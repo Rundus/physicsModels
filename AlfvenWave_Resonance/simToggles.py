@@ -63,6 +63,17 @@ class BgeoToggles:
     ConstantBval = None # in tesla. Set == None to NOT use a constant Bval
 
 ########################
+# --- PLASMA DENSITY ---
+########################
+class plasmaDensityToggles:
+    useTanaka_Profile = False
+    useKletzingS33_Profile = True
+    useChaston_Profile = True
+
+    staticDensity = False
+    staticDensityVal = 15 * (100 ** 3)
+
+########################
 # --- ELECTRIC FIELD ---
 ########################
 class EToggles:
@@ -81,6 +92,5 @@ class EToggles:
     # toggles
     static_Kperp = False
     flipEField = True
-    staticDensity = False
-    staticDensityVal = 15*(100**3)
+
 

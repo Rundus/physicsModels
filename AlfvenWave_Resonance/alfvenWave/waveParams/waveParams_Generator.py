@@ -5,6 +5,7 @@ from myspaceToolsLib.CDF_load import loadDictFromFile
 from numpy import exp, sqrt, array, pi, abs, tanh
 simulationAlt = GenToggles.simAlt
 
+# TODO: import the ionosphere environment parameters and re-path the data to each of the wave parameter profiles
 
 ##################
 # --- PLOTTING ---
@@ -13,15 +14,9 @@ plotting = False
 useTanakaDensity = False
 xNorm = R_REF # use m_to_km otherwise
 xLabel = '$R_{E}$' if xNorm == R_REF else 'km'
-plottingDict = {'Temperature': True,
+plottingDict = {
                 'lambdaPerp': True,
-                'Density': True,
-                'ionMass': True,
-                'Beta': True,
-                'plasmaFreq': True,
                 'skinDepth': True,
-                'ionCyclotron': True,
-                'ionLarmorRadius': True,
                 'alfSpdMHD': True,
                 'kineticTerms': True,
                 'lambdaPara': True,
@@ -54,67 +49,6 @@ def generatePlasmaEnvironment(outputData, **kwargs):
     Legend_fontSize = 16
     dpi = 100
 
-    # --- Temperature ---
-    def temperatureProfile(altRange, **kwargs):
-        plotBool = kwargs.get('showPlot', False)
-
-        # --- Ionosphere Temperature Profile ---
-        # ASSUMES Ions and electrons have same temperature profile
-        T0 = 2.5 # Temperature at the Ionospher (in eV)
-        T1 = 0.0135 # (in eV)
-        h0 = 2000*m_to_km # scale height (in meters)
-        T_iono = T1*exp(altRange/h0) + T0
-        deltaZ = 0.3*R_REF
-        T_ps = 2000 # temperature of plasma sheet (in eV)
-        # T_ps = 105  # temperature of plasma sheet (in eV)
-        z_ps = 3.75*R_REF # height of plasma sheet (in meters)
-        w = 0.5*(1 - tanh((altRange - z_ps)/deltaZ)) # models the transition to the plasma sheet
-
-        # determine the overall temperature profile
-        T_e = array([T_iono[i]*w[i] + T_ps*(1 - w[i]) for i in range(len(altRange))])
-
-        if plotBool:
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots(3,sharex=True)
-            fig.set_size_inches(figure_width, figure_height*(3/2))
-
-            ax[0].plot(altRange / xNorm, T_iono,linewidth=Plot_LineWidth)
-            ax[0].set_title('Ionospheric Temperature Profile vs Altitude', fontsize=Title_FontSize)
-            ax[0].set_ylabel('Temperature [eV]',fontsize=Label_FontSize)
-            ax[0].set_yscale('log')
-            ax[0].axvline(x=400000 / xNorm, label='Observation Height', color='red')
-            ax[0].grid(True)
-
-            ax[1].plot(altRange / xNorm, w,linewidth=Plot_LineWidth)
-            ax[1].set_title('Weighting Function vs Altitude', fontsize=Title_FontSize)
-            ax[1].set_ylabel('Weighting Function',fontsize=Label_FontSize)
-            # ax[1].set_xlabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
-            ax[1].axvline(x=400000 / xNorm, label='Observation Height', color='red')
-
-            ax[2].plot(altRange / xNorm, T_e,linewidth=Plot_LineWidth)
-            ax[2].set_yscale('log')
-            ax[2].set_title('Total Electron Temperature vs Altitude', fontsize=Title_FontSize)
-            ax[2].set_ylabel('Electron Temperature [eV]',fontsize=Label_FontSize)
-            ax[2].set_xlabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
-            ax[2].axvline(x=400000 / xNorm, label='Observation Height', color='red')
-            ax[2].grid(True)
-
-            for i in range(3):
-                ax[i].grid(True)
-                ax[i].tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width,
-                                           length=Tick_Length)
-                ax[i].tick_params(axis='y', which='minor', labelsize=Tick_FontSize_minor,
-                                           width=Tick_Width_minor, length=Tick_Length_minor)
-                ax[i].tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width,
-                                           length=Tick_Length)
-                ax[i].tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor,
-                                           width=Tick_Width_minor, length=Tick_Length_minor)
-
-            plt.legend(fontsize=Legend_fontSize)
-            plt.tight_layout()
-            plt.savefig('C:\Data\ACESII\science\simulations\TestParticle\plasmaEnvironment\MODEL_Temperature.png',dpi=dpi)
-
-        return T_e
 
     # --- Kperp ---
     def lambdaPerpProfile(altRange, **kwargs):
@@ -162,177 +96,6 @@ def generatePlasmaEnvironment(outputData, **kwargs):
 
         return LambdaPerp, kperp
 
-    # --- PLASMA DENSITY ---
-    # uses the Klezting Model to return an array of plasma density (in m^-3) from [Alt_low, ..., Alt_High]
-    def plasmaDensityProfile(altRange, **kwargs):
-        plotBool = kwargs.get('showPlot', False)
-        useTanakaDensity = kwargs.get('useTanakaDensity', False)
-
-        if useTanakaDensity:
-
-            ##### TANAKA FIT #####
-            # --- determine the density over all altitudes ---
-            # Description: returns density for altitude "z [km]" in m^-3
-            n0 = 24000000
-            n1 = 2000000
-            z0 = 600  # in km from E's surface
-            h = 680  # in km from E's surface
-            H = -0.74
-            a = 0.0003656481654202569
-
-            def fitFunc(x, n0, n1, z0, h, H, a):
-                return a * (n0 * exp(-1 * (x - z0) / h) + n1 * (x ** (H)))
-            n_density = (cm_to_m ** 3) * array([ fitFunc(alt/m_to_km, n0, n1, z0, h, H, a) for alt in altRange])  # calculated density (in m^-3)
-
-        elif EToggles.staticDensity:
-            n_density = array([EToggles.staticDensity for alt in altRange])
-
-        else:
-            #### KLETZING AND TORBERT MODEL ####
-            # --- determine the density over all altitudes ---
-            # Description: returns density for altitude "z [km]" in m^-3
-            h = 0.06 * (R_REF / m_to_km)  # in km from E's surface
-            n0 = 6E4
-            n1 = 1.34E7
-            z0 = 0.05 * (R_REF / m_to_km)  # in km from E's surface
-            n_density = (cm_to_m**3)*array([(n0 * exp(-1 * ((alt / m_to_km) - z0) / h) + n1 * ((alt / m_to_km) ** (-1.55))) for alt in altRange])  # calculated density (in m^-3)
-
-        if plotBool:
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots()
-            fig.set_size_inches(figure_width,1 + figure_height/2)
-            ax.plot(altRange/xNorm, n_density/(cm_to_m**3),linewidth=Plot_LineWidth)
-            ax.set_title('$n$ vs Altitude', fontsize = Title_FontSize)
-            ax.set_ylabel('Density [$cm^{-3}$]', fontsize=Label_FontSize)
-            ax.set_xlabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
-            ax.axvline(x=400000/xNorm,label='Observation Height', color='red', linewidth=Plot_LineWidth)
-            ax.set_yscale('log')
-            ax.set_ylim(1E-2, 1E6)
-            ax.margins(0)
-            ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
-            ax.tick_params(axis='y', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
-            ax.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
-            ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
-            ax.grid(True)
-            plt.legend(fontsize=Legend_fontSize)
-            plt.tight_layout()
-            plt.savefig('C:\Data\ACESII\science\simulations\TestParticle\plasmaEnvironment\MODEL_density',dpi=dpi)
-
-
-        return n_density
-
-    # --- Ion Mass ---
-    def ionMassProfile(altRange, **kwargs):
-        plotBool = kwargs.get('showPlot', False)
-
-        plasmaDensity_total = plasmaDensityProfile(altRange)
-        z_i = 2370*m_to_km  #
-        h_i = 1800*m_to_km  # height of plasma sheet (in meters)
-        n_Op = array([plasmaDensity_total[i]*0.5 * (1 - tanh((altRange[i] - z_i) / h_i)) for i in range(len(altRange))])
-        n_Hp = plasmaDensity_total - n_Op
-        m_Op = IonMasses[1]
-        m_Hp = IonMasses[2]
-        m_eff_i = array([ m_Hp*0.5*(1 + tanh( (altRange[i] - z_i)/h_i )) + m_Op*0.5*(1 - tanh( (altRange[i] - z_i)/h_i )) for i in range(len(altRange))])
-
-        if plotBool:
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots(2,sharex=True)
-            fig.set_size_inches(figure_width, figure_height)
-            ax[0].plot(altRange / xNorm, n_Op, color='blue', label='$n_{0^{+}}$ [$m^{-3}$]', linewidth=Plot_LineWidth)
-            ax[0].plot(altRange / xNorm, n_Hp, color='red', label='$n_{H^{+}}$ [$m^{-3}$]', linewidth=Plot_LineWidth)
-            ax[0].set_title('Plasma densities vs Altitude', fontsize=Title_FontSize)
-            ax[0].set_ylabel(r'Density [m$^{-3}$]', fontsize=Label_FontSize)
-            ax[0].axvline(x=400000 / xNorm, label='Observation Height', color='black', linewidth=Plot_LineWidth)
-            ax[0].set_yscale('log')
-            ax[0].legend(fontsize=Legend_fontSize)
-
-            ax[1].plot(altRange / xNorm, m_eff_i, linewidth=Plot_LineWidth)
-            ax[1].set_ylabel('$m_{eff_{i}}$ [kg]', fontsize=Label_FontSize)
-            ax[1].set_xlabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
-            ax[1].axvline(x=400000 / xNorm, label='Observation Height', color='red', linewidth=Plot_LineWidth)
-            for i in range(2):
-                ax[i].grid(True)
-                ax[i].tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
-                ax[i].tick_params(axis='y', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
-                ax[i].tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
-                ax[i].tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
-
-            plt.legend(fontsize=Legend_fontSize)
-            plt.tight_layout()
-            plt.savefig('C:\Data\ACESII\science\simulations\TestParticle\plasmaEnvironment\MODEL_ionMass.png',dpi=dpi)
-
-        return n_Op, n_Hp, m_eff_i
-
-    # --- PLASMA BETA ---
-    def plasmaBetaProfile(altRange, **kwargs):
-        plotBool = kwargs.get('showPlot', False)
-
-        plasmaDensity = plasmaDensityProfile(altRange)
-        Bgeo,Bgrad = data_dict_Bgeo['Bgeo'][0],data_dict_Bgeo['Bgrad'][0]
-        Te = 50
-        plasmaBeta = array([(plasmaDensity[i]*q0*Te)/(Bgeo[i]**2 /(2*u0)) for i in range(len(altRange))])
-        n_Op, n_Hp, m_eff_i = ionMassProfile(altRange)
-        ratio = m_e/m_eff_i
-
-        if plotBool:
-            import matplotlib.pyplot as plt
-
-            Temps = [1, 10, 50]
-            colors= ['tab:red','tab:blue','tab:green']
-
-            fig, ax = plt.subplots()
-            fig.set_size_inches(figure_width, figure_height)
-
-            for k,temp in enumerate(Temps):
-                plasmaBeta = array([(plasmaDensity[i] * q0 * temp) / (Bgeo[i] ** 2 / (2 * u0)) for i in range(len(altRange))])
-                ax.plot(altRange/xNorm, plasmaBeta/ratio, color=colors[k], label=f'T_e = {temp} eV',linewidth=Plot_LineWidth)
-
-            ax.set_title(r'$\beta$ vs Altitude',fontsize=Title_FontSize)
-            ax.set_ylabel('Plasma Beta / (m_e/m_i)',fontsize=Label_FontSize)
-            ax.set_xlabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
-            ax.axvline(x=400000/xNorm, label='Observation Height', color='red',linestyle='--',linewidth=Plot_LineWidth)
-            ax.axhline(y=1, color='black')
-            ax.set_yscale('log')
-            plt.legend(fontsize=Legend_fontSize)
-            ax.grid(True)
-            ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
-            ax.tick_params(axis='y', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
-            ax.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
-            ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
-            plt.tight_layout()
-            plt.savefig('C:\Data\ACESII\science\simulations\TestParticle\plasmaEnvironment\MODEL_beta.png',dpi=dpi)
-
-
-        return plasmaBeta
-
-    # --- PLASMA FREQ ---
-    def plasmaFreqProfile(altRange,**kwargs):
-        plotBool = kwargs.get('showPlot', False)
-
-        plasmaDensity = plasmaDensityProfile(altRange)
-        plasmaFreq = array([sqrt(plasmaDensity[i]* (q0*q0) / (ep0*m_e)) for i in range(len(plasmaDensity))])
-
-        if plotBool:
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots()
-            fig.set_size_inches(figure_width, 1+ figure_height/2)
-            ax.plot(altRange/xNorm, plasmaFreq,linewidth=Plot_LineWidth)
-            ax.set_title('$\omega_{pe}$ vs Altitude',fontsize=Title_FontSize)
-            ax.set_ylabel('Plasma Freq [rad/s]',fontsize=Label_FontSize)
-            ax.set_yscale('log')
-            ax.set_xlabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
-            ax.axvline(x=400000/xNorm,label='Observation Height',color='red',linewidth=Plot_LineWidth)
-            plt.legend(fontsize=Legend_fontSize)
-            ax.grid(True)
-            ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
-            ax.tick_params(axis='y', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
-            ax.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
-            ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
-            plt.tight_layout()
-            plt.savefig('C:\Data\ACESII\science\simulations\TestParticle\plasmaEnvironment\MODEL_plasFreq.png',dpi=dpi)
-
-        return plasmaFreq
-
     # --- SKIN DEPTH ---
     def skinDepthProfile(altRange,**kwargs):
         plotBool = kwargs.get('showPlot', False)
@@ -364,108 +127,6 @@ def generatePlasmaEnvironment(outputData, **kwargs):
             plt.savefig('C:\Data\ACESII\science\simulations\TestParticle\plasmaEnvironment\MODEL_skinDepth.png',dpi=dpi)
 
         return skinDepth
-
-    # --- ION CYCLOTRON FREQ ---
-    def ionCyclotronProfile(altRange,**kwargs):
-        plotBool = kwargs.get('showPlot', False)
-
-        Bgeo,Bgrad = data_dict_Bgeo['Bgeo'][0], data_dict_Bgeo['Bgrad'][0]
-        plasmaDensity = plasmaDensityProfile(altRange)
-        n_Op, n_Hp, m_eff_i = ionMassProfile(altRange)
-        m_Op = IonMasses[1]
-        m_Hp = IonMasses[2]
-        ionCyclotron_Op = q0 * Bgeo / m_Op
-        ionCyclotron_Hp = q0 * Bgeo / m_Hp
-        ionCyclotron = (n_Op*ionCyclotron_Op + n_Hp*ionCyclotron_Hp)/plasmaDensity
-
-        if plotBool:
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots(2,sharex=True)
-            fig.set_size_inches(figure_width, figure_height)
-            ax[0].plot(altRange/xNorm, ionCyclotron, color='blue', label='$\omega_{total}$',linewidth=Plot_LineWidth)
-            ax[0].plot(altRange / xNorm, ionCyclotron_Op, color='black', label='$\omega_{Op}$',linewidth=Plot_LineWidth)
-            ax[0].plot(altRange / xNorm, ionCyclotron_Hp, color='red', label='$\omega_{Hp}$',linewidth=Plot_LineWidth)
-            ax[0].set_title('$\omega_{ci}$ vs Altitude',fontsize=Title_FontSize)
-            ax[0].set_ylabel('$\omega_{ci}$ [rad/s]',fontsize=Label_FontSize)
-
-            ax[0].axvline(x=400000/xNorm, label='Observation Height',color='red',linewidth=Plot_LineWidth)
-            ax[0].set_yscale('log')
-            ax[0].set_ylim(0.1, 1E4)
-            ax[0].set_xlim(0,GenToggles.simAltHigh/xNorm)
-            ax[0].grid(True)
-            ax[0].margins(0)
-            ax[0].legend(fontsize=Legend_fontSize)
-
-            ax[1].plot(altRange / xNorm, ionCyclotron / (2*pi), color='blue', label='$f_{avg}$',linewidth=Plot_LineWidth)
-            ax[1].plot(altRange / xNorm, ionCyclotron_Op/ (2*pi), color='black', label='$f_{Op}$',linewidth=Plot_LineWidth)
-            ax[1].plot(altRange / xNorm, ionCyclotron_Hp/ (2*pi), color='green', label='$f_{Hp}$',linewidth=Plot_LineWidth)
-            ax[1].set_title('$f_{ci}$ vs Altitude',fontsize=Title_FontSize)
-            ax[1].set_ylabel('$f_{ci}$ [Hz]',fontsize=Label_FontSize)
-            ax[1].set_xlabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
-            ax[1].axvline(x=400000 / xNorm, label='Observation Height', color='red',linewidth=Plot_LineWidth)
-            ax[1].set_yscale('log')
-            ax[1].set_ylim(0.1, 1000)
-            ax[1].set_xlim(0, GenToggles.simAltHigh/xNorm)
-            ax[1].margins(0)
-            ax[1].grid(True)
-            ax[1].legend(fontsize=Legend_fontSize)
-
-
-            for i in range(2):
-                ax[i].grid(True)
-                ax[i].tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width,
-                                           length=Tick_Length)
-                ax[i].tick_params(axis='y', which='minor', labelsize=Tick_FontSize_minor,
-                                           width=Tick_Width_minor, length=Tick_Length_minor)
-                ax[i].tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width,
-                                           length=Tick_Length)
-                ax[i].tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor,
-                                           width=Tick_Width_minor, length=Tick_Length_minor)
-            plt.tight_layout()
-            plt.savefig('C:\Data\ACESII\science\simulations\TestParticle\plasmaEnvironment\MODEL_ionCyclo.png',dpi=dpi)
-
-        return ionCyclotron, ionCyclotron_Op, ionCyclotron_Hp
-
-    # --- Ion Larmor Radius ---
-    def ionLarmorRadiusProfile(altRange,**kwargs):
-        plotBool = kwargs.get('showPlot', False)
-
-        ionCyclotron, ionCyclotron_Op, ionCyclotron_Hp = ionCyclotronProfile(altRange)
-        n_Op, n_Hp, m_eff_i = ionMassProfile(altRange)
-        plasmaDensity = plasmaDensityProfile(altRange)
-        Ti = temperatureProfile(altRange)
-        vth_Op = sqrt(2)*sqrt(8 * q0 * Ti /IonMasses[1]) # the sqrt(2) comes from the vector sum of two dimensions
-        vth_Hp = sqrt(2)*sqrt(8 * q0 * Ti/ IonMasses[2])
-
-        ionLarmorRadius_Op = vth_Op / ionCyclotron_Op
-        ionLarmorRadius_Hp = vth_Hp / ionCyclotron_Hp
-        ionLarmorRadius = (n_Op*ionLarmorRadius_Op + n_Hp*ionLarmorRadius_Hp)/plasmaDensity
-
-        if plotBool:
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots()
-            fig.set_size_inches(figure_width, 1+ figure_height/2)
-            ax.plot(altRange / xNorm, ionLarmorRadius, label=r'$\rho_{avg}$',linewidth=Plot_LineWidth)
-            ax.plot(altRange / xNorm, ionLarmorRadius_Op, label=r'$\rho_{Op}$',linewidth=Plot_LineWidth)
-            ax.plot(altRange / xNorm, ionLarmorRadius_Hp, label=r'$\rho_{Hp}$',linewidth=Plot_LineWidth)
-            ax.set_title(r'$\rho_{i}$ vs Altitude',fontsize=Title_FontSize)
-            ax.set_ylabel(r'$\rho_{i}$ [m]',fontsize=Label_FontSize)
-            ax.set_xlabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
-            ax.axvline(x=400000 / xNorm, label='Observation Height', color='red',linestyle='--',linewidth=Plot_LineWidth)
-            # ax.axvline(x=10000000 / xNorm, label='Magnetosheath Proton Limit', color='tab:green',linestyle='--',linewidth=Plot_LineWidth)
-            ax.set_yscale('log')
-            ax.set_ylim(1, 4E5)
-            ax.margins(0)
-            plt.legend(fontsize=Legend_fontSize)
-            ax.grid(True)
-            ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
-            ax.tick_params(axis='y', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor,length=Tick_Length_minor)
-            ax.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
-            ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor,length=Tick_Length_minor)
-            plt.tight_layout()
-            plt.savefig('C:\Data\ACESII\science\simulations\TestParticle\plasmaEnvironment\MODEL_ionLarmor.png',dpi=dpi)
-
-        return ionLarmorRadius, ionLarmorRadius_Op, ionLarmorRadius_Hp
 
     # --- MHD Alfven Speed ---
     def MHD_alfvenSpeedProfile(altRange,**kwargs):

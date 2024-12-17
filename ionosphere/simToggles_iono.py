@@ -3,21 +3,16 @@ import numpy as np
 from numpy import linspace
 from numpy import array
 from spaceToolsLib.variables import m_to_km
-
-
-# TODO: PITCH ANGLE CALCULATION IS WRONG:
-#  If you make a strong pulse that causes all particles to move downward, you have equal amounts of -180 and 180 particles.
-#  But everything should be 0deg!
-
-######################
-# --- POWER SWITCH ---
-######################
-runFullSimulation = True # MUST BE  == TRUE TO RUN THE SIMULATION. Set this == True then run executable
+from datetime import datetime
 
 ######################
 # ---GENERAL SETUP ---
 ######################
 class GenToggles:
+    target_Latitude = 70  # used to pull from the IRI model
+    target_Longitude = 16  # used to pull from the IRI model
+    target_time = datetime(2022, 11, 20, 17, 20)
+
     simAltLow = 200*m_to_km # low altitude (in meters)
     simAltHigh = 1000*m_to_km # high altitude (in meters)
     obsHeight = 400*m_to_km # height of observation (in meters)
@@ -37,15 +32,55 @@ class GenToggles:
 class BgeoToggles:
     Lshell = 8.7
     useConstantBval = False
-    ConstantBval = (10000E-9) # in tesla
+    ConstantBval = 50000E-9 # in tesla. Set == None to NOT use a constant Bval
+
+##########################
+# --- NEUTRALS TOGGLES ---
+##########################
+class neutralsToggles:
+    NRLMSIS_filePath = r'C:\Data\physicsModels\ionosphere\NRLMSIS\ACESII\NRLMSIS2.0.3D.2022324.nc'
+
+
+
 
 ########################
 # --- PLASMA DENSITY ---
 ########################
-class plasmaDensity:
-    useTanakaDensity = False
-    useKletzingS33Density = True
-    useChastonDensity = True
+class plasmaToggles:
+
+    useIRI = True
+
+    # --- --- --- ---
+    ### ELECTRONS ###
+    # --- --- --- ---
+    # Temperature
+    useIRI_Te_Profile = False if not useIRI else True
+    useSchroeder_Te_Profile = False
+
+    # Density
+    useIRI_ne_Profile = False if not useIRI else True
+    useTanaka_ne_Profile = True
+    useKletzingS33_ne_Profile = True
+    useChaston_ne_Profile = False
+    useStatic_ne_Profile = False
+    staticDensityVal = 15 * (100 ** 3)
+
+    # --- --- --
+    ### IONS ###
+    # --- --- --
+    # temperature
+    useIRI_Ti_Profile = False if not useIRI else True
+
+    # density
+    useIRI_ni_Profile = False if not useIRI else True
+
+    IRI_filePath = r'C:\Data\physicsModels\ionosphere\IRI\ACESII\IRI_3D_2022324.cdf'
+
+
+
+
+
+
 
 
 
