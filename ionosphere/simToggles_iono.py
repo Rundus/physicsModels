@@ -13,7 +13,7 @@ class GenToggles:
     target_Longitude = 16  # used to pull from the IRI model
     target_time = datetime(2022, 11, 20, 17, 20)
 
-    simAltLow = 200*m_to_km # low altitude (in meters)
+    simAltLow = 100*m_to_km # low altitude (in meters)
     simAltHigh = 1000*m_to_km # high altitude (in meters)
     obsHeight = 400*m_to_km # height of observation (in meters)
     alt_Rez = 2000 # number of points in the altitude grid
@@ -59,8 +59,8 @@ class plasmaToggles:
 
     # Density
     useIRI_ne_Profile = False if not useIRI else True
-    useTanaka_ne_Profile = True
-    useKletzingS33_ne_Profile = True
+    useTanaka_ne_Profile = False
+    useKletzingS33_ne_Profile = False
     useChaston_ne_Profile = False
     useStatic_ne_Profile = False
     staticDensityVal = 15 * (100 ** 3)
