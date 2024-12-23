@@ -7,7 +7,7 @@
 # --- IMPORTS ---
 #################
 import time
-from ionosphere.simToggles_iono import GenToggles,BgeoToggles,plasmaToggles,neutralsToggles
+from ionosphere.simToggles_iono import GenToggles,BgeoToggles,plasmaToggles,neutralsToggles,conductivityToggles
 import spaceToolsLib as stl
 start_time = time.time()
 
@@ -16,8 +16,9 @@ start_time = time.time()
 # --- TOGGLES ---
 #################
 regenBgeo = False
-regenPlasmaEnvironment=True
-regenNeutralEnvironment = False
+regenPlasmaEnvironment= False
+regenNeutralEnvironment = True
+regenIonoConductivity = True
 
 ################################
 # --- --- --- --- --- --- --- --
@@ -44,4 +45,11 @@ if regenNeutralEnvironment:
     stl.prgMsg('Regenerating Neutral Environment')
     from ionosphere.neutralEnvironment.ionoNeutralEnvironment_Generator import generateNeutralEnvironment
     generateNeutralEnvironment(GenToggles, neutralsToggles, showPlot=True)
+    stl.Done(start_time)
+
+if regenIonoConductivity:
+    # conductivity
+    stl.prgMsg('Regenerating Ionospheric Conductivity')
+    from ionosphere.conductivity.ionoConductivity_Generator import generateIonosphericConductivity
+    generateIonosphericConductivity(True, GenToggles,conductivityToggles, showPlot=True)
     stl.Done(start_time)

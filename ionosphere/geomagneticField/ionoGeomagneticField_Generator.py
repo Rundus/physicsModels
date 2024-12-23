@@ -1,5 +1,5 @@
 # --- imports ---
-from ionosphere.simToggles_iono import runFullSimulation
+
 from spaceToolsLib.variables import m_to_km,Re
 from spaceToolsLib.tools import CHAOS
 from spaceToolsLib.tools.CDF_output import outputCDFdata

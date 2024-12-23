@@ -13,7 +13,7 @@ class GenToggles:
     target_Longitude = 16  # used to pull from the IRI model
     target_time = datetime(2022, 11, 20, 17, 20)
 
-    simAltLow = 100*m_to_km # low altitude (in meters)
+    simAltLow = 50*m_to_km # low altitude (in meters)
     simAltHigh = 1000*m_to_km # high altitude (in meters)
     obsHeight = 400*m_to_km # height of observation (in meters)
     alt_Rez = 2000 # number of points in the altitude grid
@@ -39,6 +39,9 @@ class BgeoToggles:
 ##########################
 class neutralsToggles:
     NRLMSIS_filePath = r'C:\Data\physicsModels\ionosphere\NRLMSIS\ACESII\NRLMSIS2.0.3D.2022324.nc'
+
+
+    neutralKeys = ['N2', 'O2', 'O', 'HE', 'H', 'AR', 'N', 'NO']  # NOTE: does NOT include anomolous O+
 
 
 
@@ -77,7 +80,10 @@ class plasmaToggles:
     IRI_filePath = r'C:\Data\physicsModels\ionosphere\IRI\ACESII\IRI_3D_2022324.cdf'
 
 
+class conductivityToggles:
 
+    useIRI_ne_profile = True
+    useHeight_Ionization_ne_profile = False
 
 
 

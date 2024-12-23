@@ -11,11 +11,26 @@ from scipy.interpolate import CubicSpline
 
 
 # TODO: Convert each model into a class object with functions representing its various variables. This should standardize some of these functions and allow for expansion.
-# TODO: add electron Larmor Length
+# TODO: Swap the x-y axes in each plot to have Altitude on y-axis
 
 ##################
 # --- PLOTTING ---
 ##################
+# --- Plotting Toggles ---
+figure_width = 14  # in inches
+figure_height = 8.5  # in inches
+Title_FontSize = 25
+Label_FontSize = 25
+Tick_FontSize = 25
+Tick_FontSize_minor = 20
+Tick_Length = 10
+Tick_Width = 2
+Tick_Length_minor = 5
+Tick_Width_minor = 1
+Text_Fontsize = 20
+Plot_LineWidth = 2.5
+Legend_fontSize = 20
+dpi = 100
 xNorm = m_to_km # use m_to_km otherwise
 xLabel = '$R_{E}$' if xNorm == Re else 'km'
 
@@ -26,21 +41,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
     plotting = kwargs.get('showPlot', False)
     data_dict = {}
 
-    # --- Plotting Toggles ---
-    figure_width = 14  # in inches
-    figure_height = 8.5  # in inches
-    Title_FontSize = 25
-    Label_FontSize = 25
-    Tick_FontSize = 25
-    Tick_FontSize_minor = 20
-    Tick_Length = 10
-    Tick_Width = 2
-    Tick_Length_minor = 5
-    Tick_Width_minor = 1
-    Text_Fontsize = 20
-    Plot_LineWidth = 2.5
-    Legend_fontSize = 16
-    dpi = 100
+
 
     if plasmaToggles.useIRI:
         Inames = ['O+', 'H+', 'He+', 'O2+', 'NO+', 'N+']
@@ -73,24 +74,8 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
 
                 # --- linear 1D interpolate data to assist the cubic interpolation ---
                 interpolated_result = np.interp(GenToggles.simAlt,data_dict_IRI['ht'][0][alt_low_idx:alt_high_idx]*m_to_km, reducedData)
-                # newAlt = np.linspace(GenToggles.simAltLow,GenToggles.simAltHigh,)
-
-
-                # --- cubic interpolation ---
-                # splCub = CubicSpline(data_dict_IRI['ht'][0][alt_low_idx:alt_high_idx]*m_to_km, reducedData)
-
-
-                # evaluate the interpolation and store the interpolated data
-                # interpolated_result = np.array([splCub(val) for val in GenToggles.simAlt])
-                # interpolated_result[interpolated_result<0] = 1E-6 # because of the low number of datapoints, the spline overcorrects at sharp turns. Fix this by setting anything negative to zero.
                 data_dict_IRI[varname][0] = interpolated_result
 
-                # import matplotlib.pyplot as plt
-                # fig, ax = plt.subplots()
-                # ax.set_title(varname)
-                # ax.plot(GenToggles.simAlt,interpolated_result,color='tab:red',zorder=0,label='Spline')
-                # ax.plot(data_dict_IRI['ht'][0][alt_low_idx:alt_high_idx]*m_to_km, reducedData,color='tab:blue', zorder=1,label='raw')
-                # plt.show()
 
 
     # --- Temperature ---
@@ -113,21 +98,22 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             T_e = np.array([T_iono[i]*w[i] + T_ps*(1 - w[i]) for i in range(len(altRange))])
 
         elif plasmaToggles.useIRI_Te_Profile:
-            T_e = data_dict_IRI['Te'][0]*(kB/q0)
+            T_e = data_dict_IRI['Te'][0]
 
-        data_dict = {**data_dict, **{'Te': [T_e, {'DEPEND_0': 'simAlt', 'UNITS': 'eV', 'LABLAXIS': 'Te'}]}}
+        data_dict = {**data_dict, **{'Te': [T_e, {'DEPEND_0': 'simAlt', 'UNITS': 'K', 'LABLAXIS': 'Te'}]}}
 
         if kwargs.get('showPlot', False):
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots(sharex=True)
             fig.set_size_inches(figure_width, figure_height * (3 / 2))
 
-            ax.plot(altRange / xNorm, data_dict['Te'][0], linewidth=Plot_LineWidth)
+            ax.plot(data_dict['Te'][0], altRange / xNorm,  linewidth=Plot_LineWidth)
             ax.set_title('Electron Ionospheric Temperature Profile vs Altitude', fontsize=Title_FontSize)
-            ax.set_ylabel('Temperature [eV]', fontsize=Label_FontSize)
-            ax.set_yscale('log')
-            ax.axvline(x=400000 / xNorm, label='Observation Height', color='red')
+            ax.set_xlabel('Temperature [K]', fontsize=Label_FontSize)
+            ax.set_ylabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
+            ax.axhline(y=400000 / xNorm, label='Observation Height', color='red')
             ax.grid(True)
+            ax.set_xlim(100,3500)
 
             ax.grid(True)
             ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width,
@@ -166,22 +152,22 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             T_i = np.array([T_iono[i]*w[i] + T_ps*(1 - w[i]) for i in range(len(altRange))])
 
         elif plasmaToggles.useIRI_Te_Profile:
-            T_i = data_dict_IRI['Te'][0]*kB/q0
-            T_iono = T_i
+            Ti = data_dict_IRI['Ti'][0]
 
-        data_dict = {**data_dict,**{'Ti': [T_i, {'DEPEND_0': 'simAlt', 'UNITS': 'eV', 'LABLAXIS': 'Ti'}]}}
+        data_dict = {**data_dict,**{'Ti': [Ti, {'DEPEND_0': 'simAlt', 'UNITS': 'K', 'LABLAXIS': 'Ti'}]}}
 
         if kwargs.get('showPlot', False):
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots(sharex=True)
             fig.set_size_inches(figure_width, figure_height * (3 / 2))
 
-            ax.plot(altRange / xNorm, data_dict['Ti'][0], linewidth=Plot_LineWidth)
+            ax.plot(data_dict['Ti'][0], altRange / xNorm,  linewidth=Plot_LineWidth)
             ax.set_title('Ion Ionospheric Temperature Profile vs Altitude', fontsize=Title_FontSize)
-            ax.set_ylabel('Temperature [eV]', fontsize=Label_FontSize)
-            ax.set_yscale('log')
-            ax.axvline(x=400000 / xNorm, label='Observation Height', color='red')
+            ax.set_xlabel('Temperature [K]', fontsize=Label_FontSize)
+            ax.set_ylabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
+            ax.axhline(y=400000 / xNorm, label='Observation Height', color='red')
             ax.grid(True)
+            ax.set_xlim(100, 3500)
 
             ax.grid(True)
             ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width,
@@ -235,7 +221,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             ne_density = np.array([plasmaToggles.staticDensity for alt in altRange])
 
         elif plasmaToggles.useIRI_ne_Profile:
-            ne_density = deepcopy(data_dict_IRI['Ne'][0])
+            ne_density = 1E6*deepcopy(data_dict_IRI['Ne'][0]) # convert data into m^-3
 
         data_dict = {**data_dict,**{'ne': [ne_density, {'DEPEND_0': 'simAlt', 'UNITS': 'm!A-3!N', 'LABLAXIS': 'ne'}]}}
 
@@ -250,7 +236,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             ax.set_xlabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
             ax.axvline(x=400000/xNorm,label='Observation Height', color='red', linewidth=Plot_LineWidth)
             ax.set_yscale('log')
-            ax.set_ylim(1E2, 1E6)
+            # ax.set_ylim(1E2, 1E6)
             ax.margins(0)
             ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
             ax.tick_params(axis='y', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
@@ -292,6 +278,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             fig.set_size_inches(figure_width, figure_height)
             for idx,thing in enumerate(n_ions):
                 ax[0].plot(altRange / xNorm, thing, label=f'${Ikeys[idx]}$ [$m^{-3}$]', linewidth=Plot_LineWidth)
+            ax[0].plot(altRange / xNorm, data_dict['ne'][0], label=f'$ne$ [$m^{-3}$]', linewidth=Plot_LineWidth)
             ax[0].plot(altRange / xNorm, ni_total, label=f'$ni$ [$m^{-3}$]', linewidth=Plot_LineWidth)
             ax[0].set_title('Ion Plasma density vs Altitude', fontsize=Title_FontSize)
             ax[0].set_ylabel(r'Density [m$^{-3}$]', fontsize=Label_FontSize)
@@ -326,7 +313,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
     def plasmaBetaProfile(altRange,data_dict,**kwargs):
 
         m_eff_i = data_dict['m_eff_i'][0]
-        plasmaBeta = (data_dict['ne'][0]*q0*data_dict['Te'][0])/((data_dict_Bgeo['Bgeo'][0])**2 /(2*u0))
+        plasmaBeta = (data_dict['ne'][0]*kB*data_dict['Te'][0])/((data_dict_Bgeo['Bgeo'][0])**2 /(2*u0))
         ratio = m_e/m_eff_i
         data_dict = {**data_dict, **{'beta_e': [plasmaBeta, {'DEPEND_0': 'simAlt', 'UNITS': None, 'LABLAXIS': 'beta_e'}]}}
 
@@ -335,13 +322,13 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             colors= ['tab:red','tab:blue','tab:green']
             fig, ax = plt.subplots()
             fig.set_size_inches(figure_width, figure_height)
-            ax.plot(altRange/xNorm, plasmaBeta/ratio, color=next(iter(colors)), label=r'$\beta_{i}$',linewidth=Plot_LineWidth)
+            ax.plot(plasmaBeta/ratio, altRange/xNorm, color=next(iter(colors)), label=r'$\beta_{i}$',linewidth=Plot_LineWidth)
             ax.set_title(r'$\beta$ vs Altitude',fontsize=Title_FontSize)
-            ax.set_ylabel('Plasma Beta / (m_e/m_i)',fontsize=Label_FontSize)
-            ax.set_xlabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
-            ax.axvline(x=400000/xNorm, label='Observation Height', color='red',linestyle='--',linewidth=Plot_LineWidth)
-            ax.axhline(y=1, color='black')
-            ax.set_yscale('log')
+            ax.set_xlabel('Plasma Beta / (m_e/m_i)',fontsize=Label_FontSize)
+            ax.set_ylabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
+            ax.axhline(y=400000/xNorm, label='Observation Height', color='red',linestyle='--',linewidth=Plot_LineWidth)
+            ax.axvline(x=1, color='black')
+            ax.set_xscale('log')
             plt.legend(fontsize=Legend_fontSize)
             ax.grid(True)
             ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
@@ -381,13 +368,15 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
         return data_dict
 
     # --- ION CYCLOTRON FREQ ---
-    def ionCyclotronProfile(altRange,data_dict,**kwargs):
+    def cyclotronProfile(altRange,data_dict,**kwargs):
         n_ions = np.array([data_dict[f"n_{key}"][0] for key in Ikeys])
         ionCyclotron_ions = np.array([q0 * data_dict_Bgeo['Bgeo'][0]  / mass for mass in Imasses])
         ionCyclotron_eff = np.sum(ionCyclotron_ions*n_ions,axis=0)/data_dict['ni'][0]
+        electronCyclotron = q0 * data_dict_Bgeo['Bgeo'][0]/ m_e
         data_dict = {**data_dict,
-                     **{'ionCyclotron_eff': [ionCyclotron_eff, {'DEPEND_0': 'simAlt', 'UNITS': 'rad/s', 'LABLAXIS': 'ionCyclotron_eff'}]},
-                     **{f'ionCyclotron_{key}': [ionCyclotron_ions[idx], {'DEPEND_0': 'simAlt', 'UNITS': 'rad/s', 'LABLAXIS': f'ionCyclotron_{key}'}] for idx, key in enumerate(Ikeys)}
+                     **{'Omega_e': [electronCyclotron, {'DEPEND_0': 'simAlt', 'UNITS': 'rad/s', 'LABLAXIS': 'electronCyclotron'}]},
+                     **{'Omega_i_eff': [ionCyclotron_eff, {'DEPEND_0': 'simAlt', 'UNITS': 'rad/s', 'LABLAXIS': 'ionCyclotron_eff'}]},
+                     **{f'Omega_{key}': [ionCyclotron_ions[idx], {'DEPEND_0': 'simAlt', 'UNITS': 'rad/s', 'LABLAXIS': f'ionCyclotron_{key}'}] for idx, key in enumerate(Ikeys)}
                      }
 
         if kwargs.get('showPlot', False):
@@ -395,31 +384,32 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             fig, ax = plt.subplots(2, sharex=True)
             fig.set_size_inches(figure_width, figure_height)
             for idx,thing in enumerate(ionCyclotron_ions):
-                ax[0].plot(altRange / xNorm, thing, label=f'${Inames[idx]}$ [rad/s]', linewidth=Plot_LineWidth)
+                ax[0].plot(thing, altRange / xNorm,  label=f'${Inames[idx]}$ [rad/s]', linewidth=Plot_LineWidth)
 
-            ax[0].plot(altRange / xNorm, ionCyclotron_eff, label='$\Omega_{eff}$ [rad/s]', linewidth=Plot_LineWidth)
+            ax[0].plot(ionCyclotron_eff, altRange / xNorm,  label='$\Omega_{eff}$ [rad/s]', linewidth=Plot_LineWidth)
             ax[0].set_title('$\Omega_{ci}$ vs Altitude', fontsize=Title_FontSize)
-            ax[0].set_ylabel('$\Omega_{ci}$ [rad/s]', fontsize=Label_FontSize)
+            ax[0].set_xlabel('$\Omega_{ci}$ [rad/s]', fontsize=Label_FontSize)
+            ax[0].set_ylabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
+            ax[0].axhline(y=400000 / xNorm, label='Observation Height', color='red', linewidth=Plot_LineWidth)
+            ax[0].set_xscale('log')
+            ax[0].set_xlim(1E2, 1E4)
+            ax[0].set_ylim(0, GenToggles.simAltHigh / xNorm)
 
-            ax[0].axvline(x=400000 / xNorm, label='Observation Height', color='red', linewidth=Plot_LineWidth)
-            ax[0].set_yscale('log')
-            ax[1].set_ylim(1E2, 1E4)
-            ax[0].set_xlim(0, GenToggles.simAltHigh / xNorm)
             ax[0].grid(True)
             ax[0].margins(0)
             ax[0].legend(fontsize=Legend_fontSize,loc='upper right')
 
             for idx,thing in enumerate(ionCyclotron_ions):
-                ax[1].plot(altRange / xNorm, thing/ (2 * np.pi), label=f'${Inames[idx]}$ [Hz]', linewidth=Plot_LineWidth)
+                ax[1].plot(thing/ (2 * np.pi),altRange / xNorm,  label=f'${Inames[idx]}$ [Hz]', linewidth=Plot_LineWidth)
 
-            ax[1].plot(altRange / xNorm, ionCyclotron_eff / (2 * np.pi), color='blue', label='$f_{avg}$', linewidth=Plot_LineWidth)
+            ax[1].plot( ionCyclotron_eff / (2 * np.pi),altRange / xNorm, color='blue', label='$f_{avg}$', linewidth=Plot_LineWidth)
             ax[1].set_title('$f_{ci}$ vs Altitude', fontsize=Title_FontSize)
-            ax[1].set_ylabel('$f_{ci}$ [Hz]', fontsize=Label_FontSize)
-            ax[1].set_xlabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
-            ax[1].axvline(x=400000 / xNorm, label='Observation Height', color='red', linewidth=Plot_LineWidth)
-            ax[1].set_yscale('log')
-            ax[1].set_ylim(1E2, 1E4)
-            ax[1].set_xlim(0, GenToggles.simAltHigh / xNorm)
+            ax[1].set_xlabel('$f_{ci}$ [Hz]', fontsize=Label_FontSize)
+            ax[1].set_ylabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
+            ax[1].axhline(y=400000 / xNorm, label='Observation Height', color='red', linewidth=Plot_LineWidth)
+            ax[1].set_xscale('log')
+            ax[1].set_xlim(1E2, 1E4)
+            ax[1].set_ylim(0, GenToggles.simAltHigh / xNorm)
             ax[1].margins(0)
             ax[1].grid(True)
             ax[1].legend(fontsize=Legend_fontSize,loc='upper right')
@@ -445,8 +435,8 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
 
         Ti = data_dict['Ti'][0]
         n_ions = np.array([data_dict[f"n_{key}"][0] for idx, key in enumerate(Ikeys)])
-        vth_ions = np.array([np.sqrt(2)*np.sqrt(8 * q0 * Ti /mass) for mass in Imasses]) # the np.sqrt(2) comes from the vector sum of two dimensions
-        ionLarmorRadius_ions = np.array([vth_ions[idx] / data_dict[f"ionCyclotron_{key}"][0] for idx,key in enumerate(Ikeys)])
+        vth_ions = np.array([np.sqrt(2)*np.sqrt(8 *kB* Ti /mass) for mass in Imasses]) # the np.sqrt(2) comes from the vector sum of two dimensions
+        ionLarmorRadius_ions = np.array([vth_ions[idx] / data_dict[f"Omega_{key}"][0] for idx,key in enumerate(Ikeys)])
         ionLarmorRadius_eff = np.sum(n_ions*ionLarmorRadius_ions)/data_dict['ni'][0]
         data_dict = {**data_dict,
                      **{'ionLarmorRadius_eff': [ionLarmorRadius_eff, {'DEPEND_0': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'ionLarmorRadius_eff'}]},
@@ -458,15 +448,14 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             fig, ax = plt.subplots()
             fig.set_size_inches(figure_width, 1+ figure_height/2)
             for idx, ion in enumerate(Ikeys):
-                ax.plot(altRange / xNorm, data_dict[f"ionLarmorRadius_{ion}"][0], label=rf"$\rho_{ion}$",linewidth=Plot_LineWidth)
+                ax.plot(data_dict[f"ionLarmorRadius_{ion}"][0], altRange / xNorm,  label=rf"$\rho_{ion}$",linewidth=Plot_LineWidth)
 
-            ax.plot(altRange / xNorm, ionLarmorRadius_eff, label=r'$\rho_{avg}$', linewidth=Plot_LineWidth)
+            ax.plot(ionLarmorRadius_eff, altRange / xNorm,  label=r'$\rho_{avg}$', linewidth=Plot_LineWidth)
             ax.set_title(r'$\rho_{i}$ vs Altitude',fontsize=Title_FontSize)
-            ax.set_ylabel(r'$\rho_{i}$ [m]',fontsize=Label_FontSize)
-            ax.set_xlabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
-            ax.axvline(x=400000 / xNorm, label='Observation Height', color='red',linestyle='--',linewidth=Plot_LineWidth)
-            # ax.axvline(x=10000000 / xNorm, label='Magnetosheath Proton Limit', color='tab:green',linestyle='--',linewidth=Plot_LineWidth)
-            ax.set_yscale('log')
+            ax.set_xlabel(r'$\rho_{i}$ [m]',fontsize=Label_FontSize)
+            ax.set_ylabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
+            ax.axhline(y=400000 / xNorm, label='Observation Height', color='red',linestyle='--',linewidth=Plot_LineWidth)
+            ax.set_xscale('log')
             ax.set_ylim(1, 4E5)
             ax.margins(0)
             plt.legend(fontsize=Legend_fontSize)
@@ -496,20 +485,20 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots()
             fig.set_size_inches(figure_width, figure_height)
-            ax.plot(altRange / xNorm, VA_MHD/(10000*m_to_km), label='$V_{A} (MHD)$',linewidth=Plot_LineWidth)
+            ax.plot(VA_MHD/(10000*m_to_km), altRange / xNorm,  label='$V_{A} (MHD)$',linewidth=Plot_LineWidth)
             ax.set_title(r'$V_{A}$ vs Altitude',fontsize=Title_FontSize)
-            ax.set_ylabel('MHD Alfven Speed  [10,000 km/s]',fontsize=Label_FontSize)
-            ax.set_xlabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
-            ax.axvline(x=400000 / xNorm, label='Observation Height', color='red', linestyle='--',linewidth=Plot_LineWidth)
+            ax.set_xlabel('MHD Alfven Speed  [10,000 km/s]',fontsize=Label_FontSize)
+            ax.set_ylabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
+            ax.axhline(y=400000 / xNorm, label='Observation Height', color='red', linestyle='--',linewidth=Plot_LineWidth)
 
             # plot some thermal velocity comparisons
             Vth_low = np.sqrt(8*q0*1/(9.11E-31))/(10000*m_to_km)
-            ax.axhline(y=Vth_low, color='black',linewidth=Plot_LineWidth)
-            ax.text(x=Re/xNorm,y=Vth_low*1.3,s='$V_{th_{e}}$ (1 eV)', color='black',fontsize=Text_Fontsize)
+            ax.axvline(x=Vth_low, color='black',linewidth=Plot_LineWidth)
+            ax.text(y=Re/xNorm,x=Vth_low*1.3,s='$V_{th_{e}}$ (1 eV)', color='black',fontsize=Text_Fontsize)
 
             Vth_high = np.sqrt(8 * q0 * 50 / (9.11E-31))/(10000*m_to_km)
-            ax.axhline(y=Vth_high, color='black',linewidth=Plot_LineWidth)
-            ax.text(x=Re/xNorm, y=Vth_high * 1.1, s='$V_{th_{e}}$ (50 eV)', color='black',fontsize=Text_Fontsize)
+            ax.axvline(x=Vth_high, color='black',linewidth=Plot_LineWidth)
+            ax.text(y=Re/xNorm, x=Vth_high * 1.1, s='$V_{th_{e}}$ (50 eV)', color='black',fontsize=Text_Fontsize)
 
             ax.grid(True)
             ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
@@ -537,7 +526,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
                         ion_plasmaDensityProfile,
                         plasmaBetaProfile,
                         plasmaFreqProfile,
-                        ionCyclotronProfile,
+                        cyclotronProfile,
                         ionLarmorRadiusProfile,
                         MHD_alfvenSpeedProfile]
 

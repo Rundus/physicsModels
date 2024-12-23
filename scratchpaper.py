@@ -1,9 +1,17 @@
 import numpy as np
 
-a = np.array([[1,2,3],[5,6,7]])
-b = np.array([1,2])
-c = np.array([1,10])
-print((a.T*b).T)
-print(np.sum((a.T*b).T,axis=0))
+from itertools import product
+
+a = [1,2,3]
+b = ['a','b','c']
+c = [10,11,12]
+d = ['i','j','k']
+combos1 = [list(thing) for thing in product(a,c)]
+combos2 = [list(thing) for thing in product(b,d)]
+
+
+print(combos1)
+print(combos2)
+
 
 # print(((a.T*b)/c).T)

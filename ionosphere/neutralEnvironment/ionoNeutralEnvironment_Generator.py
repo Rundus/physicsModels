@@ -9,9 +9,10 @@ from spaceToolsLib.tools.CDF_load import loadDictFromFile
 from scipy.io import netcdf_file
 from scipy.interpolate import CubicSpline
 from spaceToolsLib.tools.CDF_output import outputCDFdata
-from spaceToolsLib.variables import m_to_km,Re
+from spaceToolsLib.variables import m_to_km,Re,NeutralMasses
 from numpy import abs,array,datetime64,squeeze
 import pymsis
+import numpy as np
 
 
 ##################
@@ -19,25 +20,25 @@ import pymsis
 ##################
 xNorm = m_to_km # use m_to_km otherwise
 xLabel = '$R_{E}$' if xNorm == Re else 'km'
+# --- Plotting Toggles ---
+figure_width = 14  # in inches
+figure_height = 8.5  # in inches
+Title_FontSize = 25
+Label_FontSize = 25
+Tick_FontSize = 25
+Tick_FontSize_minor = 20
+Tick_Length = 10
+Tick_Width = 2
+Tick_Length_minor = 5
+Tick_Width_minor = 1
+Text_Fontsize = 20
+Plot_LineWidth = 2.5
+Legend_fontSize = 16
+dpi = 100
+
 
 def generateNeutralEnvironment(GenToggles, neutralsToggles, **kwargs):
     showPlot = kwargs.get('showPlot', False)
-
-    # --- Plotting Toggles ---
-    figure_width = 14  # in inches
-    figure_height = 8.5  # in inches
-    Title_FontSize = 25
-    Label_FontSize = 25
-    Tick_FontSize = 25
-    Tick_FontSize_minor = 20
-    Tick_Length = 10
-    Tick_Width = 2
-    Tick_Length_minor = 5
-    Tick_Width_minor = 1
-    Text_Fontsize = 20
-    Plot_LineWidth = 2.5
-    Legend_fontSize = 16
-    dpi = 100
 
     # get the NRLMSIS data
     lon = GenToggles.target_Longitude
@@ -57,22 +58,27 @@ def generateNeutralEnvironment(GenToggles, neutralsToggles, **kwargs):
     data_dict = {}
     for var in pymsis.Variable:
 
+        varData = np.array([val if val> 1E-25 else 0 for val in NRLMSIS_data[:, var]])
+
+
         if var.name =='MASS_DENSITY':
             varunits = 'kg m!A-3!N'
+            varname = 'rho_n'
         elif var.name =='TEMPERATURE':
             varunits = 'K'
+            varname = 'Tn'
         else:
             varunits = 'm!A-3!N'
+            varname = var.name
 
-
-        data_dict = {**data_dict, **{var.name: [NRLMSIS_data[:,var], {'DEPEND_0': 'simAlt', 'UNITS':varunits , 'LABLAXIS': var.name,'VAR_TYPE': 'data'} ]}}
+        data_dict = {**data_dict, **{varname: [varData, {'DEPEND_0': 'simAlt', 'UNITS':varunits , 'LABLAXIS': var.name,'VAR_TYPE': 'data'} ]}}
 
         if showPlot:
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots()
             fig.set_size_inches(figure_width, figure_height)
             ax.plot(GenToggles.simAlt / xNorm, NRLMSIS_data[:,var], label=rf'{var.name}', linewidth=Plot_LineWidth)
-            ax.set_title(f'Time: {neutralsToggles.target_time}, Lat: {neutralsToggles.target_Latitude}, Long: {neutralsToggles.target_Longitude}\n'+rf'{var.name} vs Altitude', fontsize=Title_FontSize)
+            ax.set_title(f'Time: {GenToggles.target_time}, Lat: {GenToggles.target_Latitude}, Long: {GenToggles.target_Longitude}\n'+rf'{var.name} vs Altitude', fontsize=Title_FontSize)
             ax.set_ylabel(f'{var.name} [{varunits}]', fontsize=Label_FontSize)
             ax.set_xlabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
             ax.grid(True)
@@ -90,7 +96,13 @@ def generateNeutralEnvironment(GenToggles, neutralsToggles, **kwargs):
     # add the ionosphere simulation altitude
     data_dict = {**data_dict, **{'simAlt': [GenToggles.simAlt, {'DEPEND_0': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'simAlt','VAR_TYPE': 'data'}]}}
 
-    # add the lat/long/time these data were taken from?
+    # add the total neutral density
+    n_n = np.array([data_dict[f"{key}"][0] for key in neutralsToggles.neutralKeys])
+    data_dict = {**data_dict, **{'nn': [np.sum(n_n,axis=0), {'DEPEND_0': 'simAlt', 'UNITS': 'm^-3', 'LABLAXIS': 'simAlt', 'VAR_TYPE': 'data'}]}}
+
+    # add the effective neutral mass
+    m_eff_n = np.sum(np.array( [NeutralMasses[i]*n_n[i] for i in range(len(NeutralMasses))]), axis=0)/data_dict['nn'][0]
+    data_dict = {**data_dict, **{'m_eff_n': [m_eff_n, {'DEPEND_0': 'simAlt', 'UNITS': 'kg', 'LABLAXIS': 'simAlt', 'VAR_TYPE': 'data'}]}}
 
     #####################
     # --- OUTPUT DATA ---
