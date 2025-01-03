@@ -1,4 +1,4 @@
-# # --- Evans_1974_data.py ---
+# # --- Evans_1974_parameterization.py ---
 # # --- Author: C. Feltman ---
 # # DESCRIPTION: Provides needed functions and data needed to run the Evans 1974 model
 

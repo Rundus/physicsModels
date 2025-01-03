@@ -7,7 +7,7 @@
 # --- IMPORTS ---
 #################
 import time
-from ionosphere.simToggles_iono import GenToggles,BgeoToggles,plasmaToggles,neutralsToggles,conductivityToggles
+from ionosphere.simToggles_iono import GenToggles,BgeoToggles,plasmaToggles,neutralsToggles,conductivityToggles,heightIonizationToggles
 import spaceToolsLib as stl
 start_time = time.time()
 
@@ -16,9 +16,10 @@ start_time = time.time()
 # --- TOGGLES ---
 #################
 regenBgeo = False
-regenPlasmaEnvironment= False
-regenNeutralEnvironment = True
-regenIonoConductivity = True
+regenPlasmaEnvironment = False
+regenNeutralEnvironment = False
+regenHeightIonization = False
+regenIonoConductivity = False
 
 ################################
 # --- --- --- --- --- --- --- --
@@ -45,6 +46,13 @@ if regenNeutralEnvironment:
     stl.prgMsg('Regenerating Neutral Environment')
     from ionosphere.neutralEnvironment.ionoNeutralEnvironment_Generator import generateNeutralEnvironment
     generateNeutralEnvironment(GenToggles, neutralsToggles, showPlot=True)
+    stl.Done(start_time)
+
+if regenHeightIonization:
+    # height ionization
+    stl.prgMsg('Regenerating Height Ionization')
+    from ionosphere.heightIonization.heightIonization_Generator import generateHeightIonization
+    generateHeightIonization(GenToggles, heightIonizationToggles, showPlot=True)
     stl.Done(start_time)
 
 if regenIonoConductivity:

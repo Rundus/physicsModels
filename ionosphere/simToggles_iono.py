@@ -1,7 +1,5 @@
 # --- imports ---
 import numpy as np
-from numpy import linspace
-from numpy import array
 from spaceToolsLib.variables import m_to_km
 from datetime import datetime
 
@@ -12,6 +10,7 @@ class GenToggles:
     target_Latitude = 70  # used to pull from the IRI model
     target_Longitude = 16  # used to pull from the IRI model
     target_time = datetime(2022, 11, 20, 17, 20)
+    # target_time = datetime(2012, 3, 30, 12, 00)
 
     simAltLow = 50*m_to_km # low altitude (in meters)
     simAltHigh = 1000*m_to_km # high altitude (in meters)
@@ -19,7 +18,7 @@ class GenToggles:
     alt_Rez = 2000 # number of points in the altitude grid
 
     # calculatd quantities
-    simAlt = linspace(simAltLow, simAltHigh, alt_Rez)  # in METERS
+    simAlt = np.linspace(simAltLow, simAltHigh, alt_Rez)  # in METERS
 
     # extra
     fps = 10
@@ -40,9 +39,7 @@ class BgeoToggles:
 class neutralsToggles:
     NRLMSIS_filePath = r'C:\Data\physicsModels\ionosphere\NRLMSIS\ACESII\NRLMSIS2.0.3D.2022324.nc'
 
-
-    neutralKeys = ['N2', 'O2', 'O', 'HE', 'H', 'AR', 'N', 'NO']  # NOTE: does NOT include anomolous O+
-
+    wNeutrals = ['N2','O2','O'] # which neutrals to consider in the simulation, use the key format in spacetoolsLib
 
 
 
@@ -50,40 +47,43 @@ class neutralsToggles:
 # --- PLASMA DENSITY ---
 ########################
 class plasmaToggles:
-
-    useIRI = True
-
     # --- --- --- ---
     ### ELECTRONS ###
     # --- --- --- ---
-    # Temperature
-    useIRI_Te_Profile = False if not useIRI else True
-    useSchroeder_Te_Profile = False
+    useIRI_Te_Profile = True
+    useIRI_ne_Profile = True
 
-    # Density
-    useIRI_ne_Profile = False if not useIRI else True
-    useTanaka_ne_Profile = False
-    useKletzingS33_ne_Profile = False
-    useChaston_ne_Profile = False
     useStatic_ne_Profile = False
     staticDensityVal = 15 * (100 ** 3)
 
     # --- --- --
     ### IONS ###
     # --- --- --
-    # temperature
-    useIRI_Ti_Profile = False if not useIRI else True
-
-    # density
-    useIRI_ni_Profile = False if not useIRI else True
-
+    useIRI_Ti_Profile = True
+    useIRI_ni_Profile = True
     IRI_filePath = r'C:\Data\physicsModels\ionosphere\IRI\ACESII\IRI_3D_2022324.cdf'
+    # IRI_filePath = r'C:\Data\physicsModels\ionosphere\IRI\Leda2019'
+
+    wIons = ['NO+','O+','O2+']  # which neutrals to consider in the simulation, use the key format in spaceToolsLib
+    # wIons = ['NO+','H+','N+','He+', 'O+', 'O2+']  # all ions
 
 
+
+######################
+# --- CONDUCTIVITY ---
+######################
 class conductivityToggles:
+    test = 5
 
-    useIRI_ne_profile = True
-    useHeight_Ionization_ne_profile = False
+
+
+###########################
+# --- HEIGHT IONIZATION ---
+###########################
+class heightIonizationToggles:
+    test = 5
+
+
 
 
 

@@ -7,7 +7,7 @@
 import scipy.interpolate
 
 from ionosphere.simToggles_iono import GenToggles, conductivityToggles,plasmaToggles,neutralsToggles
-from spaceToolsLib.variables import u0,m_e,ep0,cm_to_m,IonMasses,q0, m_to_km,Re,kB,m_Hp,m_Op,m_Np,m_Hep,m_NOp,m_O2p,m_N2p,NeutralMasses
+from spaceToolsLib.variables import u0,m_e,ep0,cm_to_m,q0, m_to_km,Re,kB,ion_dict
 from spaceToolsLib.tools.CDF_load import loadDictFromFile
 from ionosphere.conductivity.model_conductivity_classes import *
 import numpy as np
@@ -49,49 +49,31 @@ data_dict_plasma = loadDictFromFile(rf'{GenToggles.simFolderPath}\plasmaEnvironm
 def generateIonosphericConductivity(outputData,GenToggles,conductivityToggles, **kwargs):
     data_dict = {}
 
-    # --- choose your dataset ---
-    ionKeys = ['Op', 'Hp', 'Hep', 'O2p', 'NOp', 'Np']
-    ionMasses = np.array(IonMasses[1:6+1])
-    # neutralKeys = ['N2','O2','O','HE','H','AR','N','NO'] # NOTE: does NOT include anomolous O+
-    # neutralMasses = NeutralMasses
-
-    # --- get some ubiquitous data variables ---
-    n_ions = np.array([data_dict_plasma[f"n_{key}"][0] for key in ionKeys])
-    n_neutrals = np.array([data_dict_neutral[f"{key}"][0] for key in neutralsToggles.neutralKeys])
-
-    if conductivityToggles.useIRI_ne_profile:
-        ne = data_dict_plasma['ne'][0]
-
-    elif conductivityToggles.useHeight_Ionization_ne_profile:
-        raise Exception('Need to code this still!')
-
-
     # --- Electron mobility ---
     def electron_collisionFreqProfile(altRange,data_dict,**kwargs):
 
         # electron-neutral collisions
-        model = Nicolet1953()
-        nu_en = model.electronNeutral_CollisionFreq(data_dict_neutral, data_dict_plasma)
-        for thing in nu_en:
-            print(thing)
+        model = Leda2019()
+        nu_en = [model.electronNeutral_CollisionFreq(data_dict_neutral= data_dict_neutral, data_dict_plasma= data_dict_plasma,neutralKey=key) for key in neutralsToggles.wNeutrals]
 
         # electron-ion collisions
         model = Johnson1961()
         nu_ei = model.electronIon_CollisionFreq(data_dict_neutral,data_dict_plasma)
 
+
         # total collision fre
-        nu_e_total = nu_ei + nu_en
+        nu_e_total = nu_ei + np.sum(nu_en,axis=0)
 
         data_dict = {**data_dict,
-                     **{'nu_e_total': [nu_e_total, {'DEPEND_0': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': 'nu_e'}]},
-                     # **{f"nu_e_{key}": [nu_en[idx], {'DEPEND_0': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': f"nu_e_{key}"}] for idx,key in enumerate(neutralsToggles.neutralKeys)}
+                     **{'nu_e_total': [nu_e_total, {'DEPEND_0': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': 'nu_e'}]}
                      }
 
         if kwargs.get('showPlot', False):
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots(sharex=True)
             fig.set_size_inches(figure_width, figure_height * (3 / 2))
-            ax.plot(nu_en,altRange / xNorm,  linewidth=Plot_LineWidth,label=fr"$\nu$: e-n")
+            for idx,key in enumerate(neutralsToggles.wNeutrals):
+                ax.plot(nu_en[idx],altRange / xNorm,  linewidth=Plot_LineWidth,label=fr"$\nu$: e-n ({key})")
             ax.plot(nu_ei,altRange / xNorm,  linewidth=Plot_LineWidth, label=rf"$\nu$: e-i")
             ax.plot(nu_e_total,altRange / xNorm,  linewidth=Plot_LineWidth, label=rf"$\nu$: e-total")
             ax.set_title('Electron Collision Freq. vs Altitude', fontsize=Title_FontSize)
@@ -120,21 +102,25 @@ def generateIonosphericConductivity(outputData,GenToggles,conductivityToggles, *
 
     def ion_collisionFreqProfile(altRange, data_dict, **kwargs):
 
-        model = Johnson1961()
-        nu_in = np.array(model.ionNeutral_CollisionsFreq(data_dict_neutral, data_dict_plasma))
+        model = Leda2019()
+        nu_in = [model.ionNeutral_CollisionsFreq(data_dict_neutral= data_dict_neutral, data_dict_plasma= data_dict_plasma, ionKey=key) for key in plasmaToggles.wIons] # NOp, Op, O2p
 
         # total collision freq
-        nu_i_total = nu_in
-
+        nu_i_total = np.sum(nu_in,axis=0)
 
         data_dict = {**data_dict,
-                     **{'nu_i_total': [nu_i_total, {'DEPEND_0': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': 'Total Ion Collisions'}]}
+                     **{'nu_i_total': [nu_i_total, {'DEPEND_0': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': 'Total Ion Collisions'}]},
+                     **{f'nu_{key}': [nu_in[idx], {'DEPEND_0': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': f'{key} Collisions'}] for idx,key in enumerate(plasmaToggles.wIons)}
                      }
 
         if kwargs.get('showPlot', False):
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots(sharex=True)
             fig.set_size_inches(figure_width, figure_height * (3 / 2))
+
+            for idx, key in enumerate(plasmaToggles.wIons):
+                ax.plot(data_dict[f"nu_{key}"][0], altRange / xNorm, linewidth=Plot_LineWidth, label=rf"$\nu$: i-n ({key})")
+
             ax.plot(data_dict['nu_e_total'][0], altRange / xNorm, linewidth=Plot_LineWidth, label=rf"$\nu$: e-total")
             ax.plot(data_dict['nu_i_total'][0], altRange / xNorm,  linewidth=Plot_LineWidth, label=rf"$\nu$: i-total")
             ax.set_title('Ion Collision Freq. vs Altitude', fontsize=Title_FontSize)
@@ -162,16 +148,19 @@ def generateIonosphericConductivity(outputData,GenToggles,conductivityToggles, *
         return data_dict
 
     def mobilityProfile(altRange, data_dict,**kwargs):
-        nu_e = data_dict['nu_e_total'][0]
-        nu_i = data_dict['nu_i_total'][0]
-        Omega_i_eff = data_dict_plasma['Omega_i_eff'][0]
-        Omega_e = data_dict_plasma['Omega_e'][0]
-        ionMobility = Omega_i_eff/nu_i
-        elecMobility = Omega_e/nu_e
 
+        # electrons
+        nu_e = data_dict['nu_e_total'][0]
+        Omega_e = data_dict_plasma['Omega_e'][0]
+        elecMobility = Omega_e / nu_e
+
+        # ions
+        ionMobility = [ data_dict_plasma[f"Omega_{key}"][0]/data_dict[f"nu_{key}"][0] for key in plasmaToggles.wIons]
+        ionMobility_eff = data_dict_plasma['Omega_i_eff'][0]/data_dict["nu_i_total"][0]
 
         data_dict = {**data_dict,
-                     **{'kappa_i': [ionMobility, {'DEPEND_0': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': 'ionMobility'}]},
+                     **{f'kappa_i_eff': [ionMobility_eff, {'DEPEND_0': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': f'ion Mobility (effective)'}]},
+                     **{f'kappa_{key}': [ionMobility[idx], {'DEPEND_0': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': f'{key} Mobility'}] for idx,key in enumerate(plasmaToggles.wIons)},
                      **{'kappa_e': [elecMobility, {'DEPEND_0': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': 'elecMobility'}]},
                      }
 
@@ -179,7 +168,9 @@ def generateIonosphericConductivity(outputData,GenToggles,conductivityToggles, *
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots(sharex=True)
             fig.set_size_inches(figure_width, figure_height * (3 / 2))
-            ax.plot(data_dict['kappa_i'][0], altRange / xNorm, linewidth=Plot_LineWidth, label=r"$\kappa_{i}$")
+            for idx, key in enumerate(plasmaToggles.wIons):
+                ax.plot(data_dict[f"kappa_{key}"][0], altRange / xNorm, linewidth=Plot_LineWidth, label=rf"$\kappa_{key}$")
+            ax.plot(data_dict['kappa_i_eff'][0], altRange / xNorm, linewidth=Plot_LineWidth, label=r"$\kappa_{i}$")
             ax.plot(data_dict['kappa_e'][0], altRange / xNorm, linewidth=Plot_LineWidth, label=r"$\kappa_{e}$")
             ax.set_title('Ion/Electron Mobility vs Altitude', fontsize=Title_FontSize)
             ax.set_xlabel('Mobility', fontsize=Label_FontSize)
@@ -188,16 +179,10 @@ def generateIonosphericConductivity(outputData,GenToggles,conductivityToggles, *
             ax.set_xscale('log')
             ax.grid(True)
             ax.yaxis.set_ticks(np.arange(0, 1000+50, 100))
-
-            ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width,
-                           length=Tick_Length)
-            ax.tick_params(axis='y', which='minor', labelsize=Tick_FontSize_minor,
-                           width=Tick_Width_minor, length=Tick_Length_minor)
-            ax.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width,
-                           length=Tick_Length)
-            ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor,
-                           width=Tick_Width_minor, length=Tick_Length_minor)
-
+            ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
+            ax.tick_params(axis='y', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
+            ax.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
+            ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
             plt.legend(fontsize=Legend_fontSize)
             plt.tight_layout()
             plt.savefig(f'{GenToggles.simFolderPath}\conductivity\MODEL_mobility.png', dpi=dpi)
@@ -207,39 +192,41 @@ def generateIonosphericConductivity(outputData,GenToggles,conductivityToggles, *
 
     def ionosphericConductivityProfile(altRange, data_dict, **kwargs):
 
-        kappa_i = data_dict['kappa_i'][0]
-        kappa_e = data_dict['kappa_e'][0]
         B_geo = data_dict_Bgeo['Bgeo'][0]
-        ne = data_dict_plasma['ne'][0]
-        sigmaPedersen = (ne * q0 / B_geo) * ((kappa_i / (1 + kappa_i ** 2)) + (kappa_e) / (1 + kappa_e ** 2))
-        sigmaHall = (ne*q0/B_geo)*((kappa_e**2)/(1 + kappa_e**2) - (kappa_i**2)/(1 + kappa_i**2))
-        sigmaParallel = (ne*q0/B_geo)*(kappa_i + kappa_e)
+
+        # calculate the specific sigmas for each ion/electron with format: # [ [parallel,Pedersen and Hall], [...], [...] ]
+        ionsSigmas = [ (data_dict_plasma[f"n_{key}"][0] * q0 / B_geo) * np.array([data_dict[f'kappa_{key}'][0], data_dict[f'kappa_{key}'][0]/(1 + np.power(data_dict[f'kappa_{key}'][0],2)), np.power(data_dict[f'kappa_{key}'][0],2)/(1 + np.power(data_dict[f'kappa_{key}'][0],2))]) for key in plasmaToggles.wIons]
+        elecSigmas = (data_dict_plasma[f"ne"][0] * q0 / B_geo) * np.array([data_dict[f'kappa_e'][0], data_dict[f'kappa_e'][0]/(1 + np.power(data_dict[f'kappa_e'][0],2)), np.power(data_dict[f'kappa_e'][0],2)/(1 + np.power(data_dict[f'kappa_e'][0],2))])
+
+        sigmaPedersen = np.sum([ionsSigmas[idx][1] for idx in range(len(plasmaToggles.wIons))],axis=0) + elecSigmas[1]
+        sigmaHall =  - np.sum([ionsSigmas[idx][2] for idx in range(len(plasmaToggles.wIons))],axis=0) + elecSigmas[2]
+        sigmaParallel = np.sum([ionsSigmas[idx][0] for idx in range(len(plasmaToggles.wIons))],axis=0) + elecSigmas[0]
 
         # height-integrated conductivities
         from scipy.integrate import trapz
-        SigmaHall = np.array([trapz(y=sigmaHall,x=altRange)])
-        SigmaPedersen = np.array([trapz(y=sigmaPedersen,x=altRange)])
-
-
+        heightIntegratedHall = np.array([trapz(y=sigmaHall,x=altRange)])
+        heightIntegratedPedersen = np.array([trapz(y=sigmaPedersen,x=altRange)])
         data_dict = {**data_dict,
-                     **{'sigma_P': [sigmaPedersen, {'DEPEND_0': 'simAlt', 'UNITS': 'mho/m', 'LABLAXIS': 'Pedersen Conductivity'}]},
-                     **{'sigma_H': [sigmaHall, {'DEPEND_0': 'simAlt', 'UNITS': 'mho/m', 'LABLAXIS': 'Hall Conductivity'}]},
-                     **{'Sigma_P': [SigmaPedersen, {'DEPEND_0': 'simAlt', 'UNITS': 'mho', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
-                     **{'Sigma_H': [SigmaHall, {'DEPEND_0': 'simAlt', 'UNITS': 'mho', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
-                     **{'sigma_Par': [sigmaParallel, {'DEPEND_0': 'simAlt', 'UNITS': 'mho/m', 'LABLAXIS': 'Parallel Conductivity'}]},
+                     **{'sigma_P_total': [sigmaPedersen, {'DEPEND_0': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Pedersen Conductivity'}]},
+                     **{'sigma_H_total': [sigmaHall, {'DEPEND_0': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Hall Conductivity'}]},
+                     **{'heightIntegrated_H': [heightIntegratedHall, {'DEPEND_0': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                     **{'heightIntegrated_P': [heightIntegratedPedersen, {'DEPEND_0': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                     **{'sigma_Par': [sigmaParallel, {'DEPEND_0': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Parallel Conductivity'}]},
+                     **{f"sigma_P_{key}": [ionsSigmas[idx][1], {'DEPEND_0': 'simAlt', 'UNITS': 'S', 'LABLAXIS': f'Pedersen Conductivity ({key})'}] for idx,key in enumerate(plasmaToggles.wIons)},
+                     **{f"sigma_H_{key}": [ionsSigmas[idx][2], {'DEPEND_0': 'simAlt', 'UNITS': 'S', 'LABLAXIS': f'Hall Conductivity ({key})'}] for idx, key in enumerate(plasmaToggles.wIons)}
                      }
 
         if kwargs.get('showPlot', False):
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots(sharex=True)
             fig.set_size_inches(figure_width, figure_height * (3 / 2))
-            ax.plot(data_dict['sigma_P'][0]*1E6, altRange / xNorm, linewidth=Plot_LineWidth, label=r"$\sigma_{P}$",color='red')
-            ax.plot(data_dict['sigma_H'][0]*1E6, altRange / xNorm, linewidth=Plot_LineWidth, label=r"$\sigma_{H}$",color='blue')
+            ax.plot(data_dict['sigma_P_total'][0]*1E6, altRange / xNorm, linewidth=Plot_LineWidth, label=r"$\sigma_{P}$",color='red')
+            ax.plot(data_dict['sigma_H_total'][0]*1E6, altRange / xNorm, linewidth=Plot_LineWidth, label=r"$\sigma_{H}$",color='blue')
             ax.plot(data_dict['sigma_Par'][0]*1E6, altRange / xNorm, linewidth=Plot_LineWidth, label=r"$\sigma_{0}$                                                                                                                                                                                                                 ", color='green')
-            ax.axvline(data_dict['Sigma_P'][0], linewidth=Plot_LineWidth, label=r"$\Sigma_{P}$",color='tab:red')
-            ax.axvline(data_dict['Sigma_H'][0], linewidth=Plot_LineWidth, label=r"$\Sigma_{H}$",color='tab:blue')
+            ax.axvline(data_dict['heightIntegrated_P'][0], linewidth=Plot_LineWidth, label=r"$\Sigma_{P}$",color='tab:red')
+            ax.axvline(data_dict['heightIntegrated_H'][0], linewidth=Plot_LineWidth, label=r"$\Sigma_{H}$",color='tab:blue')
             ax.set_title('Ionospheric Conductivity vs Altitude', fontsize=Title_FontSize)
-            ax.set_xlabel('conductivity [$10^{-6}$ mho/m]', fontsize=Label_FontSize)
+            ax.set_xlabel('conductivity [$10^{-6}$ S/m]', fontsize=Label_FontSize)
             ax.set_ylabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
             ax.axhline(y=400000 / xNorm, label='Observation Height', color='red')
             ax.set_xscale('log')
@@ -262,22 +249,84 @@ def generateIonosphericConductivity(outputData,GenToggles,conductivityToggles, *
 
         return data_dict
 
+
+
+
     ##################
     # --- PLOTTING ---
     ##################
+
+    def makePlotOfModel(altRange, data_dict, **kwargs):
+
+
+        if kwargs.get('showPlot', False):
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots(nrows=2,ncols=3)
+            fig.set_size_inches(12, 8)
+
+            conductivityScaleFactor = 1E4
+
+            # plot all the data
+            for key in neutralsToggles.wNeutrals:
+                ax[0, 0].plot(data_dict_neutral[f'{key}'][0], altRange / xNorm, linewidth=Plot_LineWidth,label=key)  # neutrals
+
+            for key in plasmaToggles.wIons:
+                ax[0, 1].plot(data_dict_plasma[f'n_{key}'][0], altRange / xNorm, linewidth=Plot_LineWidth,label=key) # ions
+                ax[1, 1].plot(data_dict[f'sigma_P_{key}'][0]*conductivityScaleFactor, altRange / xNorm, linewidth=Plot_LineWidth,label=key) # ion pedersen conductivites
+                ax[1, 2].plot(data_dict[f'sigma_H_{key}'][0]*conductivityScaleFactor, altRange / xNorm, linewidth=Plot_LineWidth,label=key)  # ion Hall conductivites
+
+
+            ax[1,1].set_xlabel('Pedersen Conductivity [S/10km]')
+
+            # neutrals - fine adjustments
+            ax[0, 0].set_ylabel('Altitude [km]')
+            ax[0, 0].set_xlim(1E12, 1E21)
+            ax[0, 0].set_xscale('log')
+            ax[0, 0].set_xlabel('Number density [m$^{-3}$]')
+
+            # ions - fine adjustments
+            ax[0, 1].set_xlim(1E9, 1E12)
+            ax[0, 1].set_xscale('log')
+            ax[0, 1].set_xlabel('Number density [m$^{-3}$]')
+
+            # temperature
+            ax[0,2].set_xlim(0, 1800)
+            ax[0, 2].plot(data_dict_plasma[f'Ti'][0], altRange / xNorm, linewidth=Plot_LineWidth,label='$T_{i}$')  # temperature
+            ax[0, 2].plot(data_dict_plasma[f'Te'][0], altRange / xNorm, linewidth=Plot_LineWidth,label='$T_{e}$')  # temperature
+            ax[0, 2].plot(data_dict_neutral[f'Tn'][0], altRange / xNorm, linewidth=Plot_LineWidth,label='$T_{n}$')  # temperature
+
+            # Total Pedersen/Hall Conductivity
+            ax[1, 0].plot(data_dict['sigma_P_total'][0]*conductivityScaleFactor, altRange / xNorm, linewidth=Plot_LineWidth,label='$\sigma_{P}$')
+            ax[1, 0].plot(data_dict['sigma_H_total'][0]*conductivityScaleFactor, altRange / xNorm, linewidth=Plot_LineWidth,label='$\sigma_{H}$')
+            ax[1, 0].set_xlabel('Conductivity [S/10km]')
+
+            # Hall conductivity
+            ax[1, 2].set_xlabel('Hall Conductivity [S/10km]')
+
+            for i in range(2):
+                for j in range(3):
+                    ax[i,j].set_ylim(60,300)
+                    ax[i,j].legend()
+
+            plt.tight_layout()
+            plt.savefig(f'{GenToggles.simFolderPath}\conductivity\MODEL_profile.png', dpi=dpi)
+
+        return data_dict
+
+
+
     if kwargs.get('showPlot', False):
 
         # --- collect all the functions ---
         profileFuncs = [electron_collisionFreqProfile,
                         ion_collisionFreqProfile,
                         mobilityProfile,
-                        ionosphericConductivityProfile
+                        ionosphericConductivityProfile,
+                        makePlotOfModel
                         ]
 
         for i in range(len(profileFuncs)):
             data_dict = profileFuncs[i](altRange=GenToggles.simAlt, data_dict=data_dict, showPlot=True)
-
-
 
     #####################
     # --- OUTPUT DATA ---

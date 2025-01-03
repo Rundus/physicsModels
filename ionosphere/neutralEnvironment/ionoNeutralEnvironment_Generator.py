@@ -4,13 +4,9 @@
 
 
 # --- imports ---
-from ionosphere.simToggles_iono import GenToggles, neutralsToggles
-from spaceToolsLib.tools.CDF_load import loadDictFromFile
-from scipy.io import netcdf_file
-from scipy.interpolate import CubicSpline
 from spaceToolsLib.tools.CDF_output import outputCDFdata
-from spaceToolsLib.variables import m_to_km,Re,NeutralMasses
-from numpy import abs,array,datetime64,squeeze
+from spaceToolsLib.variables import m_to_km,Re,netural_dict
+from numpy import datetime64,squeeze
 import pymsis
 import numpy as np
 
@@ -97,11 +93,11 @@ def generateNeutralEnvironment(GenToggles, neutralsToggles, **kwargs):
     data_dict = {**data_dict, **{'simAlt': [GenToggles.simAlt, {'DEPEND_0': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'simAlt','VAR_TYPE': 'data'}]}}
 
     # add the total neutral density
-    n_n = np.array([data_dict[f"{key}"][0] for key in neutralsToggles.neutralKeys])
+    n_n = np.array([data_dict[f"{key}"][0] for key in neutralsToggles.wNeutrals])
     data_dict = {**data_dict, **{'nn': [np.sum(n_n,axis=0), {'DEPEND_0': 'simAlt', 'UNITS': 'm^-3', 'LABLAXIS': 'simAlt', 'VAR_TYPE': 'data'}]}}
 
     # add the effective neutral mass
-    m_eff_n = np.sum(np.array( [NeutralMasses[i]*n_n[i] for i in range(len(NeutralMasses))]), axis=0)/data_dict['nn'][0]
+    m_eff_n = np.sum(np.array( [netural_dict[key]*data_dict[f"{key}"][0] for key in neutralsToggles.wNeutrals]), axis=0)/data_dict['nn'][0]
     data_dict = {**data_dict, **{'m_eff_n': [m_eff_n, {'DEPEND_0': 'simAlt', 'UNITS': 'kg', 'LABLAXIS': 'simAlt', 'VAR_TYPE': 'data'}]}}
 
     #####################

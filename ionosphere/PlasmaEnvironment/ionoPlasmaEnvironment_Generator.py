@@ -1,17 +1,12 @@
 # --- imports ---
-import scipy.interpolate
-
 from ionosphere.simToggles_iono import GenToggles, plasmaToggles
-from spaceToolsLib.variables import u0,m_e,ep0,cm_to_m,IonMasses,q0, m_to_km,Re,kB,m_Hp,m_Op,m_Np,m_Hep,m_NOp,m_O2p,m_N2p
+from spaceToolsLib.variables import u0,m_e,ep0,q0, m_to_km,Re,kB,ion_dict
 from spaceToolsLib.tools.CDF_load import loadDictFromFile
+from spaceToolsLib.tools.CDF_output import outputCDFdata
+from ionosphere.PlasmaEnvironment.model_plasmaEnvironment_classes import *
 import numpy as np
 from copy import deepcopy
-from spaceToolsLib.tools.CDF_output import outputCDFdata
-from scipy.interpolate import CubicSpline
 
-
-# TODO: Convert each model into a class object with functions representing its various variables. This should standardize some of these functions and allow for expansion.
-# TODO: Swap the x-y axes in each plot to have Altitude on y-axis
 
 ##################
 # --- PLOTTING ---
@@ -40,64 +35,32 @@ data_dict_Bgeo = loadDictFromFile(rf'{GenToggles.simFolderPath}\geomagneticField
 def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
     plotting = kwargs.get('showPlot', False)
     data_dict = {}
-
-
-
-    if plasmaToggles.useIRI:
-        Inames = ['O+', 'H+', 'He+', 'O2+', 'NO+', 'N+']
-        Ikeys = ['Op', 'Hp', 'Hep', 'O2p', 'NOp', 'Np']
-        Imasses = np.array(IonMasses[1:6+1])
-    else:
-        Inames = ['O+', 'H+']
-        Ikeys = ['Op', 'Hp']
-        Imasses = np.array(IonMasses[1:3])
-
+    Imasses = np.array([ion_dict[key] for key in plasmaToggles.wIons])
+    Ikeys = np.array([key for key in plasmaToggles.wIons])
 
     # --- IRI ---
-    # if you use the IRI data anywhere, downsample it at the right lat/long/alt/time and interpolate it onto the simulation
-    if plasmaToggles.useIRI:
+    data_dict_IRI = deepcopy(loadDictFromFile(plasmaToggles.IRI_filePath)) # collect the IRI data
 
-        # collect the IRI data
-        data_dict_IRI = deepcopy(loadDictFromFile(plasmaToggles.IRI_filePath))
+    # get the IRI at the specific Lat/Long/Time
+    dt_targetTime = GenToggles.target_time
+    time_idx = abs(data_dict_IRI['time'][0] - int(dt_targetTime.hour * 60 + dt_targetTime.minute)).argmin()
+    lat_idx = abs(data_dict_IRI['lat'][0] - GenToggles.target_Latitude).argmin()
+    long_idx = abs(data_dict_IRI['lon'][0] - GenToggles.target_Longitude).argmin()
+    alt_low_idx, alt_high_idx = abs(data_dict_IRI['ht'][0] - GenToggles.simAltLow/m_to_km).argmin(), abs(data_dict_IRI['ht'][0] - GenToggles.simAltHigh/m_to_km).argmin()
 
-        # get the IRI at the specific Lat/Long/Time
-        dt_targetTime = GenToggles.target_time
-        time_idx = abs(data_dict_IRI['time'][0] - int(dt_targetTime.hour * 60 + dt_targetTime.minute)).argmin()
-        lat_idx = abs(data_dict_IRI['lat'][0] - GenToggles.target_Latitude).argmin()
-        long_idx = abs(data_dict_IRI['lon'][0] - GenToggles.target_Longitude).argmin()
-        alt_low_idx, alt_high_idx = abs(data_dict_IRI['ht'][0] - GenToggles.simAltLow/m_to_km).argmin(), abs(data_dict_IRI['ht'][0] - GenToggles.simAltHigh/m_to_km).argmin()
+    for varname in data_dict_IRI.keys():
+        if varname not in ['time', 'ht', 'lat', 'lon']:
 
-        for varname in data_dict_IRI.keys():
-            if varname not in ['time', 'ht', 'lat', 'lon']:
+            reducedData = deepcopy(np.array(data_dict_IRI[varname][0][time_idx,alt_low_idx:alt_high_idx,lat_idx,long_idx]))
 
-                reducedData = deepcopy(np.array(data_dict_IRI[varname][0][time_idx,alt_low_idx:alt_high_idx,lat_idx,long_idx]))
-
-                # --- linear 1D interpolate data to assist the cubic interpolation ---
-                interpolated_result = np.interp(GenToggles.simAlt,data_dict_IRI['ht'][0][alt_low_idx:alt_high_idx]*m_to_km, reducedData)
-                data_dict_IRI[varname][0] = interpolated_result
-
-
+            # --- linear 1D interpolate data to assist the cubic interpolation ---
+            interpolated_result = np.interp(GenToggles.simAlt,data_dict_IRI['ht'][0][alt_low_idx:alt_high_idx]*m_to_km, reducedData)
+            data_dict_IRI[varname][0] = interpolated_result
 
     # --- Temperature ---
     def electron_temperatureProfile(altRange,data_dict,**kwargs):
 
-        if plasmaToggles.useSchroeder_Te_Profile:
-            # --- Ionosphere Temperature Profile ---
-            # ASSUMES Ions and electrons have same temperature profile
-            T0 = 2.5 # Temperature at the Ionospher (in eV)
-            T1 = 0.0135 # (in eV)
-            h0 = 2000*m_to_km # scale height (in meters)
-            T_iono = T1*np.exp(altRange/h0) + T0
-            deltaZ = 0.3*Re
-            T_ps = 2000 # temperature of plasma sheet (in eV)
-            # T_ps = 105  # temperature of plasma sheet (in eV)
-            z_ps = 3.75*Re # height of plasma sheet (in meters)
-            w = 0.5*(1 - np.tanh((altRange - z_ps)/deltaZ)) # models the transition to the plasma sheet
-
-            # determine the overall temperature profile
-            T_e = np.array([T_iono[i]*w[i] + T_ps*(1 - w[i]) for i in range(len(altRange))])
-
-        elif plasmaToggles.useIRI_Te_Profile:
+        if plasmaToggles.useIRI_Te_Profile:
             T_e = data_dict_IRI['Te'][0]
 
         data_dict = {**data_dict, **{'Te': [T_e, {'DEPEND_0': 'simAlt', 'UNITS': 'K', 'LABLAXIS': 'Te'}]}}
@@ -135,23 +98,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
     # --- Temperature ---
     def ion_temperatureProfile(altRange,data_dict,**kwargs):
 
-        if plasmaToggles.useSchroeder_Te_Profile:
-            # --- Ionosphere Temperature Profile ---
-            # ASSUMES Ions and electrons have same temperature profile
-            T0 = 2.5 # Temperature at the Ionospher (in eV)
-            T1 = 0.0135 # (in eV)
-            h0 = 2000*m_to_km # scale height (in meters)
-            T_iono = T1*np.exp(altRange/h0) + T0
-            deltaZ = 0.3*Re
-            T_ps = 2000 # temperature of plasma sheet (in eV)
-            # T_ps = 105  # temperature of plasma sheet (in eV)
-            z_ps = 3.75*Re # height of plasma sheet (in meters)
-            w = 0.5*(1 - np.tanh((altRange - z_ps)/deltaZ)) # models the transition to the plasma sheet
-
-            # determine the overall temperature profile
-            T_i = np.array([T_iono[i]*w[i] + T_ps*(1 - w[i]) for i in range(len(altRange))])
-
-        elif plasmaToggles.useIRI_Te_Profile:
+        if plasmaToggles.useIRI_Te_Profile:
             Ti = data_dict_IRI['Ti'][0]
 
         data_dict = {**data_dict,**{'Ti': [Ti, {'DEPEND_0': 'simAlt', 'UNITS': 'K', 'LABLAXIS': 'Ti'}]}}
@@ -184,40 +131,50 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_Ion_Temperature.png', dpi=dpi)
 
         return data_dict
+    def recombinationRate(altRange, data_dict, **kwargs):
+
+        model = vickrey1982()
+        recombRate_vickrey = model.calcRecombinationRate(altRange, data_dict)
+        model = schunkNagy2009()
+        recombRate_schunkNagy = model.calcRecombinationRate(altRange, data_dict)
+
+        data_dict = {**data_dict, **{'recombRate': [recombRate_vickrey, {'DEPEND_0': 'simAlt', 'UNITS': 'm^3s^-1',
+                                                                            'LABLAXIS': 'Recombination Rate'}]} }
+
+        if kwargs.get('showPlot', False):
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots(sharex=True)
+            fig.set_size_inches(figure_width, figure_height * (3 / 2))
+            ax.plot(recombRate_vickrey, altRange / xNorm, linewidth=Plot_LineWidth, label=r"Vickrey 1982")
+            ax.plot(recombRate_schunkNagy, altRange / xNorm, linewidth=Plot_LineWidth, label=r"S&N 2009")
+            ax.set_title('Ionospheric Recombination Rate', fontsize=Title_FontSize)
+            ax.set_xlabel('Recombination Rate [m$^{3}$s$^{-1}$ ]', fontsize=Label_FontSize)
+            ax.set_ylabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
+            ax.axhline(y=400000 / xNorm, label='Observation Height', color='red')
+            ax.set_xscale('log')
+            ax.grid(True)
+            ax.yaxis.set_ticks(np.arange(0, 1000 + 50, 100))
+            ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width,
+                           length=Tick_Length)
+            ax.tick_params(axis='y', which='minor', labelsize=Tick_FontSize_minor,
+                           width=Tick_Width_minor, length=Tick_Length_minor)
+            ax.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width,
+                           length=Tick_Length)
+            ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor,
+                           width=Tick_Width_minor, length=Tick_Length_minor)
+
+            plt.legend(fontsize=Legend_fontSize)
+            plt.tight_layout()
+            plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_recombinationRate.png', dpi=dpi)
+
+        return data_dict
 
     # --- PLASMA DENSITY ---
     # uses the Kletzing Model to return an np.array of plasma density (in m^-3) from [Alt_low, ..., Alt_High]
     def electron_plasmaDensityProfile(altRange,data_dict,**kwargs):
 
-        if plasmaToggles.useTanaka_ne_Profile:
-            ##### TANAKA FIT #####
-            # --- determine the density over all altitudes ---
-            # Description: returns density for altitude "z [km]" in m^-3
-            n0 = 24000000
-            n1 = 2000000
-            z0 = 600  # in km from E's surface
-            h = 680  # in km from E's surface
-            H = -0.74
-            a = 0.0003656481654202569
 
-            def fitFunc(x, n0, n1, z0, h, H, a):
-                return a * (n0 * np.exp(-1 * (x - z0) / h) + n1 * (x ** (H)))
-            ne_density = (cm_to_m ** 3) * np.array([ fitFunc(alt/m_to_km, n0, n1, z0, h, H, a) for alt in altRange])  # calculated density (in m^-3)
-
-        elif plasmaToggles.useKletzingS33_ne_Profile:
-            #### KLETZING AND TORBERT MODEL ####
-            # --- determine the density over all altitudes ---
-            # Description: returns density for altitude "z [km]" in m^-3
-            h = 0.06 * (Re / m_to_km)  # in km from E's surface
-            n0 = 6E4
-            n1 = 1.34E7
-            z0 = 0.05 * (Re / m_to_km)  # in km from E's surface
-            ne_density = (cm_to_m**3)*np.array([(n0 * np.exp(-1 * ((alt / m_to_km) - z0) / h) + n1 * ((alt / m_to_km) ** (-1.55))) for alt in altRange])  # calculated density (in m^-3)
-
-        elif plasmaToggles.useChaston_ne_Profile:
-            raise Exception('No Chaston Profile Available yet!')
-
-        elif plasmaToggles.useStatic_ne_Profile:
+        if plasmaToggles.useStatic_ne_Profile:
             ne_density = np.array([plasmaToggles.staticDensity for alt in altRange])
 
         elif plasmaToggles.useIRI_ne_Profile:
@@ -251,18 +208,9 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
 
     # --- Ion Mass ---
     def ion_plasmaDensityProfile(altRange,data_dict, **kwargs):
-        if plasmaToggles.useSchroeder_Te_Profile:
-            z_i = 2370*m_to_km  #
-            h_i = 1800*m_to_km  # height of plasma sheet (in meters)
-            n_Op = np.array([data_dict['ne'][0][i]*0.5 * (1 - np.tanh((altRange[i] - z_i) / h_i)) for i in range(len(altRange))])
-            n_Hp = data_dict['ne'][0] - n_Op
-            m_Op = IonMasses[1]
-            m_Hp = IonMasses[2]
-            ni_total = data_dict['ne'][0]
-            m_eff_i = np.array([m_Hp * 0.5 * (1 + np.tanh((altRange[i] - z_i) / h_i)) + m_Op * 0.5 * (1 - np.tanh((altRange[i] - z_i) / h_i)) for i in range(len(altRange))])
-            n_ions = [n_Op, n_Hp]
-        elif plasmaToggles.useIRI_ni_Profile:
-            n_ions = 1E6*np.array([data_dict_IRI[f"{key}"][0] for key in Inames])# get the ion densities and convert them to m^-3
+
+        if plasmaToggles.useIRI_ni_Profile:
+            n_ions = 1E6*np.array([data_dict_IRI[f"{key}"][0] for key in plasmaToggles.wIons])# get the ion densities and convert them to m^-3
             m_eff_i = (np.sum((n_ions.T*Imasses).T, axis=0) / (np.sum(n_ions, axis=0)))
             ni_total = np.sum(n_ions, axis=0)
 
@@ -287,7 +235,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             ax[0].set_ylim(1E6,1E12)
             ax[0].legend(fontsize=Legend_fontSize,loc='upper right')
 
-            ax[1].plot(altRange / xNorm, m_eff_i/IonMasses[2], linewidth=Plot_LineWidth)
+            ax[1].plot(altRange / xNorm, m_eff_i/ion_dict['proton'], linewidth=Plot_LineWidth)
             ax[1].set_ylabel('$m_{eff_{i}}/m_{Hp}$ [kg]', fontsize=Label_FontSize)
             ax[1].set_xlabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
             ax[1].axvline(x=400000 / xNorm, label='Observation Height', color='red', linewidth=Plot_LineWidth)
@@ -350,12 +298,12 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots()
             fig.set_size_inches(figure_width, 1+ figure_height/2)
-            ax.plot(altRange/xNorm, plasmaFreq,linewidth=Plot_LineWidth)
+            ax.plot(plasmaFreq, altRange/xNorm, linewidth=Plot_LineWidth)
             ax.set_title('$\omega_{pe}$ vs Altitude',fontsize=Title_FontSize)
-            ax.set_ylabel('Plasma Freq [rad/s]',fontsize=Label_FontSize)
-            ax.set_yscale('log')
-            ax.set_xlabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
-            ax.axvline(x=400000/xNorm,label='Observation Height',color='red',linewidth=Plot_LineWidth)
+            ax.set_xlabel('Plasma Freq [rad/s]',fontsize=Label_FontSize)
+            ax.set_xscale('log')
+            ax.set_ylabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
+            ax.axhline(y=400000/xNorm,label='Observation Height',color='red',linewidth=Plot_LineWidth)
             plt.legend(fontsize=Legend_fontSize,loc='upper right')
             ax.grid(True)
             ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
@@ -384,7 +332,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             fig, ax = plt.subplots(2, sharex=True)
             fig.set_size_inches(figure_width, figure_height)
             for idx,thing in enumerate(ionCyclotron_ions):
-                ax[0].plot(thing, altRange / xNorm,  label=f'${Inames[idx]}$ [rad/s]', linewidth=Plot_LineWidth)
+                ax[0].plot(thing, altRange / xNorm,  label=f'${Ikeys[idx]}$ [rad/s]', linewidth=Plot_LineWidth)
 
             ax[0].plot(ionCyclotron_eff, altRange / xNorm,  label='$\Omega_{eff}$ [rad/s]', linewidth=Plot_LineWidth)
             ax[0].set_title('$\Omega_{ci}$ vs Altitude', fontsize=Title_FontSize)
@@ -394,13 +342,12 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             ax[0].set_xscale('log')
             ax[0].set_xlim(1E2, 1E4)
             ax[0].set_ylim(0, GenToggles.simAltHigh / xNorm)
-
             ax[0].grid(True)
             ax[0].margins(0)
             ax[0].legend(fontsize=Legend_fontSize,loc='upper right')
 
             for idx,thing in enumerate(ionCyclotron_ions):
-                ax[1].plot(thing/ (2 * np.pi),altRange / xNorm,  label=f'${Inames[idx]}$ [Hz]', linewidth=Plot_LineWidth)
+                ax[1].plot(thing/ (2 * np.pi),altRange / xNorm,  label=f'${Ikeys[idx]}$ [Hz]', linewidth=Plot_LineWidth)
 
             ax[1].plot( ionCyclotron_eff / (2 * np.pi),altRange / xNorm, color='blue', label='$f_{avg}$', linewidth=Plot_LineWidth)
             ax[1].set_title('$f_{ci}$ vs Altitude', fontsize=Title_FontSize)
@@ -437,7 +384,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
         n_ions = np.array([data_dict[f"n_{key}"][0] for idx, key in enumerate(Ikeys)])
         vth_ions = np.array([np.sqrt(2)*np.sqrt(8 *kB* Ti /mass) for mass in Imasses]) # the np.sqrt(2) comes from the vector sum of two dimensions
         ionLarmorRadius_ions = np.array([vth_ions[idx] / data_dict[f"Omega_{key}"][0] for idx,key in enumerate(Ikeys)])
-        ionLarmorRadius_eff = np.sum(n_ions*ionLarmorRadius_ions)/data_dict['ni'][0]
+        ionLarmorRadius_eff = np.sum(n_ions*ionLarmorRadius_ions,axis=0)/data_dict['ni'][0]
         data_dict = {**data_dict,
                      **{'ionLarmorRadius_eff': [ionLarmorRadius_eff, {'DEPEND_0': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'ionLarmorRadius_eff'}]},
                      **{f'ionLarmorRadius_{key}': [ionLarmorRadius_ions[idx], {'DEPEND_0': 'simAlt', 'UNITS': 'm', 'LABLAXIS': f'ionLarmorRadius_{key}'}] for idx, key in enumerate(Ikeys)}
@@ -456,8 +403,9 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             ax.set_ylabel(f'Altitude [{xLabel}]',fontsize=Label_FontSize)
             ax.axhline(y=400000 / xNorm, label='Observation Height', color='red',linestyle='--',linewidth=Plot_LineWidth)
             ax.set_xscale('log')
-            ax.set_ylim(1, 4E5)
+            ax.set_ylim(0, GenToggles.simAltHigh / xNorm)
             ax.margins(0)
+            ax.set_xlim(1E0,2E2)
             plt.legend(fontsize=Legend_fontSize)
             ax.grid(True)
             ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
@@ -524,6 +472,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
                         ion_temperatureProfile,
                         electron_plasmaDensityProfile,
                         ion_plasmaDensityProfile,
+                        recombinationRate,
                         plasmaBetaProfile,
                         plasmaFreqProfile,
                         cyclotronProfile,
