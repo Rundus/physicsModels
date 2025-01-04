@@ -1,0 +1,6 @@
+[1] Check the recombination rates in PlasmaEnvironment
+        there's large discrepancies between the two available models
+[2] Cross-check the conductivity model with Leda2019 model
+        use the IRI model data from Leda2019 and try to reproduce their results
+[3] Implement a way to use raw diffNFlux data in the Fang2009 parameterization
+        The energy flux for a specific energy channel

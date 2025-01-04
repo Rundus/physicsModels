@@ -1,6 +1,6 @@
 # --- betaFit.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION: using the data from diffNFlux_fitting we can generate distributions at various altitudes
+# DESCRIPTION: using the data from primaryBeam_fitting we can generate distributions at various altitudes
 # to see which height our data most closely matches to
 import numpy as np
 
