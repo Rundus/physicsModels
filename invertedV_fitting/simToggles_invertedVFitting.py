@@ -36,6 +36,13 @@ class primaryBeamToggles:
     # --- Levenberg-Marquart Fit toggles ---
     wPitchsToFit = [2]
     wDistributionToFit = 'Kappa' # 'Maxwellian' or 'Kappa'
+    # Determine guesses for the fitted data
+    V0_deviation = 0.18
+    guess = [1, 120, 250]  # observed plasma at dispersive region is 0.5E5 cm^-3 BUT this doesn't make sense to use as the kappa fit since the kappa fit comes from MUCH less dense populations above
+    n_bounds = [0.001,10]  # n [cm^-3]
+    Te_bounds =  [10, 500]
+    kappa_bounds = [1,1000]
+
 
     # -- Fit Statistics Toggles ---
     nPoints_Thresh = 3  # Number of y-points that are needed in order to fit the data
