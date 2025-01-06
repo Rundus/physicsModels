@@ -14,8 +14,8 @@ start_time = time.time()
 #################
 # --- TOGGLES ---
 #################
-primaryBeam_fitting = False
-primaryBeam_Plotting = True
+primaryBeam_fitting = True
+primaryBeam_Plotting = False
 
 
 ################################
@@ -26,7 +26,7 @@ primaryBeam_Plotting = True
 
 
 if primaryBeam_fitting:
-    stl.prgMsg('Generatorating Primary Beam Fit Parameters')
+    stl.prgMsg('Generating Primary Beam Fit Parameters')
     from invertedV_fitting.primaryBeam_fitting.primaryBeamFits_Generator import generatePrimaryBeamFit
     generatePrimaryBeamFit(GenToggles, primaryBeamToggles)
     stl.Done(start_time)

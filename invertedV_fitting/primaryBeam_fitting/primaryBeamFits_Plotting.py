@@ -2,11 +2,15 @@
 # --- Author: C. Feltman ---
 # DESCRIPTION: get the data from the primary beam fits and plot the data WITHOUT regenerating all the fits again
 
+
+# TODO: Add a spectrogram of the real data above each fit?
+
 from invertedV_fitting.primaryBeam_fitting.model_primaryBeam_classes import *
 import spaceToolsLib as stl
 from copy import deepcopy
 import matplotlib.pyplot as plt
-
+from tqdm import tqdm
+import os, shutil
 
 ##################
 # --- PLOTTING ---
@@ -17,7 +21,7 @@ Title_FontSize = 20
 Label_FontSize = 20
 Label_Padding = 8
 Text_FontSize = 18
-Tick_FontSize = 12
+Tick_FontSize = 16
 Tick_Length = 1
 Tick_Width = 1
 Tick_FontSize_minor = 10
@@ -40,22 +44,33 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, **kwargs):
     # --- LOADING THE DATA ---
     # --- --- --- --- --- ---
     ##########################
-    data_dict_diffFlux = stl.loadDictFromFile(inputFilePath=GenToggles.input_diffNFiles[GenToggles.wFlyerFit],
-                                              wKeys_Reduce=['Differential_Energy_Flux',
-                                                            'Differential_Number_Flux',
-                                                            'Epoch',
-                                                            'Differential_Number_Flux_stdDev'])
+    data_dict_diffFlux = stl.loadDictFromFile(inputFilePath=GenToggles.input_diffNFiles[GenToggles.wFlyerFit])
 
     data_dict = stl.loadDictFromFile(inputFilePath=rf'C:\Data\physicsModels\invertedV\primaryBeam_Fitting\primaryBeam_fitting_parameters.cdf')
 
     # get the raw data, fitted data and fit parameters, then evaluate the model and plot it on the data with the fit parameters
     for ptchIdx, ptchVal in enumerate(primaryBeamToggles.wPitchsToFit):
-        for idx,tmeStamp in enumerate(data_dict['timestamp_fitData'][0][ptchIdx]):
+
+        # delete all images in the directory
+        imagefolder = rf'C:\Data\physicsModels\invertedV\primaryBeam_Fitting\fitPhotos\{data_dict_diffFlux["Pitch_Angle"][0][ptchVal]}deg'
+        for filename in os.listdir(imagefolder):
+            file_path = os.path.join(imagefolder, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.remove(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print('Failed to delete %s. Reason: %s' % (file_path, e))
+
+
+        # create new images
+        for idx,tmeStamp in tqdm(enumerate(data_dict['timestamp_fitData'][0][ptchIdx])):
 
             # get the full data at the time/pitch slice
             tmeIdx = np.abs(data_dict_diffFlux['Epoch'][0] - tmeStamp).argmin() # get the index of where the data was taken from
             xData_raw = data_dict_diffFlux['Energy'][0]
-            yData_raw = data_dict_diffFlux['Differential_Number_Flux'][0][tmeIdx][np.abs(data_dict_diffFlux['Pitch_Angle'][0] - ptchVal).argmin()]
+            yData_raw = data_dict_diffFlux['Differential_Number_Flux'][0][tmeIdx][ptchVal]
 
             # get the indicies and data of the datapoints that was fitted
             dataIdx_set = data_dict['dataIdxs'][0][ptchIdx][idx]
@@ -83,11 +98,15 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, **kwargs):
             # --- MAKE THE PLOTS ---
             fig, ax = plt.subplots()
             fig.set_size_inches(figure_width, figure_height)
-            fig.suptitle(f'Pitch Angle = {ptchVal} \n {tmeStamp} UTC', fontsize=Title_FontSize)
+            fig.suptitle(f'Pitch Angle = {data_dict_diffFlux["Pitch_Angle"][0][ptchVal]}$^\circ$ \n {tmeStamp} UTC', fontsize=Title_FontSize)
 
 
             # Raw Data
-            ax.plot(xData_raw, yData_raw, '-o')
+            ax.plot(xData_raw, yData_raw, '-o',color='tab:blue')
+
+            # fitted Data
+            ax.plot(fittedX, fittedY, '-o', color='tab:red')
+
 
             # plot the noise
             ax.plot(xData_raw,yData_noise, color='black',label=f'{primaryBeamToggles.countNoiseLevel}-Count Noise')
@@ -110,13 +129,13 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, **kwargs):
             ax.set_yscale('log')
             ax.set_xscale('log')
             ax.set_xlabel('Energy [eV]', fontsize=Label_FontSize)
-            ax.set_ylabel('diffNFlux [cm$^{-2}$s$^{-1}$str$^{-1}$ eV/eV]', fontsize=Label_FontSize - 4)
-            ax.set_xlim(28, 1E4)
+            ax.set_ylabel('[cm$^{-2}$s$^{-1}$str$^{-1}$ eV/eV]', fontsize=Label_FontSize)
+            ax.set_xlim(20, 1E4)
             ax.set_ylim(1E4, 5E7)
             ax.grid(True, alpha=0.4, which='both')
-            ax.text(250, 5E4, s='Primaries', fontsize=Text_FontSize, weight='bold', va='center', ha='center')
-            ax.text(70, 5E4, s='Secondaries/Backscatter', fontsize=Text_FontSize, weight='bold', va='center', ha='center')
+            # ax.text(250, 5E4, s='Primaries', fontsize=Text_FontSize, weight='bold', va='center', ha='center')
+            # ax.text(70, 5E4, s='Secondaries/Backscatter', fontsize=Text_FontSize, weight='bold', va='center', ha='center')
             ax.legend(fontsize=Legend_fontSize)
 
-            plt.savefig(rf'C:\Data\physicsModels\invertedV\primaryBeam_Fitting\fitPhotos\{data_dict_diffFlux["Pitch_Angle"][0][ptchIdx]}deg\FitData_Pitch{data_dict_diffFlux["Pitch_Angle"][0][ptchIdx]}_{tmeIdx}.png')
+            plt.savefig(rf'C:\Data\physicsModels\invertedV\primaryBeam_Fitting\fitPhotos\{data_dict_diffFlux["Pitch_Angle"][0][ptchVal]}deg\FitData_{data_dict_diffFlux["Pitch_Angle"][0][ptchVal]}deg_{idx}.png')
             plt.close()

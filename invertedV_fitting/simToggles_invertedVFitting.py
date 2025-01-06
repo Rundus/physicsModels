@@ -9,13 +9,15 @@ from datetime import datetime
 class GenToggles:
     wFlyerFit = 0
     input_diffNFiles = ['C:\Data\ACESII\L2\high\ACESII_36359_l2_eepaa_fullCal.cdf',
-                        'C:\Data\ACESII\L2\high\ACESII_36364_l2_eepaa_fullCal.cdf']
-    wRegion = 1  # pick the region below to use in the inverted-V times
-    # should do this in terms of ILat!
-    invertedV_times = [[datetime(2022, 11, 20, 17, 25, 1, 162210), datetime(2022, 11, 20, 17, 25, 2, 962215)],
-                       # Dispersive Region
-                       [datetime(2022, 11, 20, 17, 25, 23, 762000), datetime(2022, 11, 20, 17, 25, 46, 612000)]
-                       # Primary inverted-V
+                        'C:\Data\ACESII\L2\low\ACESII_36364_l2_eepaa_fullCal.cdf']
+    wRegion = 2  # pick the region below to use in the inverted-V times
+    invertedV_times = [
+                        [datetime(2022, 11, 20, 17, 24, 12, 162000), datetime(2022, 11, 20, 17, 24, 18, 812000)], # Very First ,Inverted-V, the high energy one
+                        [datetime(2022, 11, 20, 17, 24, 45, 862000), datetime(2022, 11, 20, 17, 24, 49, 312000)], # small inverted-V, after the High energy One
+                        [datetime(2022, 11, 20, 17, 25, 23, 762000), datetime(2022, 11, 20, 17, 26, 8, 212000)],  # Primary inverted-V
+                        [datetime(2022, 11, 20, 17, 26, 11, 412000), datetime(2022, 11, 20, 17, 26, 19, 912000)],  # Inverted-V right after the Primary-V, has STEBs on either sides of it
+                        [datetime(2022, 11, 20, 17, 26, 35, 112000), datetime(2022, 11, 20, 17, 26, 40, 712000)], # Inverted-V two after the Primary-V
+                        [datetime(2022, 11, 20, 17, 28, 17, 112000), datetime(2022, 11, 20, 17, 28, 34, 612000)] # Faint inverted-V on the most northside of the flight
                        ]
 
 ##########################
@@ -28,24 +30,36 @@ class primaryBeamToggles:
     outputStatisticsPlot = False
 
     # --- controlling the noise floor ---
-    countNoiseLevel = 4
+    countNoiseLevel = 3
 
     # --- accelerating potential toggles ---
-    engy_Thresh = 140  # minimum allowable energy of the inverted-V potential
+    engy_Thresh = 110  # minimum allowable energy of the inverted-V potential
 
     # --- Levenberg-Marquart Fit toggles ---
-    wPitchsToFit = [2]
+    wPitchsToFit = [2, 3]
     wDistributionToFit = 'Kappa' # 'Maxwellian' or 'Kappa'
+    numToAverageOver = 5 # HOW many datapoints are averaged together when fitting
+
     # Determine guesses for the fitted data
     V0_deviation = 0.18
-    guess = [1, 120, 250]  # observed plasma at dispersive region is 0.5E5 cm^-3 BUT this doesn't make sense to use as the kappa fit since the kappa fit comes from MUCH less dense populations above
-    n_bounds = [0.001,10]  # n [cm^-3]
+    n_bounds = [0.001,3]  # n [cm^-3]
     Te_bounds =  [10, 500]
-    kappa_bounds = [1,1000]
+    kappa_bounds = [1.5,30]
 
+    if wDistributionToFit == 'Maxwellian':
+        n_guess = 1
+        T_guess = 300
+        # can't do V0 guess, that's generated in the code itself
+    elif wDistributionToFit == 'Kappa':
+        n_guess = 1
+        T_guess = 300
+        kappa_guess = 20
+
+    # --- fit refinement ---
+    beta_guess = 6 # altitude of the inverted-V
+    n0guess_deviation = 0.8
 
     # -- Fit Statistics Toggles ---
-    nPoints_Thresh = 3  # Number of y-points that are needed in order to fit the data
     chiSquare_ThreshRange = [0.1, 100]  # range that the ChiSquare must fall into in order to be counted
 
 
