@@ -3,13 +3,15 @@
 # DESCRIPTION: using the method outline in Kaeppler's thesis, we can fit inverted-V distributions
 # to get estimate the magnetospheric temperature, density and electrostatic potential that accelerated
 # our particles
-
+import matplotlib.pyplot as plt
 # TODO: Re-work the fitting code to also work if the "Maxwellian" option is selected
+# TODO: Perform fits on ACES-I Kaeppler data to compare results of methods!
 
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
 import numpy as np
+import matplotlib.pyplot as plt
 from invertedV_fitting.primaryBeam_fitting.model_primaryBeam_classes import *
 import spaceToolsLib as stl
 from functools import partial
@@ -85,8 +87,12 @@ def generatePrimaryBeamFit(GenToggles, primaryBeamToggles, **kwargs):
         # --- PERFORM THE FIT ---
         #########################
         if len(yData) > 0:
-            # --- fit the data ---
-            params, cov = curve_fit(fitFunc, xData, yData, maxfev=int(1E4), bounds=bounds, p0=p0guess)
+
+            if kwargs.get('useNoGuess',False):
+                params, cov = curve_fit(fitFunc, xData, yData, maxfev=primaryBeamToggles.maxfev, bounds=bounds)
+            else:
+                # --- fit the data ---
+                params, cov = curve_fit(fitFunc, xData, yData, maxfev=primaryBeamToggles.maxfev, bounds=bounds, p0=p0guess)
 
             # --- calculate the Chi Square ---
             ChiSquare = (1 / (len(params) - 1)) * sum([(fitFunc(xData[i], *params) - yData[i]) ** 2 / (stdDevs[i] ** 2) for i in range(len(xData))])
@@ -107,31 +113,23 @@ def generatePrimaryBeamFit(GenToggles, primaryBeamToggles, **kwargs):
 
         # Collect the numToAverageOver Dataset across pitch angles 0 to 90 for energies >= Emin
         diffNFluxRange =data_dict_diffNFlux['Differential_Number_Flux'][0][tmeIdx - round(primaryBeamToggles.numToAverageOver/2) :tmeIdx + round(primaryBeamToggles.numToAverageOver/2),2:10+1,:EminIdx+1]
-        diffNFlux_averaged = np.zeros(shape=(len(PitchRange), len(EnergyRange)))
 
-        for ptchIdx in range(len(PitchRange)):
-            # get the energy values for all times but at one specific pitch angle
-            engyData = np.array([diffNFluxRange[i][ptchIdx] for i in range(len(diffNFluxRange))]).T
-            print(engyData)
-            diffNFlux_averaged[ptchIdx] = np.array([np.mean(arr[np.where(arr>=0)[0]]) for arr in engyData])
+
+        # average the diffNFlux data while excluding fillvals from the mean
+        diffNFluxRange[diffNFluxRange < 0] = np.NaN
+        diffNFlux_averaged = np.nanmean(diffNFluxRange,axis=0)
 
         # integrate over energy and pitch angle
         numberFlux_perPitch = (np.cos(np.radians(PitchRange))*
                       np.sin(np.radians(PitchRange))*
-                      np.array([simpson(diffNFlux_averaged[i], EnergyRange) for i in range(len(diffNFlux_averaged))]))
+                      np.array([simpson(diffNFlux_averaged[i][::-1], EnergyRange[::-1]) for i in range(len(diffNFlux_averaged))])) # Order is inverted to integrate from low Energy to High Energy
 
-        print(diffNFlux_averaged[0])
-        print(EnergyRange)
-        print(PitchRange)
         numberFlux = 2*np.pi*simpson(numberFlux_perPitch, PitchRange)
-        print(numberFlux)
 
         # calculate the n0Guess
         betaChoice = primaryBeamToggles.beta_guess
-        Akappa = (betaChoice/2) *np.sqrt((Te_guess*(2*Kappa_guess-3))/(np.pi*stl.m_e)) * (gamma(Kappa_guess + 1) / ( Kappa_guess*(Kappa_guess-1)*gamma(Kappa_guess-0.5)))
-        print(Akappa)
+        Akappa = (stl.cm_to_m)*(betaChoice/2) *np.sqrt((stl.q0*Te_guess*(2*Kappa_guess-3))/(np.pi*stl.m_e)) * (gamma(Kappa_guess + 1) / ( Kappa_guess*(Kappa_guess-1)*gamma(Kappa_guess-0.5))) # multiplied by 100 to convert to cm/s for unit matching
         n0Guess = numberFlux/(Akappa - Akappa*(1 - 1/betaChoice)*np.power(1 + (V0_guess)/(Te_guess*(Kappa_guess-3/2)*(betaChoice-1)),-(Kappa_guess-1))    )
-        print(n0Guess)
         return n0Guess
 
 
@@ -144,32 +142,10 @@ def generatePrimaryBeamFit(GenToggles, primaryBeamToggles, **kwargs):
 
     for ptchIdx, pitchVal in enumerate(primaryBeamToggles.wPitchsToFit):
 
-        ##############################
-        # --- COLLECT THE FIT DATA ---
-        ##############################
-        # ensure the data is divided into chunks that can be sub-divided. If not, keep drop points from the end until it can be
-        low_idx, high_idx = np.abs(data_dict_diffFlux['Epoch'][0] - GenToggles.invertedV_times[GenToggles.wRegion][0]).argmin(), np.abs( data_dict_diffFlux['Epoch'][0] - GenToggles.invertedV_times[GenToggles.wRegion][1]).argmin()
-
-        if (high_idx -low_idx)%primaryBeamToggles.numToAverageOver != 0:
-            high_idx -= (high_idx -low_idx)%primaryBeamToggles.numToAverageOver
-
-        chunkedEpoch = np.split(data_dict_diffFlux['Epoch'][0][low_idx:high_idx], round(len(data_dict_diffFlux['Epoch'][0][low_idx:high_idx + 1])/primaryBeamToggles.numToAverageOver) )
-        chunkedyData = np.split(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, pitchVal, :], round(len(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, pitchVal, :])/primaryBeamToggles.numToAverageOver))
-        chunkedStdDevs = np.split(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, pitchVal, :],round(len(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, pitchVal, :])/primaryBeamToggles.numToAverageOver))
-
-        # --- Average the chunked data ---
-        EpochFitData = []
-        fitData = np.zeros(shape=(len(chunkedyData), len(data_dict_diffFlux['Energy'][0]) ))
-        fitData_stdDev = np.zeros(shape=(len(chunkedStdDevs), len(data_dict_diffFlux['Energy'][0])))
-
-        for i in range(len(chunkedEpoch)):
-            EpochFitData.append(chunkedEpoch[i][ int((primaryBeamToggles.numToAverageOver-1)/2)]) # take the middle timestamp value
-
-            # average the diffFlux data by only choosing data which is valid
-            fitData[i]=np.array([np.mean(arr[np.where(arr>0)[0]]) for arr in chunkedyData[i].T])
-
-            # average the diffFlux data by only choosing data which is valid
-            fitData_stdDev[i] = np.array([np.mean(arr[np.where(arr > 0)[0]]) for arr in chunkedStdDevs[i].T])
+        EpochFitData, fitData,fitData_stdDev = helperFitFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
+                                                                                                            pitchVal=pitchVal,
+                                                                                                            GenToggles= GenToggles,
+                                                                                                            primaryBeamToggles=primaryBeamToggles)
 
         ####################################
         # --- FIT AVERAGED TIME SECTIONS ---
@@ -182,8 +158,8 @@ def generatePrimaryBeamFit(GenToggles, primaryBeamToggles, **kwargs):
 
             # --- Determine the accelerated potential from the peak in diffNflux based on a threshold limit ---
             engythresh_Idx = np.abs(data_dict_diffFlux['Energy'][0] - primaryBeamToggles.engy_Thresh).argmin() # only consider data above a certain index
-            peakDiffNIdx = np.nanargmax(fitData[tmeIdx][:engythresh_Idx]) # in that data subset, find where the maximum diffNFlux occurs AND ADD 1 MORE ENERGY TO IT, similar to KAEPPLER
-            dataIdxs = np.array([1 if i <= peakDiffNIdx and fitData[tmeIdx][i] > noiseData[i] else 0 for i in range(len(data_dict_diffFlux['Energy'][0]))]) # put a 0 or 1 in the original data length indicating if that datapoint was used for fitting
+            peakDiffNIdx = np.nanargmax(fitData[tmeIdx][:engythresh_Idx + 1]) # only consider data above the Energy_Threshold, to avoid secondaries/backscatter
+            dataIdxs = np.array([1 if fitData[tmeIdx][j] > noiseData[j] and j <= peakDiffNIdx else 0 for j in range(len(data_dict_diffFlux['Energy'][0]))])
 
             # ---  get the subset of data to fit ---
             fitTheseIndicies = np.where(dataIdxs == 1)[0]
@@ -195,20 +171,22 @@ def generatePrimaryBeamFit(GenToggles, primaryBeamToggles, **kwargs):
             xData_fit, yData_fit, yData_fit_stdDev = xData_fit[nonZeroIndicies],  yData_fit[nonZeroIndicies], yData_fit_stdDev[nonZeroIndicies]
 
             ### Perform the fit ###
-            params, ChiSquare = fitPrimaryBeam(xData_fit, yData_fit, yData_fit_stdDev, V0_guess, primaryBeamToggles)
+            params, ChiSquare = fitPrimaryBeam(xData_fit, yData_fit, yData_fit_stdDev, V0_guess, primaryBeamToggles, useNoGuess=primaryBeamToggles.useNoGuess)
 
             ### Use the First fit to motivate the n0 guess ###
             n0guess = n0GuessKaeppler2014(data_dict_diffFlux, EpochFitData[tmeIdx], params[1], params[2], params[3], primaryBeamToggles)
 
             ### Perform the informed fit again ###
+            newBounds = [[n0guess*(1-primaryBeamToggles.n0guess_deviation), n0guess*(1+primaryBeamToggles.n0guess_deviation)],
+                         primaryBeamToggles.Te_bounds,
+                         [(1 - primaryBeamToggles.V0_deviation) * V0_guess, (1 + primaryBeamToggles.V0_deviation) * V0_guess], #V0
+                         [1.5, 30] # kappa
+                        ]
+
             params, ChiSquare = fitPrimaryBeam(xData_fit, yData_fit, yData_fit_stdDev, V0_guess, primaryBeamToggles,
                                                specifyGuess=[n0guess, params[1],params[2],params[3]],
-                                               specifyBoundVals= [
-                                                   [n0guess*(1-primaryBeamToggles.n0guess_deviation), n0guess*(1+primaryBeamToggles.n0guess_deviation)],
-                                                   primaryBeamToggles.Te_bounds,
-                                                   [(1 - primaryBeamToggles.V0_deviation) * V0_guess, (1 + primaryBeamToggles.V0_deviation) * V0_guess], #V0
-                                                   [1.5, 30] # kappa
-                                               ]
+                                               specifyBoundVals= newBounds,
+                                               useNoGuess = primaryBeamToggles.useNoGuess
                                                )
 
 

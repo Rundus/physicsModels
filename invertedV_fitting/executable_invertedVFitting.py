@@ -7,7 +7,7 @@
 # --- IMPORTS ---
 #################
 import time
-from simToggles_invertedVFitting import primaryBeamToggles,GenToggles
+from simToggles_invertedVFitting import primaryBeamToggles,GenToggles,primaryBeamPlottingToggles
 import spaceToolsLib as stl
 start_time = time.time()
 
@@ -15,7 +15,7 @@ start_time = time.time()
 # --- TOGGLES ---
 #################
 primaryBeam_fitting = True
-primaryBeam_Plotting = False
+primaryBeam_Plotting = True
 
 
 ################################
@@ -26,13 +26,13 @@ primaryBeam_Plotting = False
 
 
 if primaryBeam_fitting:
-    stl.prgMsg('Generating Primary Beam Fit Parameters')
+    stl.prgMsg('Generating Primary Beam Fit Parameters\n')
     from invertedV_fitting.primaryBeam_fitting.primaryBeamFits_Generator import generatePrimaryBeamFit
     generatePrimaryBeamFit(GenToggles, primaryBeamToggles)
     stl.Done(start_time)
 
 if primaryBeam_Plotting:
-    stl.prgMsg('Plotting Primary Beam Fits')
+    stl.prgMsg('Plotting Primary Beam Fits\n')
     from invertedV_fitting.primaryBeam_fitting.primaryBeamFits_Plotting import generatePrimaryBeamFitPlots
-    generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, showPlot=True)
+    generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlottingToggles,showPlot=True)
     stl.Done(start_time)

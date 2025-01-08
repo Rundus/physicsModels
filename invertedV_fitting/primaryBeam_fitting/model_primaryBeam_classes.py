@@ -30,6 +30,45 @@ class helperFitFuncs:
 
         return diffNFlux_NoiseCount
 
+    def groupAverageData(self, data_dict_diffFlux, pitchVal, GenToggles, primaryBeamToggles):
+
+        # Input: data_dict and pitch angle (in deg)
+        # Output: Epoch, Differential_Number_Flux and stdDevs averaged over N points specified in the primaryBeamToggles
+
+        ##############################
+        # --- COLLECT THE FIT DATA ---
+        ##############################
+        # ensure the data is divided into chunks that can be sub-divided. If not, keep drop points from the end until it can be
+        low_idx, high_idx = np.abs(data_dict_diffFlux['Epoch'][0] - GenToggles.invertedV_times[GenToggles.wRegion][0]).argmin(), np.abs(data_dict_diffFlux['Epoch'][0] - GenToggles.invertedV_times[GenToggles.wRegion][1]).argmin()
+
+        if (high_idx - low_idx) % primaryBeamToggles.numToAverageOver != 0:
+            high_idx -= (high_idx - low_idx) % primaryBeamToggles.numToAverageOver
+
+        chunkedEpoch = np.split(data_dict_diffFlux['Epoch'][0][low_idx:high_idx], round(len(data_dict_diffFlux['Epoch'][0][low_idx:high_idx]) / primaryBeamToggles.numToAverageOver))
+        chunkedyData = np.split(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, pitchVal, :], round(len(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, pitchVal,:]) / primaryBeamToggles.numToAverageOver))
+        chunkedStdDevs = np.split(
+            data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, pitchVal, :], round(len(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, pitchVal,:]) / primaryBeamToggles.numToAverageOver))
+
+        # --- Average the chunked data ---
+        EpochFitData = []
+        fitData = np.zeros(shape=(len(chunkedyData), len(data_dict_diffFlux['Energy'][0])))
+        fitData_stdDev = np.zeros(shape=(len(chunkedStdDevs), len(data_dict_diffFlux['Energy'][0])))
+
+        for i in range(len(chunkedEpoch)):
+            EpochFitData.append(chunkedEpoch[i][int((primaryBeamToggles.numToAverageOver - 1) / 2)])  # take the middle timestamp value
+
+            # average the diffFlux data by only choosing data which is valid
+            chunkedyData[i][chunkedyData[i] < 0] = np.NaN
+            fitData[i] = np.nanmean(chunkedyData[i], axis=0)
+
+            # average the diffFlux data by only choosing data which is valid
+            chunkedStdDevs[i][chunkedStdDevs[i] < 0] = np.NaN
+            fitData_stdDev[i] = np.nanmean(chunkedStdDevs[i], axis=0)
+
+        EpochFitData = np.array(EpochFitData)
+
+        return EpochFitData, fitData, fitData_stdDev
+
 class velocitySpace:
 
     # --- Generate Distributions from Velocity Space ---
