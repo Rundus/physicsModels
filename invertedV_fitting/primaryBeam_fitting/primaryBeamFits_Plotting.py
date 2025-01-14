@@ -77,7 +77,7 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
 
             # get the groupAveraged Data
             Epoch_groupAverage, fitData_groupAverage, stdDev_groupAverage = helperFitFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
-                                                                                                            pitchVal=ptchVal,
+                                                                                                            pitchIdxs=[ptchVal],
                                                                                                             GenToggles= GenToggles,
                                                                                                             primaryBeamToggles=primaryBeamToggles)
 
@@ -86,7 +86,7 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
 
                 # get the full data at the time/pitch slice
                 xData_raw = data_dict_diffFlux['Energy'][0]
-                yData_raw = fitData_groupAverage[tmeIdx]
+                yData_raw = fitData_groupAverage[tmeIdx][0]
 
                 # get the indicies and data of the datapoints that was fitted
                 dataIdx_set = data_dict['dataIdxs'][0][ptchIdx][tmeIdx]

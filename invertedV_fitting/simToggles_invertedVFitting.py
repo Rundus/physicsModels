@@ -78,7 +78,13 @@ class primaryBeamPlottingToggles:
 
 class secondaryBackScatterToggles:
 
-    x = 5
+    # z_high_flyer = 400
+    # z_iono_cutoff = 300
+    # alpha_cutoff = 80
+
+    N_energyGrid = 1000 # number of points in the energy grid which covers the beam+backscatter/secondaries
+    Niterations_secondaries = 10 # number of iterations for the secondaries calculations. >19 iterations is TOO many
+    Niterations_backscatter = 10  # number of iterations for the secondaries calculations.
 
 
 

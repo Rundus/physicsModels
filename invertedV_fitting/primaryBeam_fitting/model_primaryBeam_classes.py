@@ -1,21 +1,19 @@
 # --- model_primaryBeam_classes --
 import spaceToolsLib as stl
 import numpy as np
+from scipy.integrate import simpson
 
 class helperFitFuncs:
-
     def distFunc_to_diffNFlux(self, Vperp, Vpara, dist, mass, charge):
         # Input: Velocities [m/s], distribution function [s^3m^-6]
         # output: diffNFlux [cm^-2 s^-1 eV^-1 str^-1]
         Emag = 0.5 * mass * (Vperp ** 2 + Vpara ** 2) / charge
         return (2 * Emag) * np.power(charge / (100 * mass), 2) * dist
-
     def diffNFlux_to_distFunc(self, Vperp, Vpara, diffNFlux, mass, charge):
         # Input: Vperp,Vpara in [m/s]. DiffNFlux in [cm^-2 s^-1 str^-1 eV^-1]
         # output: distribution function [s^3m^-6]
         Energy = 0.5 * mass * (Vperp ** 2 + Vpara ** 2) / charge
         return 0.5 * np.power((100 * mass / charge), 2) * diffNFlux / Energy
-
     def generateNoiseLevel(self, energyData, primaryBeamToggles):
         count_interval = 0.8992E-3
         geo_factor = 8.63E-5
@@ -29,11 +27,13 @@ class helperFitFuncs:
             diffNFlux_NoiseCount[idx] = (primaryBeamToggles.countNoiseLevel) / (geo_factor * deltaT * engy)
 
         return diffNFlux_NoiseCount
-
-    def groupAverageData(self, data_dict_diffFlux, pitchVal, GenToggles, primaryBeamToggles):
-
-        # Input: data_dict and pitch angle (in deg)
+    def groupAverageData(self, data_dict_diffFlux, pitchIdxs, GenToggles, primaryBeamToggles):
+        '''
+        # Input:
+        # data_dict_diffFlux - data_dict with "Differential_Number_Flux", "Pitch_Angle" and "Energy"  variables
+        # pitchIdxs - array of indicies corresponding to specifc pitch values in the "Pitch_Angle" variable
         # Output: Epoch, Differential_Number_Flux and stdDevs averaged over N points specified in the primaryBeamToggles
+        '''
 
         ##############################
         # --- COLLECT THE FIT DATA ---
@@ -44,30 +44,102 @@ class helperFitFuncs:
         if (high_idx - low_idx) % primaryBeamToggles.numToAverageOver != 0:
             high_idx -= (high_idx - low_idx) % primaryBeamToggles.numToAverageOver
 
+
+        # Handle the Epoch
         chunkedEpoch = np.split(data_dict_diffFlux['Epoch'][0][low_idx:high_idx], round(len(data_dict_diffFlux['Epoch'][0][low_idx:high_idx]) / primaryBeamToggles.numToAverageOver))
-        chunkedyData = np.split(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, pitchVal, :], round(len(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, pitchVal,:]) / primaryBeamToggles.numToAverageOver))
-        chunkedStdDevs = np.split(
-            data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, pitchVal, :], round(len(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, pitchVal,:]) / primaryBeamToggles.numToAverageOver))
+        EpochFitData = np.array([chunkedEpoch[i][int((primaryBeamToggles.numToAverageOver - 1) / 2)] for i in range(len(chunkedEpoch))])
 
-        # --- Average the chunked data ---
-        EpochFitData = []
-        fitData = np.zeros(shape=(len(chunkedyData), len(data_dict_diffFlux['Energy'][0])))
-        fitData_stdDev = np.zeros(shape=(len(chunkedStdDevs), len(data_dict_diffFlux['Energy'][0])))
 
-        for i in range(len(chunkedEpoch)):
-            EpochFitData.append(chunkedEpoch[i][int((primaryBeamToggles.numToAverageOver - 1) / 2)])  # take the middle timestamp value
+        # --- handle the multi-dimenional data ---
 
-            # average the diffFlux data by only choosing data which is valid
-            chunkedyData[i][chunkedyData[i] < 0] = np.NaN
-            fitData[i] = np.nanmean(chunkedyData[i], axis=0)
+        # create the storage variable
+        diffNFlux_avg = np.zeros(shape=(len(EpochFitData), len(pitchIdxs), len(data_dict_diffFlux['Energy'][0])))
+        stdDevs_avg = np.zeros(shape=(len(EpochFitData), len(pitchIdxs), len(data_dict_diffFlux['Energy'][0])))
 
-            # average the diffFlux data by only choosing data which is valid
-            chunkedStdDevs[i][chunkedStdDevs[i] < 0] = np.NaN
-            fitData_stdDev[i] = np.nanmean(chunkedStdDevs[i], axis=0)
+        for loopIdx, pitchIdx in enumerate(pitchIdxs):
 
-        EpochFitData = np.array(EpochFitData)
+            chunkedyData = np.split(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, pitchIdx, :], round(len(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, pitchIdx,:]) / primaryBeamToggles.numToAverageOver))
+            chunkedStdDevs = np.split(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, pitchIdx, :], round(len(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, pitchIdx,:]) / primaryBeamToggles.numToAverageOver))
 
-        return EpochFitData, fitData, fitData_stdDev
+            # --- Average the chunked data ---
+            fitData = np.zeros(shape=(len(chunkedyData), len(data_dict_diffFlux['Energy'][0])))
+            fitData_stdDev = np.zeros(shape=(len(chunkedStdDevs), len(data_dict_diffFlux['Energy'][0])))
+
+            for i in range(len(chunkedEpoch)):
+                # average the diffFlux data by only choosing data which is valid
+                chunkedyData[i][chunkedyData[i] < 0] = np.NaN
+                fitData[i] = np.nanmean(chunkedyData[i], axis=0)
+
+                # average the diffFlux data by only choosing data which is valid
+                chunkedStdDevs[i][chunkedStdDevs[i] < 0] = np.NaN
+                fitData_stdDev[i] = np.nanmean(chunkedStdDevs[i], axis=0)
+
+            diffNFlux_avg[:, loopIdx, :] = fitData
+            stdDevs_avg[:, loopIdx, :] = fitData_stdDev
+
+        return EpochFitData, diffNFlux_avg, stdDevs_avg
+    def calcTotal_NFlux(self, diffNFlux, pitchValues, energyValues):
+
+        # Inputs:
+        # diffNFlux - multidimensional array with shape= (len(pitchRange), len(EnergyRange)) that contains diffNFlux values
+        # pitchValues - 1D array with the pitch angles
+        # energyValues - 1D array with the energy values in eV
+
+        # output:
+        # Phi
+
+        # --- integrate over energies first ---
+        diffNflux_PerPitch = np.array([simpson(y=diffNFlux[ptchIdx], x=energyValues) for ptchIdx in range(len(pitchValues))])
+
+        # --- integrate over pitch angle ---
+        diffNflux_PerPitch = np.nan_to_num(diffNflux_PerPitch.T)
+        omniNFlux = 2 * np.pi * simpson(y=np.sin(np.radians(pitchValues)) * diffNflux_PerPitch, x=pitchValues)
+        return omniNFlux
+    def calcOmni_diffNFlux(self, diffNFlux, pitchValues, energyValues):
+        # Inputs:
+        # diffNFlux - multidimensional array with shape= (len(pitchRange), len(EnergyRange)) that contains diffNFlux values
+        # pitchValues - 1D array with the pitch angles (in deg)
+        # energyValues - 1D array with the energy values in eV
+
+        # output:
+        # Phi(E)
+
+        # --- integrate over energies first ---
+        diffNFlux = np.nan_to_num(diffNFlux.T)
+        diffNflux_Integrand = np.array([np.sin(np.radians(pitchValues))*diffNFlux[idx] for idx in range(len(energyValues))])
+
+        # --- integrate over pitch angle ---
+        omniDiffNFlux = 2 * np.pi * np.array([simpson(y=diffNflux_Integrand[idx], x=pitchValues) for idx in range(len(energyValues)) ])
+
+        return omniDiffNFlux
+    def calcPara_diffNFlux(self, diffNFlux, pitchValues):
+        # Inputs:
+        # diffNFlux - multidimensional array with shape= (len(pitchRange), len(EnergyRange)) that contains diffNFlux values
+        # pitchValues - 1D array with the pitch angles
+        # energyValues - 1D array with the energy values in eV
+
+        # output:
+        # Phi(E)
+
+        # --- integrate over energies first ---
+        diffNFlux = np.nan_to_num(diffNFlux.T)
+        diffNflux_Integrand = np.array([np.cos(np.radians(pitchValues)) * np.sin(np.radians(pitchValues)) * diffNFlux[idx] for idx in range(pitchValues)])
+
+        # --- integrate over pitch angle ---
+        paraDiffNFlux = 2 * np.pi * np.array([simpson(y=diffNflux_Integrand[idx].T, x=pitchValues) for idx in range(len(pitchValues))])
+        return paraDiffNFlux
+
+    def removeDuplicates(self, a, b):
+        from collections import defaultdict
+        D = defaultdict(list)
+        for i, item in enumerate(a):
+            D[item].append(i)
+        D = {k: v for k, v in D.items() if len(v) > 1}
+        badIndicies = [D[key][1:] for key in D.keys()]
+        badIndicies = [item for sublist in badIndicies for item in sublist]
+        newA = np.delete(a, badIndicies, axis=0)
+        newB = np.delete(b, badIndicies, axis=0)
+        return newA, newB
 
 class velocitySpace:
 

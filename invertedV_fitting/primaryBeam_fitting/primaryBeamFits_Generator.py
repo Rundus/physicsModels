@@ -140,30 +140,29 @@ def generatePrimaryBeamFit(GenToggles, primaryBeamToggles, **kwargs):
     ##################################
     noiseData = helperFitFuncs().generateNoiseLevel(data_dict_diffFlux['Energy'][0],primaryBeamToggles)
 
-    for ptchIdx, pitchVal in enumerate(primaryBeamToggles.wPitchsToFit):
+    EpochFitData, fitData, fitData_stdDev = helperFitFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
+                                                                              pitchIdxs=primaryBeamToggles.wPitchsToFit,
+                                                                              GenToggles=GenToggles,
+                                                                              primaryBeamToggles=primaryBeamToggles)
+    for idx, pitchIdx in enumerate(primaryBeamToggles.wPitchsToFit):
 
-        EpochFitData, fitData,fitData_stdDev = helperFitFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
-                                                                                                            pitchVal=pitchVal,
-                                                                                                            GenToggles= GenToggles,
-                                                                                                            primaryBeamToggles=primaryBeamToggles)
-
-        ####################################
-        # --- FIT AVERAGED TIME SECTIONS ---
-        ####################################
-        # for each slice in time, loop over the data and identify the peak differentialNumberFlux (This corresponds to the
-        # peak energy of the inverted-V since the location of the maximum number flux tells you what energy the low-energy BULk got accelerated to)
-        # Note: The peak in the number flux is very likely the maximum value AFTER 100 eV, just find this point
+            ####################################
+            # --- FIT AVERAGED TIME SECTIONS ---
+            ####################################
+            # for each slice in time, loop over the data and identify the peak differentialNumberFlux (This corresponds to the
+            # peak energy of the inverted-V since the location of the maximum number flux tells you what energy the low-energy BULk got accelerated to)
+            # Note: The peak in the number flux is very likely the maximum value AFTER 100 eV, just find this point
 
         for tmeIdx in tqdm(range(len(EpochFitData))):
 
             # --- Determine the accelerated potential from the peak in diffNflux based on a threshold limit ---
             engythresh_Idx = np.abs(data_dict_diffFlux['Energy'][0] - primaryBeamToggles.engy_Thresh).argmin() # only consider data above a certain index
-            peakDiffNIdx = np.nanargmax(fitData[tmeIdx][:engythresh_Idx + 1]) # only consider data above the Energy_Threshold, to avoid secondaries/backscatter
-            dataIdxs = np.array([1 if fitData[tmeIdx][j] > noiseData[j] and j <= peakDiffNIdx else 0 for j in range(len(data_dict_diffFlux['Energy'][0]))])
+            peakDiffNIdx = np.nanargmax(fitData[tmeIdx][idx][:engythresh_Idx + 1]) # only consider data above the Energy_Threshold, to avoid secondaries/backscatter
+            dataIdxs = np.array([1 if fitData[tmeIdx][idx][j] > noiseData[j] and j <= peakDiffNIdx else 0 for j in range(len(data_dict_diffFlux['Energy'][0]))])
 
             # ---  get the subset of data to fit ---
             fitTheseIndicies = np.where(dataIdxs == 1)[0]
-            xData_fit, yData_fit, yData_fit_stdDev = np.array(data_dict_diffFlux['Energy'][0][fitTheseIndicies]), np.array(fitData[tmeIdx][fitTheseIndicies]), np.array(fitData_stdDev[tmeIdx][fitTheseIndicies])
+            xData_fit, yData_fit, yData_fit_stdDev = np.array(data_dict_diffFlux['Energy'][0][fitTheseIndicies]), np.array(fitData[tmeIdx][idx][fitTheseIndicies]), np.array(fitData_stdDev[tmeIdx][idx][fitTheseIndicies])
             V0_guess = xData_fit[-1]
 
             # Only include data with non-zero points
@@ -184,21 +183,20 @@ def generatePrimaryBeamFit(GenToggles, primaryBeamToggles, **kwargs):
                         ]
 
             params, ChiSquare = fitPrimaryBeam(xData_fit, yData_fit, yData_fit_stdDev, V0_guess, primaryBeamToggles,
-                                               specifyGuess=[n0guess, params[1],params[2],params[3]],
-                                               specifyBoundVals= newBounds,
+                                               specifyGuess = [n0guess, params[1], params[2], params[3]],
+                                               specifyBoundVals = newBounds,
                                                useNoGuess = primaryBeamToggles.useNoGuess
                                                )
 
-
             # --- update the data_dict ---
-            data_dict['Te'][0][ptchIdx].append(params[1])
-            data_dict['n'][0][ptchIdx].append(params[0])
-            data_dict['V0'][0][ptchIdx].append(params[2])
-            data_dict['kappa'][0][ptchIdx].append(0 if primaryBeamToggles.wDistributionToFit == 'Maxwellian' else params[3])
-            data_dict['ChiSquare'][0][ptchIdx].append(ChiSquare)
-            data_dict['dataIdxs'][0][ptchIdx].append(dataIdxs)
-            data_dict['timestamp_fitData'][0][ptchIdx].append(EpochFitData[tmeIdx])
-            data_dict['numFittedPoints'][0][ptchIdx].append(len(yData_fit))
+            data_dict['Te'][0][idx].append(params[1])
+            data_dict['n'][0][idx].append(params[0])
+            data_dict['V0'][0][idx].append(params[2])
+            data_dict['kappa'][0][idx].append(0 if primaryBeamToggles.wDistributionToFit == 'Maxwellian' else params[3])
+            data_dict['ChiSquare'][0][idx].append(ChiSquare)
+            data_dict['dataIdxs'][0][idx].append(dataIdxs)
+            data_dict['timestamp_fitData'][0][idx].append(EpochFitData[tmeIdx])
+            data_dict['numFittedPoints'][0][idx].append(len(yData_fit))
 
     # --- --- --- --- --- ---
     # --- OUTPUT THE DATA ---
