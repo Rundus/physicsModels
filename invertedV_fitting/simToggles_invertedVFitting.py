@@ -51,9 +51,9 @@ class primaryBeamToggles:
 
     # Determine guesses for the fitted data
     V0_deviation = 0.18
-    n_bounds = [0.001, 3]  # n [cm^-3]
-    Te_bounds =  [10, 500]
-    kappa_bounds = [1.5, 30]
+    n_bounds = [0.001, 10]  # n [cm^-3]
+    Te_bounds = [10, 500]
+    kappa_bounds = [1.5, 101]
 
     if wDistributionToFit == 'Maxwellian':
         n_guess = 1
@@ -65,6 +65,7 @@ class primaryBeamToggles:
         kappa_guess = 20
 
     # --- fit refinement ---
+    useFitRefinement = False
     beta_guess = 6 # altitude of the inverted-V
     n0guess_deviation = 0.8
 
@@ -83,6 +84,7 @@ class secondaryBackScatterToggles:
     # alpha_cutoff = 80
 
     N_energyGrid = 1000 # number of points in the energy grid which covers the beam+backscatter/secondaries
+    wPtchIdx = 0 # Index of Desired Pitch angle in wPitchToFit that will be used in the secondary/backscatter calculations
     Niterations_secondaries = 10 # number of iterations for the secondaries calculations. >19 iterations is TOO many
     Niterations_backscatter = 10  # number of iterations for the secondaries calculations.
 

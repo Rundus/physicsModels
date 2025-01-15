@@ -1,13 +1,12 @@
-# --- verify_SecondaryBackscatterMethod.py ---
+# --- verify_backscatterMethod.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: use the digitized values from Evans 1974 Fig. 5 to check my
 # Secondary/Backscatter code
-import numpy as np
 
 #################
 # --- IMPORTS ---
 #################
-from invertedV_fitting.primaryBeam_fitting.Evans_Model.parameterizationCurves_Evans1974_classes import *
+from invertedV_fitting.BackScatter.Evans_Model.parameterizationCurves_Evans1974_classes import *
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 
@@ -77,8 +76,6 @@ yData_beam_45deg = spline(xData_beam_45deg)
 xData_45deg = np.append(xData_backscatter_45deg, xData_beam_45deg)
 yData_45deg = np.append(yData_backscatter_45deg, yData_beam_45deg)
 
-
-
 #########################################
 # --- Apply my Code to the Evans Data ---
 #########################################
@@ -88,7 +85,7 @@ relevantPitchAngles = np.array([0 +i*10 for i in range(3)])
 diffNFlux_Beam = np.array([yData_beam_0deg for i in range(len(relevantPitchAngles))])
 
 # GENERATE BACKSCATTER - my method
-omniFlux = helperFitFuncs().calcTotal_NFlux(diffNFlux=diffNFlux_Beam,
+omniFlux = helperFuncs().calcTotal_NFlux(diffNFlux=diffNFlux_Beam,
                                             pitchValues=relevantPitchAngles,
                                             energyValues=xData_beam_0deg)
 
@@ -99,7 +96,7 @@ secondaryFlux_0deg = Evans1974().calcSecondaries(detectorEnergies=xData_0deg,
                                             V0=model_V0)
 
 # calculate the OmniFlux - Integrate over pitch angle
-omniDiffFlux = helperFitFuncs().calcOmni_diffNFlux(diffNFlux=diffNFlux_Beam,
+omniDiffFlux = helperFuncs().calcOmni_diffNFlux(diffNFlux=diffNFlux_Beam,
                                                    pitchValues=relevantPitchAngles,
                                                    energyValues=xData_beam_0deg)
 

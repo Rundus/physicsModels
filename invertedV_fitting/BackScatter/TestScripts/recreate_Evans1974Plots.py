@@ -2,7 +2,7 @@
 # --- Imports ---
 import matplotlib.pyplot as plt
 import numpy as np
-from invertedV_fitting.primaryBeam_fitting.Evans_Model.parameterizationCurves_Evans1974_classes import Evans1974
+from invertedV_fitting.BackScatter.Evans_Model.parameterizationCurves_Evans1974_classes import Evans1974
 import spaceToolsLib as stl
 
 #TODO: Something isn't correct with the accelerated Maxwellian Example. It's TOO SMALL
@@ -110,12 +110,18 @@ if recreate_Evans1974_Fig5:
     model_V0 = 2000  # V
     model_vPos = 2000  # inverted-V altitude (in km)
 
-    def acceleratedMaxwellain(x, n0, T, V0):
+    def diffNFlux_acceleratedMaxwellain(x, n0, T, V0):
 
-        return stl.q0/(np.power(stl.cm_to_m,2))*((1E6)*n0/(2*np.power(np.pi,3/2))) * (stl.q0*(x + V0)/np.power(stl.q0*T,3/2)) * np.sqrt(2/stl.m_e) * np.exp(-x/T)
+        # get the distribution in SI units
+        diffNFlux_Maxwellian = ((1E6)*n0/(2*np.power(np.pi,3/2))) * (stl.q0*(x + V0)/np.power(stl.q0*T,3/2)) * np.sqrt(2/stl.m_e) * np.exp(-x/T)
+
+        # convert dist to cm^-2eV^-1
+        diffNFlux_Maxwellian_converted = stl.q0/(np.power(stl.cm_to_m,2))*diffNFlux_Maxwellian
+
+        return diffNFlux_Maxwellian_converted
 
     energyRange = np.linspace(0, 1E4, 5000)
-    yData_beam = acceleratedMaxwellain(energyRange,model_n,model_T,model_V0)
+    yData_beam = diffNFlux_acceleratedMaxwellain(energyRange,model_n,model_T,model_V0)
     yData_beam[np.where(energyRange<model_V0)[0]]=0
 
 

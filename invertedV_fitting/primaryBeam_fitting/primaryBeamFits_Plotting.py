@@ -1,11 +1,9 @@
 # --- primaryBeamFits_Plotting.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: get the data from the primary beam fits and plot the data WITHOUT regenerating all the fits again
-
-
 # TODO: Add restrictions on the ChiSquare and exlude bad fits e.g. too few datapoints, poor ChiSquare values
 
-from invertedV_fitting.primaryBeam_fitting.model_primaryBeam_classes import *
+from invertedV_fitting.primaryBeam_fitting.primaryBeam_classes import *
 import spaceToolsLib as stl
 from copy import deepcopy
 import matplotlib.pyplot as plt
@@ -76,7 +74,7 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
 
 
             # get the groupAveraged Data
-            Epoch_groupAverage, fitData_groupAverage, stdDev_groupAverage = helperFitFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
+            Epoch_groupAverage, fitData_groupAverage, stdDev_groupAverage = helperFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
                                                                                                             pitchIdxs=[ptchVal],
                                                                                                             GenToggles= GenToggles,
                                                                                                             primaryBeamToggles=primaryBeamToggles)
@@ -103,13 +101,13 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
                 # generate the evaluated model data for display
                 xData_model = np.linspace(fittedX.min(), fittedX.max(), 100)
                 if primaryBeamToggles.wDistributionToFit == 'Maxwellian':
-                    yData_model = fittingDistributions().diffNFlux_fitFunc_Maxwellian(xData_model, n_model,T_model,V0_model, stl.m_e, stl.q0 )
+                    yData_model = primaryBeam_class().diffNFlux_fitFunc_Maxwellian(xData_model, n_model,T_model,V0_model)
                 elif primaryBeamToggles.wDistributionToFit == 'Kappa':
-                    yData_model = fittingDistributions().diffNFlux_fitFunc_Kappa(xData_model, n_model, T_model, V0_model, kappa_model, stl.m_e, stl.q0)
+                    yData_model = primaryBeam_class().diffNFlux_fitFunc_Kappa(xData_model, n_model, T_model, V0_model, kappa_model)
 
 
                 # Generate the noise level
-                yData_noise = helperFitFuncs().generateNoiseLevel(xData_raw, primaryBeamToggles)
+                yData_noise = helperFuncs().generateNoiseLevel(xData_raw, primaryBeamToggles)
 
                 # --- MAKE THE PLOTS ---
                 fig, ax = plt.subplots()
@@ -202,22 +200,23 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
 
             # Density Values
             ax[2].scatter(timestamp, ne,color='black')
-            ax[2].set_ylim(0, 30)
+            ax[2].set_ylim(0, 4)
             ax[2].set_ylabel(r'n$_{0}$ [cm$^{-3}$]', fontsize=Label_FontSize)
 
             # V0 Values
-            ax[3].scatter(timestamp,V0,color='black')
-            ax[3].set_ylim(100, 1000)
+            ax[3].scatter(timestamp, V0, color='black')
+            ax[3].set_ylim(50, 800)
             ax[3].set_ylabel(r'V$_{0}$ [eV]', fontsize=Label_FontSize)
 
             # Te Values
             ax[4].scatter(timestamp, Te,color='black')
-            ax[4].set_ylim(50, 500)
+            ax[4].set_ylim(20, 300)
             ax[4].set_ylabel(r'T$_{e}$ [eV]', fontsize=Label_FontSize)
 
             # Kappa Values
             ax[5].scatter(timestamp, kappa, color='black')
-            ax[5].set_ylim(0 ,30)
+            ax[5].set_ylim(1E-1, 1E2)
+            ax[5].set_yscale('log')
             ax[5].axhline(y=10)
             ax[5].set_ylabel(r'$\kappa$', fontsize=Label_FontSize)
 

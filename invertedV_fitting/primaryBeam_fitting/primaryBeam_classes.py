@@ -1,9 +1,11 @@
 # --- model_primaryBeam_classes --
 import spaceToolsLib as stl
 import numpy as np
-from scipy.integrate import simpson
+from scipy.special import gamma
 
-class helperFitFuncs:
+
+
+class helperFuncs:
     def distFunc_to_diffNFlux(self, Vperp, Vpara, dist, mass, charge):
         # Input: Velocities [m/s], distribution function [s^3m^-6]
         # output: diffNFlux [cm^-2 s^-1 eV^-1 str^-1]
@@ -27,13 +29,20 @@ class helperFitFuncs:
             diffNFlux_NoiseCount[idx] = (primaryBeamToggles.countNoiseLevel) / (geo_factor * deltaT * engy)
 
         return diffNFlux_NoiseCount
-    def groupAverageData(self, data_dict_diffFlux, pitchIdxs, GenToggles, primaryBeamToggles):
+    def groupAverageData(self, data_dict_diffFlux, GenToggles, N_avg):
         '''
         # Input:
         # data_dict_diffFlux - data_dict with "Differential_Number_Flux", "Pitch_Angle" and "Energy"  variables
         # pitchIdxs - array of indicies corresponding to specifc pitch values in the "Pitch_Angle" variable
-        # Output: Epoch, Differential_Number_Flux and stdDevs averaged over N points specified in the primaryBeamToggles
+        # N_avg - scalar indicating the number of Epoch values to average over. Should be odd
+
+        # Output:
+        Epoch, Differential_Number_Flux and stdDevs averaged over N TIME-points specified in the primaryBeamToggles. Dimensions in Pitch and Energy are untouched
         '''
+
+
+        if N_avg%2 == 0:
+            raise Exception('Number of Points to Average over must be odd')
 
         ##############################
         # --- COLLECT THE FIT DATA ---
@@ -41,25 +50,26 @@ class helperFitFuncs:
         # ensure the data is divided into chunks that can be sub-divided. If not, keep drop points from the end until it can be
         low_idx, high_idx = np.abs(data_dict_diffFlux['Epoch'][0] - GenToggles.invertedV_times[GenToggles.wRegion][0]).argmin(), np.abs(data_dict_diffFlux['Epoch'][0] - GenToggles.invertedV_times[GenToggles.wRegion][1]).argmin()
 
-        if (high_idx - low_idx) % primaryBeamToggles.numToAverageOver != 0:
-            high_idx -= (high_idx - low_idx) % primaryBeamToggles.numToAverageOver
+        if (high_idx - low_idx) % N_avg != 0:
+            high_idx -= (high_idx - low_idx) % N_avg
 
 
         # Handle the Epoch
-        chunkedEpoch = np.split(data_dict_diffFlux['Epoch'][0][low_idx:high_idx], round(len(data_dict_diffFlux['Epoch'][0][low_idx:high_idx]) / primaryBeamToggles.numToAverageOver))
-        EpochFitData = np.array([chunkedEpoch[i][int((primaryBeamToggles.numToAverageOver - 1) / 2)] for i in range(len(chunkedEpoch))])
+        chunkedEpoch = np.split(data_dict_diffFlux['Epoch'][0][low_idx:high_idx], round(len(data_dict_diffFlux['Epoch'][0][low_idx:high_idx]) / N_avg))
+        EpochFitData = np.array([chunkedEpoch[i][int((N_avg - 1) / 2)] for i in range(len(chunkedEpoch))])
 
 
         # --- handle the multi-dimenional data ---
 
         # create the storage variable
-        diffNFlux_avg = np.zeros(shape=(len(EpochFitData), len(pitchIdxs), len(data_dict_diffFlux['Energy'][0])))
-        stdDevs_avg = np.zeros(shape=(len(EpochFitData), len(pitchIdxs), len(data_dict_diffFlux['Energy'][0])))
+        detectorPitchAngles = data_dict_diffFlux['Pitch_Angle'][0]
+        diffNFlux_avg = np.zeros(shape=(len(EpochFitData), len(detectorPitchAngles), len(data_dict_diffFlux['Energy'][0])))
+        stdDevs_avg = np.zeros(shape=(len(EpochFitData), len(detectorPitchAngles), len(data_dict_diffFlux['Energy'][0])))
 
-        for loopIdx, pitchIdx in enumerate(pitchIdxs):
+        for loopIdx, pitchValue in enumerate(detectorPitchAngles):
 
-            chunkedyData = np.split(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, pitchIdx, :], round(len(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, pitchIdx,:]) / primaryBeamToggles.numToAverageOver))
-            chunkedStdDevs = np.split(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, pitchIdx, :], round(len(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, pitchIdx,:]) / primaryBeamToggles.numToAverageOver))
+            chunkedyData = np.split(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, loopIdx, :], round(len(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, loopIdx,:]) / N_avg))
+            chunkedStdDevs = np.split(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, loopIdx, :], round(len(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, loopIdx,:]) / N_avg))
 
             # --- Average the chunked data ---
             fitData = np.zeros(shape=(len(chunkedyData), len(data_dict_diffFlux['Energy'][0])))
@@ -78,57 +88,6 @@ class helperFitFuncs:
             stdDevs_avg[:, loopIdx, :] = fitData_stdDev
 
         return EpochFitData, diffNFlux_avg, stdDevs_avg
-    def calcTotal_NFlux(self, diffNFlux, pitchValues, energyValues):
-
-        # Inputs:
-        # diffNFlux - multidimensional array with shape= (len(pitchRange), len(EnergyRange)) that contains diffNFlux values
-        # pitchValues - 1D array with the pitch angles
-        # energyValues - 1D array with the energy values in eV
-
-        # output:
-        # Phi
-
-        # --- integrate over energies first ---
-        diffNflux_PerPitch = np.array([simpson(y=diffNFlux[ptchIdx], x=energyValues) for ptchIdx in range(len(pitchValues))])
-
-        # --- integrate over pitch angle ---
-        diffNflux_PerPitch = np.nan_to_num(diffNflux_PerPitch.T)
-        omniNFlux = 2 * np.pi * simpson(y=np.sin(np.radians(pitchValues)) * diffNflux_PerPitch, x=pitchValues)
-        return omniNFlux
-    def calcOmni_diffNFlux(self, diffNFlux, pitchValues, energyValues):
-        # Inputs:
-        # diffNFlux - multidimensional array with shape= (len(pitchRange), len(EnergyRange)) that contains diffNFlux values
-        # pitchValues - 1D array with the pitch angles (in deg)
-        # energyValues - 1D array with the energy values in eV
-
-        # output:
-        # Phi(E)
-
-        # --- integrate over energies first ---
-        diffNFlux = np.nan_to_num(diffNFlux.T)
-        diffNflux_Integrand = np.array([np.sin(np.radians(pitchValues))*diffNFlux[idx] for idx in range(len(energyValues))])
-
-        # --- integrate over pitch angle ---
-        omniDiffNFlux = 2 * np.pi * np.array([simpson(y=diffNflux_Integrand[idx], x=pitchValues) for idx in range(len(energyValues)) ])
-
-        return omniDiffNFlux
-    def calcPara_diffNFlux(self, diffNFlux, pitchValues):
-        # Inputs:
-        # diffNFlux - multidimensional array with shape= (len(pitchRange), len(EnergyRange)) that contains diffNFlux values
-        # pitchValues - 1D array with the pitch angles
-        # energyValues - 1D array with the energy values in eV
-
-        # output:
-        # Phi(E)
-
-        # --- integrate over energies first ---
-        diffNFlux = np.nan_to_num(diffNFlux.T)
-        diffNflux_Integrand = np.array([np.cos(np.radians(pitchValues)) * np.sin(np.radians(pitchValues)) * diffNFlux[idx] for idx in range(pitchValues)])
-
-        # --- integrate over pitch angle ---
-        paraDiffNFlux = 2 * np.pi * np.array([simpson(y=diffNflux_Integrand[idx].T, x=pitchValues) for idx in range(len(pitchValues))])
-        return paraDiffNFlux
-
     def removeDuplicates(self, a, b):
         from collections import defaultdict
         D = defaultdict(list)
@@ -141,7 +100,7 @@ class helperFitFuncs:
         newB = np.delete(b, badIndicies, axis=0)
         return newA, newB
 
-class velocitySpace:
+class velocitySpaceFuncs:
 
     # --- Generate Distributions from Velocity Space ---
     def generate_Maxwellian(self, mass, charge, n, T, Vperp, Vpara):
@@ -155,7 +114,7 @@ class velocitySpace:
         # output: the distribution function in SI units [s^3 m^-6]
         Emag = (0.5 * mass * (Vperp ** 2 + Vpara ** 2)) / charge
         Ek = T*(1 - 3/(2*kappa))
-        return (1E6)*n * np.power(mass/(2*np.pi*kappa*stl.q0*Ek),3/2) * (np.special.gamma(kappa+1)/np.special.gamma(kappa-0.5)) * np.power(1 + Emag/(kappa*Ek),-(kappa +1))
+        return (1E6)*n * np.power(mass/(2*np.pi*kappa*stl.q0*Ek),3/2) * (gamma(kappa+1)/gamma(kappa-0.5)) * np.power(1 + Emag/(kappa*Ek),-(kappa +1))
 
     # def calc_BackScatter_onto_Velspace(self, mass, charge, VperpGrid, VparaGrid, BackScatterSpline, EngyLimit):
     #     Energy = 0.5 * mass * (VperpGrid ** 2 + VparaGrid ** 2) / charge
@@ -278,15 +237,41 @@ class velocitySpace:
     #     EnergyGrid, PitchGrid = np.meshgrid(EnergyBins, PitchBins)
     #     return np.array(ZGrid_New), EnergyGrid, PitchGrid
 
-class fittingDistributions:
+class primaryBeam_class:
 
     # --- FUNCTION for fitting ---
-    def diffNFlux_fitFunc_Maxwellian(self, x, n, T, V, mass, charge):  # Used in primaryBeam_fitting
-        Energy = (2 * x/ mass) - 2 * V / mass + (2 * x / mass)
-        return (2 * x) * ((charge / mass) ** 2) * (1E2 * n) * np.power(mass / (2 * np.pi * charge * T), 3 / 2) * np.exp((-mass * Energy / (2 * T)))
+    def diffNFlux_fitFunc_Maxwellian(self, x, n, T, V):  # Used in primaryBeam_fitting
 
-    def diffNFlux_fitFunc_Kappa(self, x, n, T, V,kappa, mass, charge):  # Used in primaryBeam_fitting
-        Energy = (2 * x/ mass) - 2 * V / mass + (2 * x / mass)
-        return (2 * x) * ((charge / mass) ** 2) * (1E2 * n) * np.power(mass / (2 * np.pi * charge * T), 3 / 2) * np.exp((-mass * Energy / (2 * T)))
+        Energy = (x - V)
+
+        # Create the Distribution function in m^-6s^3
+        Dist = (1E6 * n) * np.power(stl.m_e / (2 * np.pi * stl.q0 * T), 3 / 2) * np.exp((-Energy / T))
+
+        # convert to diffNFlux in m^-2J^-1sr^-1s^1
+        diffNFlux = (2*stl.q0*x/np.power(stl.m_e,2))*Dist
+
+        # convert to cm^-2eV^-1
+        diffNFlux_converted = (stl.q0 / np.power(stl.cm_to_m, 2)) * diffNFlux
+
+        return diffNFlux_converted
+
+    def diffNFlux_fitFunc_Kappa(self, x, n, T, V, kappa):  # Used in primaryBeam_fitting
+
+        # Input energy  (in eV)
+        Energy = (x - V)
+
+        # Kappa Ek
+        Ek = T*(1 - 3/(2*kappa))
+
+        # create the Distribution function in m^-6s^3
+        Dist = ((1E6)*n * np.power(stl.m_e/(2*np.pi*kappa*stl.q0*Ek),3/2) * (gamma(kappa+1)/gamma(kappa-0.5)) * np.power(1 + Energy/(kappa*Ek),-(kappa +1)))
+
+        # convert to diffNFlux in m^-2J^-1sr^-1s^1
+        diffNFlux = (2*stl.q0*x/np.power(stl.m_e,2))*Dist
+
+        # convert to cm^-2 eV^-1
+        diffNFlux_converted = (stl.q0/np.power(stl.cm_to_m,2))*diffNFlux
+        return diffNFlux_converted
+
 
 

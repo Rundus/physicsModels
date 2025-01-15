@@ -12,7 +12,7 @@ import numpy as np
 from scipy.interpolate import CubicSpline
 from scipy.integrate import simpson
 from invertedV_fitting.simToggles_invertedVFitting import secondaryBackScatterToggles
-from invertedV_fitting.primaryBeam_fitting.model_primaryBeam_classes import helperFitFuncs
+from invertedV_fitting.primaryBeam_fitting.primaryBeam_classes import helperFuncs
 
 
 class Evans1974():
@@ -150,7 +150,7 @@ class Evans1974():
         # --- TestModel data - 0 deg - Secondaries/BackScatter ---
         self.testModel_BackScatter_Energies_0deg = [10.17709639766224, 10.821999183338981, 11.208700715625968, 11.814815327351234, 12.344873903457717, 12.898712969256117, 13.359621530164212, 14.08204797565431, 14.713823428069432, 15.373942784933998, 16.20529439277789, 16.784356732987327, 17.38411065618944, 18.00529553287512, 18.648677153395127, 19.485329355255157, 20.005231584725344, 20.72007674193801, 21.08702183696625, 21.64965998724049, 22.033067666675752, 22.82037330987, 23.021556792495566, 23.635811675442397, 24.266455939204132, 24.266455939204132, 24.696206132290385, 25.13356704648566, 25.578673464919163, 26.726232259521783, 26.261156635659866, 26.96184963573291, 27.68123833482498, 28.41982156646481, 29.435344517528634, 29.95663386532876, 30.4871550596924, 31.300604994089447, 32.41906672261727, 33.284063395711016, 33.873512168405206, 35.083911359677614, 36.02001068865875, 36.657912102330435, 37.636008488706544, 38.98085262565264, 40.37375195828243, 41.816423638620286, 43.692471072086306, 45.253730246730555, 46.87077775631218, 48.545607080431246, 51.6218476912336, 53.937804591537954, 55.376958344015065, 57.35573826094496, 60.99025973285772, 64.85509375466215, 67.76474555169581, 72.69413357798709, 75.29170657412634, 80.06279543982323, 82.92367217352547, 87.40780023059995, 90.53113536585349, 94.59271427130095, 98.83651140629469, 103.27070178945473, 108.8551029529588, 113.73876632597786, 122.01242703683677, 132.04183857498546, 137.96574910615675, 148.00174505280094, 161.5795063648351, 173.33322989001613, 184.31701921838456, 201.22636371158637, 215.86410520649565, 229.54299330342528, 246.24056183256212, 264.15275595655044, 285.86609092385333, 303.98086857395595, 328.9680711458026, 356.0092197284479, 381.9062783050191, 409.68715787765825, 439.48889260160564, 488.3050688813476, 547.3265375014148, 624.3464793338119, 681.6243679788352, 731.2075394434132, 805.3266030292443, 871.5243840303639, 926.7511875394177, 1002.930059471001, 1075.88586246435, 1134.0647859928526, 1205.9282636536022, 1293.6506965355409, 1387.7542927608201, 1501.8275822932776, 1611.074519494021, 1774.3815538317454, 1774.3815538317454, 1886.8206584846582, 2006.3848102999737, 582.0095546329565, 514.7103449911729]
         self.testModel_BackScatter_Flux_0deg = [8610568.91804672, 7954940.628984377, 7414189.709243227, 7032888.918362327, 6497388.770509437, 6163237.693451454, 5744280.895813771, 5260404.108396625, 4902818.993372483, 4569541.348240764, 4258918.830474484, 4039888.945612909, 3765270.4707706654, 3509319.6642084075, 3270767.5587191326, 3075375.067612488, 2866321.100534323, 2624872.9069330576, 2468065.537740231, 2341136.5841537085, 2181993.754538096, 2033668.9354518522, 1929080.3554603024, 1829870.6111651435, 1661047.9349141, 1661047.9349141, 1575622.7008545771, 1442898.1240974318, 1321353.7704138744, 1188938.076046969, 1253398.5038978148, 1108117.9432360276, 1032791.6994670585, 954152.591955798, 881501.2448354862, 821579.6651368309, 765731.3589980473, 707426.832832643, 659338.2639362261, 619950.0336326087, 572745.6289384188, 538530.3589139892, 501922.8214761579, 476109.67448432476, 451624.05939403543, 424644.47480892565, 402805.6386801468, 378742.41934078815, 352996.7449032823, 331909.06071266386, 317622.1842578121, 298647.7421127483, 280806.81479303486, 261718.48334582668, 248258.68954482625, 235491.11299516217, 219483.19516369258, 208195.49965238877, 195758.1018294131, 184063.702125346, 173067.91455104738, 162729.0046934469, 151667.21767822717, 142606.764757211, 135272.7101512032, 126077.31249309646, 118545.57576225295, 111463.77770047661, 106665.86944880507, 101180.20183362099, 94302.30170174898, 91040.71687359674, 86358.62770301767, 83371.78660992305, 79783.0854983633, 77704.44446465117, 75679.95962858456, 75016.92112139838, 75016.92112139838, 75016.92112139838, 74359.69155047725, 73708.2200232406, 74359.69155047725, 74359.69155047725, 74359.69155047725, 74359.69155047725, 73708.2200232406, 73062.45609298225, 73708.2200232406, 73708.2200232406, 73708.2200232406, 73708.2200232406, 75679.95962858456, 75679.95962858456, 77023.6692751238, 77704.44446465117, 80488.24984151094, 81199.6467933344, 83371.78660992305, 84108.66975720416, 85602.03248447034, 87121.91010302707, 89452.47405626308, 91040.71687359674, 92657.15919321837, 96824.94548668645, 96824.94548668645, 97680.73463870949, 102074.48500304058, 73708.2200232406, 73062.45609298225]
-        self.testModel_BackScatter_Energies_0deg, self.testModel_BackScatter_Flux_0deg = helperFitFuncs().removeDuplicates(self.testModel_BackScatter_Energies_0deg, self.testModel_BackScatter_Flux_0deg)
+        self.testModel_BackScatter_Energies_0deg, self.testModel_BackScatter_Flux_0deg = helperFuncs().removeDuplicates(self.testModel_BackScatter_Energies_0deg, self.testModel_BackScatter_Flux_0deg)
         self.testModel_BackScatter_Energies_0deg, self.testModel_BackScatter_Flux_0deg = zip(*sorted(zip(self.testModel_BackScatter_Energies_0deg, self.testModel_BackScatter_Flux_0deg)))
 
         # TestModel data - 0 deg - Primary Beam
@@ -177,7 +177,7 @@ class Evans1974():
              22077.4568483865, 20217.73426728446, 18191.67176875346, 15802.511485430437, 14344.582020811311,
              13021.160183398451, 12029.69945021091, 11211.9597152078, 10449.807260416519]
 
-        self.testModel_Beam_Energies_0deg, self.testModel_Beam_Flux_0deg = helperFitFuncs().removeDuplicates(self.testModel_Beam_Energies_0deg, self.testModel_Beam_Flux_0deg)
+        self.testModel_Beam_Energies_0deg, self.testModel_Beam_Flux_0deg = helperFuncs().removeDuplicates(self.testModel_Beam_Energies_0deg, self.testModel_Beam_Flux_0deg)
         self.testModel_Beam_Energies_0deg, self.testModel_Beam_Flux_0deg = zip(*sorted(zip(self.testModel_Beam_Energies_0deg, self.testModel_Beam_Flux_0deg)))
 
         ##########################
@@ -227,7 +227,7 @@ class Evans1974():
              245241.46885099573, 342187.35702059243, 449039.2087660087, 525789.8314000103, 766509.8965766157,
              866597.1549043449, 277263.9467800957, 163857.7567886399, 142414.20160528287]
 
-        self.testModel_BackScatter_Energies_45deg, self.testModel_BackScatter_Flux_45deg = helperFitFuncs().removeDuplicates(self.testModel_BackScatter_Energies_45deg, self.testModel_BackScatter_Flux_45deg)
+        self.testModel_BackScatter_Energies_45deg, self.testModel_BackScatter_Flux_45deg = helperFuncs().removeDuplicates(self.testModel_BackScatter_Energies_45deg, self.testModel_BackScatter_Flux_45deg)
         self.testModel_BackScatter_Energies_45deg, self.testModel_BackScatter_Flux_45deg = zip(*sorted(zip(self.testModel_BackScatter_Energies_45deg, self.testModel_BackScatter_Flux_45deg)))
 
         # TestModel data - 45 deg - Primary Beam
@@ -251,7 +251,7 @@ class Evans1974():
              190190.06079621578, 215024.18470158757, 226636.54935904406, 260761.61060971924, 277263.9467800957,
              39950.55735988475, 34419.29974700787, 29914.953001619982, 24027.614743718015, 15913.900917493676,
              12782.005049265259]
-        self.testModel_Beam_Energies_45deg, self.testModel_Beam_Flux_45deg = helperFitFuncs().removeDuplicates(self.testModel_Beam_Energies_45deg, self.testModel_Beam_Flux_45deg)
+        self.testModel_Beam_Energies_45deg, self.testModel_Beam_Flux_45deg = helperFuncs().removeDuplicates(self.testModel_Beam_Energies_45deg, self.testModel_Beam_Flux_45deg)
         self.testModel_Beam_Energies_45deg, self.testModel_Beam_Flux_45deg = zip(*sorted(zip(self.testModel_Beam_Energies_45deg, self.testModel_Beam_Flux_45deg)))
 
     def generate_SecondariesCurve(self):
@@ -272,198 +272,7 @@ class Evans1974():
         # Evans reported this value to be 0.46. Our value is 0.42248456
         return simpson(x= np.array(self.Energy_DegradedPrimary),y= 10000*np.array(self.NFlux_up_PeriE_DegradedPrimary))
 
-    #############################
-    # --- CALCULATE RESPONSES ---
-    #############################
 
-    def calcSecondaries(self, energyRange, InputOmniFlux, Niterations, V0):
-
-        '''
-        # INPUTS:
-        # detectorEnergies - ALL Energy values the detector energy range.
-        # InputOmniFlux - scalar value of the omni-directional flux
-        # V0 - returns only 0's in the output array for energies above this limit i.e. the parallel potential
-
-        # OUTPUT
-        # up-ward differentialFlux (cm^-2s^-1str^-1eV^-1)
-        '''
-
-        # --- get the spline curve ---
-        secondariesSpline = self.generate_SecondariesCurve()
-        secondaryFlux = np.zeros(shape=(len(energyRange)))
-        for i in range(Niterations):
-            S_n = InputOmniFlux*np.power(np.array(secondariesSpline(energyRange)),i+1)
-            S_n[np.where(energyRange > 1000)[0]] = 0 # remove any spline above the Evans1974 limit
-            S_n[np.where(energyRange > V0)[0]] = 0
-            secondaryFlux += S_n
-
-        return secondaryFlux/(2*np.pi) # divide by 2pi to get str^-1
-
-
-    def calcBackScatter(self, IncidentBeamEnergies, Incident_OmniDiffFlux, Niterations, detectorEnergies, V0):
-            '''
-            # INPUTS:
-            # IncidentEnergies - Energy values the detector energy range.
-            # InputOmniDiffFlux - array of the omni-directional differential flux with len = len(IncidentEnergy)
-            # V0 (kwarg) - if given, returns only 0's in the output array for energies above this limit
-
-            # OUTPUT
-            # up-ward differentialFlux (cm^-2s^-1str^-1eV^-1) for Secondaries and Backscatter, iterated "Niterations" number of times
-            '''
-
-
-            # steps:
-            # 1: Calculate JUST the backscatter from the incoming beam, NOT the secondaries since this is already accounted for
-            # 2: Use the generated backscatter to generate MORE backscatter as well as secondaries
-            # 3. repeat (2) for the N+1 step as many times as needed until convergence
-
-
-            #####################
-            # --- BACKSCATTER ---
-            #####################
-
-            # --- First step (N=1) ---
-            # calculate the Backscatter for each energy
-            B_1 = np.zeros(shape=(len(detectorEnergies)))
-
-            for idx, E_Incident in enumerate(IncidentBeamEnergies):
-
-                # --- get the spline curve ---
-                backscatterSpline = self.generate_BackScatterCurve(E_Incident)
-
-                # --- Calculate the spline at the relevant energies ---
-                B_iter = Incident_OmniDiffFlux[idx] * backscatterSpline(detectorEnergies)
-                B_iter[np.where(detectorEnergies >= E_Incident)[0]] = 0  # limit the fluxes to below the incident energy of the primary beam
-
-                # Note:
-                # the Evans curve does NOT consider backscatter from energies 10E-2 less than E_incident e.g. 1keV only generates 10eV to 1keV, thus
-                # the spline with fail outside this region. Implement a fix to only evaluate energies within this range:
-                B_iter[np.where(detectorEnergies< 1E-2*E_Incident)] = 0
-
-                B_1 += B_iter
-
-                fig, ax = plt.subplots(ncols=2)
-                ax[0].set_title(f'{E_Incident} eV')
-                ax[0].plot(detectorEnergies, B_iter)
-                ax[0].set_ylabel('B_iter')
-                ax[1].plot(detectorEnergies, B_1)
-                ax[1].set_ylabel('B_1')
-
-                for i in range(2):
-                    ax[i].set_yscale('log')
-                    ax[i].set_xscale('log')
-                    ax[i].set_xlim(1E1,1E4)
-
-                plt.show()
-
-            # using the iterative "bounces" trick again, we can calcualte ALL the secondary responses from the first backscatter "beam"
-            # omniFlux = -1 * helperFitFuncs().calcTotal_NFlux(
-            #     diffNFlux=np.array([B_1 for ptchIdx in range(19)]),
-            #     pitchValues=[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180],
-            #     energyValues=incidentEnergies)  # -1 is added since I do High-to-low energy
-
-            # use the total backscatter flux to get a new secondaries curve
-            # secondaryFlux_backscatter = self.calcSecondaries(detectorEnergies=detectorEnergies,
-            #                                         Niterations=secondaryBackScatterToggles.Niterations_secondaries,
-            #                                         InputOmniFlux=omniFlux,
-            #                                         V0=V0)
-
-
-
-
-
-
-            ###################################
-            # --- Iterate until convergence ---
-            ###################################
-            # create the Nth iteration variables and append the first step
-            B_n = np.append([B_1], np.zeros(shape=(Niterations - 1, len(detectorEnergies))), axis=0)
-
-            # Generate the (Niterations - 1) number of steps for Backscatters + Secondaries
-            for iterIdx in range(Niterations-1):
-
-                ### Nth BACKSCATTER ###
-
-                # incident flux - Only at the non-zero flux points
-                previous_backScatterFlux = B_n[iterIdx]
-                incidentFlux = B_n[iterIdx][np.where(previous_backScatterFlux > 0)[0]]
-
-                # determine the incident energies - only at the non-zero flux points
-                incidentEnergies = detectorEnergies[np.where(previous_backScatterFlux>0)[0]]
-
-                # temporary storage variable
-                B_temp = np.zeros(shape=(len(detectorEnergies)))
-
-                # Calc backscatter
-                for engyIdx, E_Incident in enumerate(incidentEnergies):
-
-                    # --- get the spline curve ---
-                    backscatterSpline = self.generate_BackScatterCurve(E_Incident)
-
-                    # --- Calculate the spline at the relevant energies ---
-                    B_iter = incidentFlux[engyIdx] * backscatterSpline(detectorEnergies)
-
-                    # limit the fluxes to below the incident energy of the primary beam
-                    B_iter[np.where(detectorEnergies >= E_Incident)[0]] = 0
-
-                    # Note:
-                    # the Evans curve does NOT consider backscatter from energies 10E-2 less than E_incident e.g. 1keV only generates 10eV to 1keV, thus
-                    # the spline with fail outside this region. Implement a fix to only evaluate energies within this range:
-                    B_iter[np.where(detectorEnergies < 1E-2 * E_Incident)] = 0
-
-                    B_temp += B_iter
-
-                    # fig, ax = plt.subplots(ncols=2)
-                    # ax[0].set_title(f'{E_Incident} eV')
-                    # ax[0].plot(detectorEnergies, B_iter)
-                    # ax[0].set_ylabel('B_iter')
-                    # ax[1].plot(detectorEnergies, B_temp)
-                    # ax[1].set_ylabel('B_temp')
-                    #
-                    # for i in range(2):
-                    #     ax[i].set_yscale('log')
-                    #     ax[i].set_xscale('log')
-                    #     ax[i].set_xlim(1E1,1E4)
-                    #     ax[i].set_ylim(1E-1,1E8)
-                    #
-                    # plt.show()
-
-                B_n[iterIdx+1] = B_temp # store this as the "next" backscatter profile
-
-
-            # sum all iterations into one variable
-            backscatterFlux = np.sum(B_n,axis=0)
-
-
-            # ensure no values above V0 exists - ANY reflected flux that has parallel energy >V0 at the parallel potential will be able to
-            # overcome the potential, and thus should NOT be included in the final product
-            backscatterFlux[np.where(detectorEnergies>V0)[0]] =0
-            secondaryFlux_backscatter[np.where(detectorEnergies>V0)[0]] = 0
-
-            return backscatterFlux, secondaryFlux_backscatter
-
-
-
-            #
-            #
-            # for iterIdx in range(Niterations):
-            #
-            #     B_n = np.zeros(shape=(len(detectorEnergies)))
-            #     S_n = np.zeros(shape=(len(detectorEnergies)))
-            #
-            #     # Determine the incoming Incident_omniDiffFlux is. Make special case if it's the first iteration
-            #
-            #
-            #     for idx, E_Incident in enumerate(IncidentBeamEnergies):
-            #
-            #         # --- get the spline curve ---
-            #         backscatterSpline = self.generate_BackScatterCurve(E_Incident)
-            #
-            #         # --- Calculate the spline at the relevant energies ---
-            #
-            #         B_iter = Incident_OmniDiffFlux[idx]*backscatterSpline(detectorEnergies)
-            #         B_iter[np.where(detectorEnergies >= E_Incident)[0]] = 0 # limit the fluxes to below the incident energy of the primary beam
-            #         backscatterFlux += B_n
 
 
 
