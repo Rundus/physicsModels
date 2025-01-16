@@ -24,6 +24,7 @@ class backScatter_class:
         omniNFlux = 2 * np.pi * simpson(y=np.sin(np.radians(pitchValues)) * diffNflux_PerPitch, x=pitchValues)
         return omniNFlux
     def calcOmni_diffNFlux(self, diffNFlux, pitchValues, energyValues):
+        '''
         # Inputs:
         # diffNFlux - multidimensional array with shape= (len(pitchRange), len(EnergyRange)) that contains diffNFlux values
         # pitchValues - 1D array with the pitch angles (in deg)
@@ -31,6 +32,7 @@ class backScatter_class:
 
         # output:
         # Phi(E)
+        '''
 
         # --- integrate over energies first ---
         diffNFlux = np.nan_to_num(diffNFlux.T)
@@ -61,7 +63,7 @@ class backScatter_class:
     # --- CALCULATE RESPONSES ---
     #############################
 
-    def calcBackscatter(self, energy_Grid, beam_Energies, beam_OmniDiffFlux, V0):
+    def calcBackscatter(self, energy_Grid, beam_Energies, beam_OmniDiffFlux):
         '''
         # INPUTS:
         # energy_Grid - 1D grid of energies for the output curves. Arbitrary Length
@@ -75,12 +77,14 @@ class backScatter_class:
         '''
 
         model = Evans1974()
+        V0 = min(beam_Energies)
 
         # --- define the outputs ---
         secondariesFlux = np.zeros(shape=(len(energy_Grid)))
         degradedPrimFlux = np.zeros(shape=(len(energy_Grid)))
 
         # --- loop over beam energies ---
+        # print(len(beam_Energies),len(beam_OmniDiffFlux))
         for engyIdx, E_Incident in enumerate(beam_Energies):
 
             # --- Secondaries ---
@@ -90,7 +94,6 @@ class backScatter_class:
             curve_secondaries[np.where(energy_Grid > 1000)[0]] = 0
             curve_secondaries[np.where(energy_Grid > V0)[0]] = 0
             secondariesFlux += curve_secondaries*beam_OmniDiffFlux[engyIdx]
-
 
             # --- DegradedPrimaries ---
             spline = model.generate_BackScatterCurve(E_Incident) # get the degradedPrimaries

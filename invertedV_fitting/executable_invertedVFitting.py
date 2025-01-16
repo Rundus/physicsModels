@@ -14,9 +14,11 @@ start_time = time.time()
 #################
 # --- TOGGLES ---
 #################
-primaryBeam_fitting = True
+primaryBeam_fitting = False
 primaryBeam_Plotting = False
-calcBackscatter = False
+backScatter_Calc = False
+backScatter_Plotting = True
+
 
 
 ################################
@@ -38,8 +40,14 @@ if primaryBeam_Plotting:
     generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlottingToggles, showPlot=True)
     stl.Done(start_time)
 
-if calcBackscatter:
+if backScatter_Calc:
     stl.prgMsg('Generating Secondary/Backscatter Data')
     from invertedV_fitting.BackScatter.backScatter_Generator import generateSecondaryBackScatter
     generateSecondaryBackScatter(GenToggles, primaryBeamToggles, secondaryBackScatterToggles, showPlot=True)
+    stl.Done(start_time)
+
+if backScatter_Plotting:
+    stl.prgMsg('Plotting BackScatter Beam Fits\n')
+    from invertedV_fitting.BackScatter.backScatter_Plotting import generateBackScatterPlots
+    generateBackScatterPlots(GenToggles)
     stl.Done(start_time)

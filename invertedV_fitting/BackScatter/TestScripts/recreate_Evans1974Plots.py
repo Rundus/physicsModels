@@ -10,8 +10,8 @@ import spaceToolsLib as stl
 #################
 # --- TOGGLES ---
 #################
-show_Evans1974_reScaledCurves = False
-show_Evans1974_Total_energy_flux_spectrums = False
+show_Evans1974_reScaledCurves = True
+show_Evans1974_Total_energy_flux_spectrums = True
 recreate_Evans1974_Fig5 = True
 
 

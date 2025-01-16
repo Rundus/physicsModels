@@ -1,4 +1,4 @@
-# --- verify_omniDiffFlux_Integration.py ---
+# --- verify_discreteVsContinuous_omniDiffFlux_Integration.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: Verify that I get the ~same number of electrons from the integration of the
 # beam regardless of whether I use real data or model data. Won't be exact but should be close.
