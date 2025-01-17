@@ -69,7 +69,6 @@ html_theme = 'pydata_sphinx_theme'
 html_static_path = []
 
 autodoc_mock_imports = [
-        "astropy",
          "matplotlib",
          "scipy",
        ]
