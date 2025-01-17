@@ -33,7 +33,7 @@ various plasma parameters.
    :caption: Contents:
    :maxdepth: 2
 
-.. AlfvenWave_Resonance.rst
+   AlfvenWave_Resonance.rst
    invertedV_fitting.rst
    ionosphere.rst
    magnetosphere_Ionosphere.rst
