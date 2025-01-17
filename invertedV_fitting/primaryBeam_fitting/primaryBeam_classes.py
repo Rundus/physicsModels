@@ -100,16 +100,40 @@ class helperFuncs:
         newB = np.delete(b, badIndicies, axis=0)
         return newA, newB
 
-class velocitySpaceFuncs:
+class distributions_class:
+
+    def generate_Maxwellian_Espace(self, n, T, energy_Grid):
+        '''
+        :param n: density [cm^-3]
+        :param T: Temperature [eV]
+        :param energy_Grid: Energy Grid [eV]
+        :return: distribution function in SI units [s^3 m^-6]
+        '''
+        return (1E6 * n) * np.power(stl.m_e / (2 * np.pi * stl.q0*T), 3 / 2) * np.exp(-1 * energy_Grid / T)
+
+    def calc_diffNFlux_Espace(self, dist, energy_Grid):
+        '''
+        :param dist: distribution function in SI units [s^3 m^-6]
+        :param energy_Grid: Energy Grid [eV]
+        :return: differential Number Flux [cm^-2s^-1sr^-1eV^-1]
+        '''
+
+        # in SI units
+        diffNFlux = (2*stl.q0*energy_Grid/np.power(stl.m_e,2))*dist
+
+        # in cm^-2 eV^-1
+        diffNFlux_converted = (stl.q0/np.power(stl.cm_to_m,2)) * diffNFlux
+
+        return diffNFlux_converted
 
     # --- Generate Distributions from Velocity Space ---
-    def generate_Maxwellian(self, mass, charge, n, T, Vperp, Vpara):
+    def generate_Maxwellian_Vspace(self, mass, charge, n, T, Vperp, Vpara):
         # Input: density [cm^-3], Temperature [eV], Velocities [m/s]
         # output: the distribution function in SI units [s^3 m^-6]
         Emag = (0.5 * mass * (Vperp ** 2 + Vpara ** 2)) / charge
         return (1E6 * n) * np.power(mass / (2 * np.pi * charge * T), 3 / 2) * np.exp(-1 * Emag / T)
 
-    def generate_kappa(self, mass, charge, n, T, kappa, Vperp, Vpara):
+    def generate_kappa_Vspace(self, mass, charge, n, T, kappa, Vperp, Vpara):
         # Input: density [cm^-3], Temperature [eV], Velocities [m/s]
         # output: the distribution function in SI units [s^3 m^-6]
         Emag = (0.5 * mass * (Vperp ** 2 + Vpara ** 2)) / charge

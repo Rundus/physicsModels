@@ -65,16 +65,15 @@ class backScatter_class:
 
     def calcBackscatter(self, energy_Grid, beam_Energies, beam_OmniDiffFlux):
         '''
-        # INPUTS:
-        # energy_Grid - 1D grid of energies for the output curves. Arbitrary Length
-        # beam_Energies - 1D array of energy values the for the input Beam.
-        # beam_OmniDiffFlux - 1D array of omniDiffFlux values of the beam [cm^-2s^-1eV^-1]. Length = Len(beam_Energies)
-        # V0 - scalar parallel potential from the fit of the beam
 
-        # OUTPUT
-        # upWard omniDiffFlux (Degraded Primaries) - 1D array of ionospheric degraded primaries flux in units of [cm^-2 s^-1 eV^-1]
-        # upWard omniDiffFlux (Secondaries) - 1D array of ionospheric secondaries flux in units of [cm^-2 s^-1 eV^-1]
+        :param energy_Grid: 1D grid of energies for the output curves. Arbitrary Length
+        :param beam_Energies: 1D array of energy values the for the input Beam.
+        :param beam_OmniDiffFlux: 1D array of omniDiffFlux values of the beam [cm^-2s^-1eV^-1]. Length = Len(beam_Energies)
+        :return:
+        upWard omniDiffFlux (Degraded Primaries) - 1D array of ionospheric degraded primaries flux in units of [cm^-2 s^-1 eV^-1]
+        upWard omniDiffFlux (Secondaries) - 1D array of ionospheric secondaries flux in units of [cm^-2 s^-1 eV^-1]
         '''
+
 
         model = Evans1974()
         V0 = min(beam_Energies)
