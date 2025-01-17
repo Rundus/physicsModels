@@ -9,7 +9,7 @@
 
 
 Welcome to physicsModels
-===================
+=======================
 
 physicsModels is a python module containing many atmospheric models for space physics
 pertaining to the aurora and high-latitude phenomenon.
