@@ -60,7 +60,31 @@ exclude_patterns = ['index_old.rst']
 # a list of builtin themes.
 #
 # html_theme = 'alabaster'
-html_theme = 'pydata_sphinx_theme'
+# html_theme = 'pydata_sphinx_theme'
+
+# -- Theme configuration -----------------------------------------------------
+
+# Sidebar configuration
+html_sidebars = {
+    "**": ["search-field.html", "sidebar-nav-bs.html"],
+    'index': []
+    }
+
+# General theme options
+html_theme_options = {
+    # Logo
+    'logo': {'text': project},
+    # Upper bar icons
+    'navbar_end': ['theme-switcher', 'navbar-icon-links'],
+    # Icon links
+    "icon_links": [
+        # GitHub of the proyect
+        {"name": "GitHub",
+         "url": "https://github.com/ecastroth/sphinx-documentation-demo",
+         "icon": "fa-brands fa-square-github",
+         "type": "fontawesome",}
+    ]
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
