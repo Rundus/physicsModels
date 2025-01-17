@@ -96,3 +96,6 @@ autodoc_mock_imports = [
          "matplotlib",
          "scipy",
        ]
+
+
+master_doc = 'index'
