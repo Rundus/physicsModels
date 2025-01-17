@@ -31,18 +31,18 @@ author = 'Connor Feltman'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinxarg.ext',
-    'sphinx_copybutton',
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.coverage',
-    'sphinx.ext.doctest',
-    'sphinx.ext.graphviz',
-    'sphinx.ext.ifconfig',
-    'sphinx.ext.imgmath',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.todo',
+    # 'sphinxarg.ext',
+    # 'sphinx_copybutton',
+    # 'sphinx.ext.autodoc',
+    # 'sphinx.ext.autosummary',
+    # 'sphinx.ext.coverage',
+    # 'sphinx.ext.doctest',
+    # 'sphinx.ext.graphviz',
+    # 'sphinx.ext.ifconfig',
+    # 'sphinx.ext.imgmath',
+    # 'sphinx.ext.intersphinx',
+    # 'sphinx.ext.napoleon',
+    # 'sphinx.ext.todo',
  ]
 
 # Add any paths that contain templates here, relative to this directory.
