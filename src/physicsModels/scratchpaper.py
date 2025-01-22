@@ -1,4 +1,5 @@
 import numpy as np
-import scipy
+a = np.array([10,10,10])
+a[np.where(a >20)[0]] = 0
+print(a)
 
-print(scipy.special.gamma(5-0.5))

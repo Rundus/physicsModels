@@ -1,4 +1,9 @@
 # --- model_primaryBeam_classes --
+import matplotlib.pyplot as plt
+from copy import deepcopy
+
+import numpy as np
+
 from src.physicsModels.invertedV_fitting.BackScatter.Evans_Model.parameterizationCurves_Evans1974_classes import *
 
 class backScatter_class:
@@ -60,20 +65,19 @@ class backScatter_class:
     # --- CALCULATE RESPONSES ---
     #############################
 
-    def calcBackscatter(self, energy_Grid, beam_Energies, beam_OmniDiffFlux):
+    def calcBackscatter(self, energy_Grid, beam_Energies, beam_IncidentElectronFlux):
         '''
-
         :param energy_Grid: 1D grid of energies for the output curves. Arbitrary Length
         :param beam_Energies: 1D array of energy values the for the input Beam.
-        :param beam_OmniDiffFlux: 1D array of omniDiffFlux values of the beam [cm^-2s^-1eV^-1]. Length = Len(beam_Energies)
+        :param beam_OmniDiffFlux: 1D array of incident electron values of the beam [cm^-2s^-1]. Length = Len(beam_Energies). Calculated from integrating varPhi(E) over a deltaE for each energy to perserve the total number of electrons regardless of energy grid resolution.
         :return:
         upWard omniDiffFlux (Degraded Primaries) - 1D array of ionospheric degraded primaries flux in units of [cm^-2 s^-1 eV^-1]
         upWard omniDiffFlux (Secondaries) - 1D array of ionospheric secondaries flux in units of [cm^-2 s^-1 eV^-1]
+        V0 (kwarg) - Scalar value of the parallel potential. Used to limit the secondary/backscatter flux. If unspecified, the minimum value of beam_Energies is taken
+        onlySecondaries (kwarg) - boolean. returns only zeros for the backscatter flux on the energy_Grid variable.
         '''
 
-
         model = Evans1974()
-        V0 = min(beam_Energies)
 
         # --- define the outputs ---
         secondariesFlux = np.zeros(shape=(len(energy_Grid)))
@@ -86,198 +90,148 @@ class backScatter_class:
             # --- Secondaries ---
             spline = model.generate_SecondariesCurve() # get the secondaries spline
             curve_secondaries = spline(energy_Grid)
-            curve_secondaries[np.where(energy_Grid > E_Incident)[0]] = 0
-            curve_secondaries[np.where(energy_Grid > 1000)[0]] = 0
-            curve_secondaries[np.where(energy_Grid > V0)[0]] = 0
-            secondariesFlux += curve_secondaries*beam_OmniDiffFlux[engyIdx]
+            curve_secondaries[np.where(energy_Grid > 1E3)[0]] = 0 # no secondaries above the incident energy
+            curve_secondaries[np.where(energy_Grid > E_Incident)[0]] = 0  # no secondaries above the incident energy
+            curve_secondaries[np.where(curve_secondaries < 0)[0]] = 0 # no negative values
+            secondariesFlux += curve_secondaries*beam_IncidentElectronFlux[engyIdx]
 
             # --- DegradedPrimaries ---
             spline = model.generate_BackScatterCurve(E_Incident) # get the degradedPrimaries
             curve_degradedPrimaries = spline(energy_Grid)
-            curve_degradedPrimaries[np.where(energy_Grid < E_Incident * 1E-2)[0]] = 0
+            curve_degradedPrimaries[np.where(energy_Grid < E_Incident * 1E-2)[0]] = 0 # only energies between 1E-2 E_energy and 1 E_energy
             curve_degradedPrimaries[np.where(energy_Grid > E_Incident)[0]] = 0
-            curve_degradedPrimaries[np.where(energy_Grid > V0)[0]] = 0
-            degradedPrimFlux += curve_degradedPrimaries*beam_OmniDiffFlux[engyIdx]
+            curve_degradedPrimaries[np.where(curve_degradedPrimaries < 0)[0]] = 0 # no negative values
+            degradedPrimFlux += curve_degradedPrimaries*beam_IncidentElectronFlux[engyIdx]
 
         return degradedPrimFlux, secondariesFlux
 
+    def calcIonosphericResponse(self, beta, V0, targetPitch, response_energy_Grid, beam_EnergyGrid, beam_diffNFlux):
+        '''
+        :param beta: - Scalar. Value of B_max/B_min indicating the height of the lower boundary of the Inverted-V
+        :param response_energy_Grid: - 1D array of energy values with arbitrary number of points. Must be between 0 to 1keV.
+        :param targetPitch: - Scalar. Pitch angle (in deg) indicating the slice in angular space of the outputted secondary/backscatter values
+        :param beam_Energies: - 1D array of energy grid values for the Primary Inverted-V beam of electrons. Arbitrary number of points allowed i.e. raw data or model data accepted.
+        :param beam_diffNFlux: - 1D array of differential number flux values (j_N) for the beam.
+        :param V0: parallel potential value of inverted-V
+        :return:
+        degradedPrimaries_Flux - 1D array of total electron differential Flux [cm^-2 s^-1 eV^-1] values for degraded primaries which has been iterated 6 times
+        secondaries_Flux - 1D array of total electron differential Flux [cm^-2 s^-1 eV^-1] values for secondary electrons which has been iterated 6 times
+        '''
 
 
+        ######################
+        # --- PRIMARY BEAM ---
+        ######################
 
-    #
-    # def calcSecondaries(self, energyRange, InputOmniFlux, Niterations, V0):
-    #
-    #     '''
-    #     # INPUTS:
-    #     # detectorEnergies - ALL Energy values the detector energy range.
-    #     # InputOmniFlux - scalar value of the omni-directional flux
-    #     # V0 - returns only 0's in the output array for energies above this limit i.e. the parallel potential
-    #
-    #     # OUTPUT
-    #     # up-ward differentialFlux (cm^-2s^-1str^-1eV^-1)
-    #     '''
-    #
-    #     # --- get the spline curve ---
-    #     secondariesSpline = self.generate_SecondariesCurve()
-    #     secondaryFlux = np.zeros(shape=(len(energyRange)))
-    #     for i in range(Niterations):
-    #         S_n = InputOmniFlux * np.power(np.array(secondariesSpline(energyRange)), i + 1)
-    #         S_n[np.where(energyRange > 1000)[0]] = 0  # remove any spline above the Evans1974 limit
-    #         S_n[np.where(energyRange > V0)[0]] = 0
-    #         secondaryFlux += S_n
-    #
-    #     return secondaryFlux / (2 * np.pi)  # divide by 2pi to get str^-1
-    #
-    # def calcDegradedPrimaries(self, IncidentBeamEnergies, Incident_OmniDiffFlux, Niterations, detectorEnergies, V0):
-    #     '''
-    #     # INPUTS:
-    #     # IncidentEnergies - Energy values the detector energy range.
-    #     # InputOmniDiffFlux - array of the omni-directional differential flux with len = len(IncidentEnergy)
-    #     # V0 (kwarg) - if given, returns only 0's in the output array for energies above this limit
-    #
-    #     # OUTPUT
-    #     # up-ward differentialFlux (cm^-2s^-1str^-1eV^-1) for Secondaries and Backscatter, iterated "Niterations" number of times
-    #     '''
-    #
-    #     # steps:
-    #     # 1: Calculate JUST the backscatter from the incoming beam, NOT the secondaries since this is already accounted for
-    #     # 2: Use the generated backscatter to generate MORE backscatter as well as secondaries
-    #     # 3. repeat (2) for the N+1 step as many times as needed until convergence
-    #
-    #     #####################
-    #     # --- BACKSCATTER ---
-    #     #####################
-    #
-    #     # --- First step (N=1) ---
-    #     # calculate the Backscatter for each energy
-    #     B_1 = np.zeros(shape=(len(detectorEnergies)))
-    #
-    #     for idx, E_Incident in enumerate(IncidentBeamEnergies):
-    #
-    #         # --- get the spline curve ---
-    #         backscatterSpline = self.generate_BackScatterCurve(E_Incident)
-    #
-    #         # --- Calculate the spline at the relevant energies ---
-    #         B_iter = Incident_OmniDiffFlux[idx] * backscatterSpline(detectorEnergies)
-    #         B_iter[np.where(detectorEnergies >= E_Incident)[
-    #             0]] = 0  # limit the fluxes to below the incident energy of the primary beam
-    #
-    #         # Note:
-    #         # the Evans curve does NOT consider backscatter from energies 10E-2 less than E_incident e.g. 1keV only generates 10eV to 1keV, thus
-    #         # the spline with fail outside this region. Implement a fix to only evaluate energies within this range:
-    #         B_iter[np.where(detectorEnergies < 1E-2 * E_Incident)] = 0
-    #
-    #         B_1 += B_iter
-    #
-    #         fig, ax = plt.subplots(ncols=2)
-    #         ax[0].set_title(f'{E_Incident} eV')
-    #         ax[0].plot(detectorEnergies, B_iter)
-    #         ax[0].set_ylabel('B_iter')
-    #         ax[1].plot(detectorEnergies, B_1)
-    #         ax[1].set_ylabel('B_1')
-    #
-    #         for i in range(2):
-    #             ax[i].set_yscale('log')
-    #             ax[i].set_xscale('log')
-    #             ax[i].set_xlim(1E1, 1E4)
-    #
-    #         plt.show()
-    #
-    #     # using the iterative "bounces" trick again, we can calcualte ALL the secondary responses from the first backscatter "beam"
-    #     # omniFlux = -1 * helperFitFuncs().calcTotal_NFlux(
-    #     #     diffNFlux=np.array([B_1 for ptchIdx in range(19)]),
-    #     #     pitchValues=[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180],
-    #     #     energyValues=incidentEnergies)  # -1 is added since I do High-to-low energy
-    #
-    #     # use the total backscatter flux to get a new secondaries curve
-    #     # secondaryFlux_backscatter = self.calcSecondaries(detectorEnergies=detectorEnergies,
-    #     #                                         Niterations=secondaryBackScatterToggles.Niterations_secondaries,
-    #     #                                         InputOmniFlux=omniFlux,
-    #     #                                         V0=V0)
-    #
-    #     ###################################
-    #     # --- Iterate until convergence ---
-    #     ###################################
-    #     # create the Nth iteration variables and append the first step
-    #     B_n = np.append([B_1], np.zeros(shape=(Niterations - 1, len(detectorEnergies))), axis=0)
-    #
-    #     # Generate the (Niterations - 1) number of steps for Backscatters + Secondaries
-    #     for iterIdx in range(Niterations - 1):
-    #
-    #         ### Nth BACKSCATTER ###
-    #
-    #         # incident flux - Only at the non-zero flux points
-    #         previous_backScatterFlux = B_n[iterIdx]
-    #         incidentFlux = B_n[iterIdx][np.where(previous_backScatterFlux > 0)[0]]
-    #
-    #         # determine the incident energies - only at the non-zero flux points
-    #         incidentEnergies = detectorEnergies[np.where(previous_backScatterFlux > 0)[0]]
-    #
-    #         # temporary storage variable
-    #         B_temp = np.zeros(shape=(len(detectorEnergies)))
-    #
-    #         # Calc backscatter
-    #         for engyIdx, E_Incident in enumerate(incidentEnergies):
-    #             # --- get the spline curve ---
-    #             backscatterSpline = self.generate_BackScatterCurve(E_Incident)
-    #
-    #             # --- Calculate the spline at the relevant energies ---
-    #             B_iter = incidentFlux[engyIdx] * backscatterSpline(detectorEnergies)
-    #
-    #             # limit the fluxes to below the incident energy of the primary beam
-    #             B_iter[np.where(detectorEnergies >= E_Incident)[0]] = 0
-    #
-    #             # Note:
-    #             # the Evans curve does NOT consider backscatter from energies 10E-2 less than E_incident e.g. 1keV only generates 10eV to 1keV, thus
-    #             # the spline with fail outside this region. Implement a fix to only evaluate energies within this range:
-    #             B_iter[np.where(detectorEnergies < 1E-2 * E_Incident)] = 0
-    #
-    #             B_temp += B_iter
-    #
-    #             # fig, ax = plt.subplots(ncols=2)
-    #             # ax[0].set_title(f'{E_Incident} eV')
-    #             # ax[0].plot(detectorEnergies, B_iter)
-    #             # ax[0].set_ylabel('B_iter')
-    #             # ax[1].plot(detectorEnergies, B_temp)
-    #             # ax[1].set_ylabel('B_temp')
-    #             #
-    #             # for i in range(2):
-    #             #     ax[i].set_yscale('log')
-    #             #     ax[i].set_xscale('log')
-    #             #     ax[i].set_xlim(1E1,1E4)
-    #             #     ax[i].set_ylim(1E-1,1E8)
-    #             #
-    #             # plt.show()
-    #
-    #         B_n[iterIdx + 1] = B_temp  # store this as the "next" backscatter profile
-    #
-    #     # sum all iterations into one variable
-    #     backscatterFlux = np.sum(B_n, axis=0)
-    #
-    #     # ensure no values above V0 exists - ANY reflected flux that has parallel energy >V0 at the parallel potential will be able to
-    #     # overcome the potential, and thus should NOT be included in the final product
-    #     backscatterFlux[np.where(detectorEnergies > V0)[0]] = 0
-    #     secondaryFlux_backscatter[np.where(detectorEnergies > V0)[0]] = 0
-    #
-    #     return backscatterFlux, secondaryFlux_backscatter
-    #
-    #     #
-    #     #
-    #     # for iterIdx in range(Niterations):
-    #     #
-    #     #     B_n = np.zeros(shape=(len(detectorEnergies)))
-    #     #     S_n = np.zeros(shape=(len(detectorEnergies)))
-    #     #
-    #     #     # Determine the incoming Incident_omniDiffFlux is. Make special case if it's the first iteration
-    #     #
-    #     #
-    #     #     for idx, E_Incident in enumerate(IncidentBeamEnergies):
-    #     #
-    #     #         # --- get the spline curve ---
-    #     #         backscatterSpline = self.generate_BackScatterCurve(E_Incident)
-    #     #
-    #     #         # --- Calculate the spline at the relevant energies ---
-    #     #
-    #     #         B_iter = Incident_OmniDiffFlux[idx]*backscatterSpline(detectorEnergies)
-    #     #         B_iter[np.where(detectorEnergies >= E_Incident)[0]] = 0 # limit the fluxes to below the incident energy of the primary beam
-    #     #         backscatterFlux += B_n
+        # Description: Evans 1974 pointed out two parts to the beam pitch angle:
+        # (1) The beam exiting the inverted-V will be collimated by alpha = arcsin(sqrt(E/(E + V0)))
+        # (2) Magnetic mirroring effects will also widen the beam
+        # At an arbitrary altitude the beam will widen due to (2), thus the beam itself may not be visible at certain eneriges for a given pitch angle
+        # e.g. at low energies, the beam is really collimated, so low energies may not show up at ~60deg for a given altitude
+
+        # inverted-V lower boundary - maximum pitch angles of the beam for a given energy
+        alpha_m = deepcopy((180 / np.pi) * np.arcsin(np.sqrt(response_energy_Grid / (response_energy_Grid + V0))))
+
+        # atmosphere boundary - pitch angle of beam electrons which had the highest pitch for a given energy
+        alpha_atm = np.degrees(np.arcsin(np.sqrt(beta) * np.sin(np.radians(alpha_m))))
+        alpha_atm = np.nan_to_num(alpha_atm, nan=90)
+
+        # atmosphere boundary - beam pitch angle required to reach 90deg at Z_atm
+        alpha_M_star = np.degrees(np.arcsin(1 / np.sqrt(beta)))
+
+        # atmosphere boundary - filter beam for electrons that have widened enough to reach "target_pitch"
+        # BE CAREFUL: alpha_m corresponds to the BEAM pitch angles, NOT the response_energy_Grid pitch angles.
+        jN_targetPitch = deepcopy(beam_diffNFlux)
+        jN_targetPitch[np.where(alpha_atm < targetPitch)[0]] = 0
+
+        ######################
+        # --- BACKSCATTER ---
+        ######################
+        nIterations = 10
+        R = 0.1
+
+        # --- define the outputs ---
+        sec_Flux = deepcopy(np.zeros(shape=(nIterations + 1, len(response_energy_Grid))))
+        dgdPrim_Flux = deepcopy(np.zeros(shape=(nIterations + 1, len(response_energy_Grid))))
+
+        # --- get varPhi(E) of the beam [cm^-2 s^-1 eV^-1]---
+        # Description: Integrate the beam over pitch angle by implementing a Gamma angle
+        Gamma = deepcopy(np.array([alpha_atm[i] if alpha_m[i] < alpha_M_star else 90 for i in range(len(alpha_atm))]))
+        varPhi_E_beam = np.pi * jN_targetPitch * np.power(np.sin(np.radians(Gamma)), 2)
+
+        # --- incident Electron Flux ---
+        # desciption: We integrate each varPhi(E) point around a deltaE to get the total number of electrons at that energy.
+        # This integration preserves the total number of electrons in the beam
+        beamSpline = CubicSpline(y=varPhi_E_beam, x=beam_EnergyGrid)
+        deltaE = (beam_EnergyGrid[1] - beam_EnergyGrid[0]) / 2
+        incident_ElecFlux = np.array([
+            simpson(
+                x=[beam_EnergyGrid[idx] - deltaE, beam_EnergyGrid[idx] + deltaE],
+                y=[beamSpline(beam_EnergyGrid[idx] - deltaE), beamSpline(beam_EnergyGrid[idx] + deltaE)]
+            )
+            for idx in range(len(varPhi_E_beam))])
+        incident_ElecEnergy = beam_EnergyGrid
+
+        # --- initial Impact ---
+        degradedPrimaries, secondaries = self.calcBackscatter(
+            energy_Grid=response_energy_Grid,
+            beam_Energies=incident_ElecEnergy,
+            beam_IncidentElectronFlux=incident_ElecFlux
+        )
+
+        # --- apply the G(E) factor ---
+        # this accounts for electrons with enough energy to escape the parallel potential
+        lostCondition = V0 * (beta / (beta - np.power(np.sin(np.radians(targetPitch)),2)))
+        G_E = []
+
+        for idx, eVal in enumerate(response_energy_Grid):
+            if eVal > lostCondition:
+                G_E.append(0)
+            elif V0 <= eVal <= lostCondition:
+                G_E.append(1 - beta*(1 - V0/eVal))
+            else:
+                G_E.append(1)
+
+        G_E = deepcopy(np.array(G_E))
+
+        # store the first beam fluxes
+        sec_Flux[0] = secondaries / (1 - R)  # account for the ENTIRE secondaries cascade by multiplying by 1/(1-R)
+        dgdPrim_Flux[0] = degradedPrimaries
+
+        ####################
+        # --- ITERATIONS ---
+        ####################
+        # Perform same operation nIteration more times
+        for loopIdx in range(1, nIterations + 1):
+            # --- second impact ---
+            varPhi_E_previous = dgdPrim_Flux[loopIdx - 1]
+            beamSpline = CubicSpline(y=varPhi_E_previous, x=response_energy_Grid)
+            deltaE = (response_energy_Grid[1] - response_energy_Grid[0]) / 2
+            incident_ElecFlux = np.array([
+                simpson(
+                    x=[response_energy_Grid[idx] - deltaE, response_energy_Grid[idx] + deltaE],
+                    y=[beamSpline(response_energy_Grid[idx] - deltaE), beamSpline(response_energy_Grid[idx] + deltaE)]
+                )
+                for idx in range(len(varPhi_E_previous))])
+            incident_ElecEnergy = response_energy_Grid
+
+            # Degraded primaries
+            degradedPrimaries, secondaries = self.calcBackscatter(
+                energy_Grid=response_energy_Grid,
+                beam_Energies=incident_ElecEnergy,
+                beam_IncidentElectronFlux=incident_ElecFlux
+            )
+
+            sec_Flux[loopIdx] = secondaries / (1 - R)
+            dgdPrim_Flux[loopIdx] = degradedPrimaries
+
+        # total up the flux and separate it into individual steradians
+        sec_total = np.sum(sec_Flux, axis=0) / np.pi
+        dgdPrim_total = np.sum(dgdPrim_Flux, axis=0) / np.pi
+
+        # Apply G(E) factor
+        sec_total = np.array(G_E)*sec_total
+        dgdPrim_total = np.array(G_E)*dgdPrim_total
+
+        return dgdPrim_total, sec_total, jN_targetPitch
+
