@@ -265,6 +265,14 @@ class primaryBeam_class:
 
     # --- FUNCTION for fitting ---
     def diffNFlux_fitFunc_Maxwellian(self, x, n, T, V):  # Used in primaryBeam_fitting
+        '''
+        :param x: scalar energy on the BEAM energy grid [eV]
+        :param n: plasma density [cm^-3]
+        :param T: electron temperature [eV]
+        :param V: inverted-V parallel potential [eV]
+        :return:
+        jN for maxwellian
+        '''
 
         Energy = (x - V)
 
@@ -274,13 +282,21 @@ class primaryBeam_class:
         # convert to diffNFlux in m^-2J^-1sr^-1s^1
         diffNFlux = (2*stl.q0*x/np.power(stl.m_e,2))*Dist
 
-        # convert to cm^-2eV^-1
+        # convert cm^-2eV^-1
         diffNFlux_converted = (stl.q0 / np.power(stl.cm_to_m, 2)) * diffNFlux
 
         return diffNFlux_converted
 
     def diffNFlux_fitFunc_Kappa(self, x, n, T, V, kappa):  # Used in primaryBeam_fitting
-
+        '''
+        :param x: scalar - energy on the BEAM energy grid [eV]
+        :param n: scalar - plasma density [cm^-3]
+        :param T: scalar - electron temperature [eV]
+        :param V: scalar - inverted-V parallel potential [eV]
+        :param kappa: scalar - kappa function value
+        :return:
+        jN for kappa
+        '''
         # Input energy  (in eV)
         Energy = (x - V)
 
@@ -293,7 +309,7 @@ class primaryBeam_class:
         # convert to diffNFlux in m^-2J^-1sr^-1s^1
         diffNFlux = (2*stl.q0*x/np.power(stl.m_e,2))*Dist
 
-        # convert to cm^-2 eV^-1
+        # convert cm^-2 eV^-1
         diffNFlux_converted = (stl.q0/np.power(stl.cm_to_m,2))*diffNFlux
         return diffNFlux_converted
 

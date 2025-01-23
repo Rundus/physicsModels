@@ -18,6 +18,8 @@ from copy import deepcopy
 from tqdm import tqdm
 from scipy.integrate import simpson
 from scipy.special import gamma
+import warnings
+warnings.filterwarnings("ignore")
 start_time = time()
 # --- --- --- --- ---
 
@@ -35,15 +37,15 @@ def generatePrimaryBeamFit(GenToggles, primaryBeamToggles, **kwargs):
                                                             'Differential_Number_Flux_stdDev'])
 
     # --- prepare the output data_dict ---
-    data_dict = {'Te': [[[] for i in range(len(primaryBeamToggles.wPitchsToFit))], {'DEPEND_0': None, 'UNITS': 'eV', 'LABLAXIS': 'Te'}],
-                 'n': [[[] for i in range(len(primaryBeamToggles.wPitchsToFit))], {'DEPEND_0': None, 'UNITS': 'cm!A-3!N', 'LABLAXIS': 'ne'}],
-                 'V0': [[[] for i in range(len(primaryBeamToggles.wPitchsToFit))], {'DEPEND_0': None, 'UNITS': 'eV', 'LABLAXIS': 'V0'}],
-                 'kappa': [[[] for i in range(len(primaryBeamToggles.wPitchsToFit))], {'DEPEND_0': None, 'UNITS': None, 'LABLAXIS': 'kappa'}],
-                 'ChiSquare': [[[] for i in range(len(primaryBeamToggles.wPitchsToFit))], {'DEPEND_0': None, 'UNITS': None, 'LABLAXIS': 'ChiSquare'}],
-                 'dataIdxs': [[[] for i in range(len(primaryBeamToggles.wPitchsToFit))], {'DEPEND_0': None, 'UNITS': None, 'LABLAXIS': 'Index'}], # indicies corresponding to the NON-ENERGY-REDUCED dataslice so as to re-construct the fit
-                 'timestamp_fitData': [[[] for i in range(len(primaryBeamToggles.wPitchsToFit))], {'DEPEND_0': None, 'UNITS': 'cm^-2 str^-1 s^-1 ev^-1', 'LABLAXIS': 'V0'}],
-                 'Fitted_Pitch_Angles': [data_dict_diffFlux['Pitch_Angle'][0][np.array(primaryBeamToggles.wPitchsToFit)], {'DEPEND_0': None, 'UNITS': 'deg', 'LABLAXIS': 'Fitted Pitch Angle'}],
-                 'numFittedPoints': [[[] for i in range(len(primaryBeamToggles.wPitchsToFit))], {'DEPEND_0': None, 'UNITS': None, 'LABLAXIS': 'Number of Fitted Points'}],
+    data_dict = {'Te': [[], {'DEPEND_0': None, 'UNITS': 'eV', 'LABLAXIS': 'Te'}],
+                 'n': [[], {'DEPEND_0': None, 'UNITS': 'cm!A-3!N', 'LABLAXIS': 'ne'}],
+                 'V0': [[], {'DEPEND_0': None, 'UNITS': 'eV', 'LABLAXIS': 'V0'}],
+                 'kappa': [[], {'DEPEND_0': None, 'UNITS': None, 'LABLAXIS': 'kappa'}],
+                 'ChiSquare': [[], {'DEPEND_0': None, 'UNITS': None, 'LABLAXIS': 'ChiSquare'}],
+                 'timestamp_fitData': [[], {'DEPEND_0': None, 'UNITS': 'cm^-2 str^-1 s^-1 ev^-1', 'LABLAXIS': 'V0'}],
+                 'Fitted_Pitch_Angles': [primaryBeamToggles.wPitchsToFit, {'DEPEND_0': None, 'UNITS': 'deg', 'LABLAXIS': 'Fitted Pitch Angle'}],
+                 'dataIdxs': [[], {'DEPEND_0': None, 'UNITS': None, 'LABLAXIS': 'Index'}], # indicies corresponding to the NON-ENERGY-REDUCED dataslice so as to re-construct the fit
+                 'numFittedPoints': [[], {'DEPEND_0': None, 'UNITS': None, 'LABLAXIS': 'Number of Fitted Points'}],
                  }
 
 
@@ -133,19 +135,29 @@ def generatePrimaryBeamFit(GenToggles, primaryBeamToggles, **kwargs):
     # --- LOOP THROUGH DATA TO FIT ---
     # --------------------------------
     ##################################
-    noiseData = helperFuncs().generateNoiseLevel(data_dict_diffFlux['Energy'][0],primaryBeamToggles)
+    noiseData = helperFuncs().generateNoiseLevel(data_dict_diffFlux['Energy'][0], primaryBeamToggles)
 
     EpochFitData, fitData, fitData_stdDev = helperFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
                                                                               GenToggles=GenToggles,
-                                                                              primaryBeamToggles=primaryBeamToggles)
-    for loopIdx, pitchIdx in enumerate(primaryBeamToggles.wPitchsToFit):
+                                                                              N_avg=primaryBeamToggles.numToAverageOver)
 
-            ####################################
-            # --- FIT AVERAGED TIME SECTIONS ---
-            ####################################
-            # for each slice in time, loop over the data and identify the peak differentialNumberFlux (This corresponds to the
-            # peak energy of the inverted-V since the location of the maximum number flux tells you what energy the low-energy BULk got accelerated to)
-            # Note: The peak in the number flux is very likely the maximum value AFTER 100 eV, just find this point
+    data_dict['dataIdxs'][0] = np.zeros(shape = (len(EpochFitData),len(data_dict_diffFlux['Pitch_Angle'][0]),len(data_dict_diffFlux['Energy'][0])))
+    data_dict['numFittedPoints'][0] = np.zeros(shape=(len(EpochFitData), len(data_dict_diffFlux['Pitch_Angle'][0])))
+    data_dict['Te'][0] = np.zeros(shape=(len(EpochFitData), len(data_dict_diffFlux['Pitch_Angle'][0])))
+    data_dict['n'][0] = np.zeros(shape=(len(EpochFitData), len(data_dict_diffFlux['Pitch_Angle'][0])))
+    data_dict['V0'][0] = np.zeros(shape=(len(EpochFitData), len(data_dict_diffFlux['Pitch_Angle'][0])))
+    data_dict['kappa'][0] = np.zeros(shape=(len(EpochFitData), len(data_dict_diffFlux['Pitch_Angle'][0])))
+    data_dict['ChiSquare'][0] = np.zeros(shape=(len(EpochFitData), len(data_dict_diffFlux['Pitch_Angle'][0])))
+    data_dict['timestamp_fitData'][0] = deepcopy(EpochFitData)
+
+    for loopIdx, pitchAngle in enumerate(primaryBeamToggles.wPitchsToFit):
+        ####################################
+        # --- FIT AVERAGED TIME SECTIONS ---
+        ####################################
+        # for each slice in time, loop over the data and identify the peak differentialNumberFlux (This corresponds to the
+        # peak energy of the inverted-V since the location of the maximum number flux tells you what energy the low-energy BULk got accelerated to)
+        # Note: The peak in the number flux is very likely the maximum value AFTER 100 eV, just find this point
+        pitchIdx = np.abs(data_dict_diffFlux['Pitch_Angle'][0] - pitchAngle).argmin()
 
         for tmeIdx in tqdm(range(len(EpochFitData))):
 
@@ -154,7 +166,9 @@ def generatePrimaryBeamFit(GenToggles, primaryBeamToggles, **kwargs):
             peakDiffNIdx = np.nanargmax(fitData[tmeIdx][pitchIdx][:engythresh_Idx + 1]) # only consider data above the Energy_Threshold, to avoid secondaries/backscatter
             dataIdxs = np.array([1 if fitData[tmeIdx][pitchIdx][j] > noiseData[j] and j <= peakDiffNIdx else 0 for j in range(len(data_dict_diffFlux['Energy'][0]))])
 
-            # ---  get the subset of data to fit ---
+            ###################################
+            # ---  get the Beam data subset ---
+            ###################################
             fitTheseIndicies = np.where(dataIdxs == 1)[0]
             xData_fit, yData_fit, yData_fit_stdDev = np.array(data_dict_diffFlux['Energy'][0][fitTheseIndicies]), np.array(fitData[tmeIdx][pitchIdx][fitTheseIndicies]), np.array(fitData_stdDev[tmeIdx][pitchIdx][fitTheseIndicies])
             V0_guess = xData_fit[-1]
@@ -164,6 +178,7 @@ def generatePrimaryBeamFit(GenToggles, primaryBeamToggles, **kwargs):
             xData_fit, yData_fit, yData_fit_stdDev = xData_fit[nonZeroIndicies],  yData_fit[nonZeroIndicies], yData_fit_stdDev[nonZeroIndicies]
 
             ### Perform the fit ###
+
             params, ChiSquare = fitPrimaryBeam(xData_fit, yData_fit, yData_fit_stdDev, V0_guess, primaryBeamToggles, useNoGuess=primaryBeamToggles.useNoGuess)
 
             if primaryBeamToggles.useFitRefinement:
@@ -184,14 +199,13 @@ def generatePrimaryBeamFit(GenToggles, primaryBeamToggles, **kwargs):
                                                    )
 
             # --- update the data_dict ---
-            data_dict['Te'][0][loopIdx].append(params[1])
-            data_dict['n'][0][loopIdx].append(params[0])
-            data_dict['V0'][0][loopIdx].append(params[2])
-            data_dict['kappa'][0][loopIdx].append(0 if primaryBeamToggles.wDistributionToFit == 'Maxwellian' else params[3])
-            data_dict['ChiSquare'][0][loopIdx].append(ChiSquare)
-            data_dict['dataIdxs'][0][loopIdx].append(dataIdxs)
-            data_dict['timestamp_fitData'][0][loopIdx].append(EpochFitData[tmeIdx])
-            data_dict['numFittedPoints'][0][loopIdx].append(len(yData_fit))
+            data_dict['Te'][0][tmeIdx][pitchIdx] = params[1]
+            data_dict['n'][0][tmeIdx][pitchIdx] = params[0]
+            data_dict['V0'][0][tmeIdx][pitchIdx] = params[2]
+            data_dict['kappa'][0][tmeIdx][pitchIdx] = 0 if primaryBeamToggles.wDistributionToFit == 'Maxwellian' else params[3]
+            data_dict['ChiSquare'][0][tmeIdx][pitchIdx]= ChiSquare
+            data_dict['dataIdxs'][0][tmeIdx][pitchIdx] = dataIdxs
+            data_dict['numFittedPoints'][0][tmeIdx][pitchIdx] = len(yData_fit)
 
     # --- --- --- --- --- ---
     # --- OUTPUT THE DATA ---

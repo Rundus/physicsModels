@@ -56,12 +56,13 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
         figure_width = 10  # in inches
         figure_height = 10  # in inches
 
-
         # get the raw data, fitted data and fit parameters, then evaluate the model and plot it on the data with the fit parameters
-        for ptchIdx, ptchVal in enumerate(primaryBeamToggles.wPitchsToFit):
+        for ploopIdx, pitchAngle in enumerate(primaryBeamToggles.wPitchsToFit):
+
+            ptchIdx = np.abs(data_dict_diffFlux['Pitch_Angle'][0] - pitchAngle).argmin()
 
             # delete all images in the directory
-            imagefolder = rf'C:\Data\physicsModels\invertedV\primaryBeam_Fitting\fitPhotos\{data_dict_diffFlux["Pitch_Angle"][0][ptchVal]}deg'
+            imagefolder = rf'C:\Data\physicsModels\invertedV\primaryBeam_Fitting\fitPhotos\{pitchAngle}deg'
             for filename in os.listdir(imagefolder):
                 file_path = os.path.join(imagefolder, filename)
                 try:
@@ -72,31 +73,28 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
                 except Exception as e:
                     print('Failed to delete %s. Reason: %s' % (file_path, e))
 
-
             # get the groupAveraged Data
             Epoch_groupAverage, fitData_groupAverage, stdDev_groupAverage = helperFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
-                                                                                                            pitchIdxs=[ptchVal],
                                                                                                             GenToggles= GenToggles,
-                                                                                                            primaryBeamToggles=primaryBeamToggles)
-
+                                                                                                        N_avg=primaryBeamToggles.numToAverageOver)
             # create new images
             for tmeIdx, tmeStamp in tqdm(enumerate(Epoch_groupAverage)):
 
                 # get the full data at the time/pitch slice
                 xData_raw = data_dict_diffFlux['Energy'][0]
-                yData_raw = fitData_groupAverage[tmeIdx][0]
+                yData_raw = fitData_groupAverage[tmeIdx][ptchIdx] # this does NOT depend upon pitch angle
 
                 # get the indicies and data of the datapoints that was fitted
-                dataIdx_set = data_dict['dataIdxs'][0][ptchIdx][tmeIdx]
+                dataIdx_set = data_dict['dataIdxs'][0][tmeIdx][ptchIdx]
                 fittedX = deepcopy(xData_raw[np.where(dataIdx_set > 0)[0]])
                 fittedY = deepcopy(yData_raw[np.where(dataIdx_set > 0)[0]])
 
                 # get the model parameters for this time/pitch slice
-                n_model  = data_dict['n'][0][ptchIdx][tmeIdx]
-                T_model  = data_dict['Te'][0][ptchIdx][tmeIdx]
-                V0_model = data_dict['V0'][0][ptchIdx][tmeIdx]
-                kappa_model = data_dict['kappa'][0][ptchIdx][tmeIdx]
-                ChiSquare_model = data_dict['ChiSquare'][0][ptchIdx][tmeIdx]
+                n_model  = data_dict['n'][0][tmeIdx][ptchIdx]
+                T_model  = data_dict['Te'][0][tmeIdx][ptchIdx]
+                V0_model = data_dict['V0'][0][tmeIdx][ptchIdx]
+                kappa_model = data_dict['kappa'][0][tmeIdx][ptchIdx]
+                ChiSquare_model = data_dict['ChiSquare'][0][tmeIdx][ptchIdx]
 
                 # generate the evaluated model data for display
                 xData_model = np.linspace(fittedX.min(), fittedX.max(), 100)
@@ -112,7 +110,7 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
                 # --- MAKE THE PLOTS ---
                 fig, ax = plt.subplots()
                 fig.set_size_inches(figure_width, figure_height)
-                fig.suptitle(f'Pitch Angle = {data_dict_diffFlux["Pitch_Angle"][0][ptchVal]}$^\circ$ \n {tmeStamp} UTC' + f'\n {primaryBeamToggles.numToAverageOver}-Averaged Points', fontsize=Title_FontSize)
+                fig.suptitle(f'Pitch Angle = {pitchAngle}$^\circ$ \n {tmeStamp} UTC' + f'\n {primaryBeamToggles.numToAverageOver}-Averaged Points', fontsize=Title_FontSize)
 
 
                 # Raw Data
@@ -151,10 +149,10 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
                 # ax.text(70, 5E4, s='Secondaries/Backscatter', fontsize=Text_FontSize, weight='bold', va='center', ha='center')
                 ax.legend(fontsize=Legend_fontSize)
 
-                plt.savefig(rf'C:\Data\physicsModels\invertedV\primaryBeam_Fitting\fitPhotos\{data_dict_diffFlux["Pitch_Angle"][0][ptchVal]}deg\FitData_{data_dict_diffFlux["Pitch_Angle"][0][ptchVal]}deg_{tmeIdx}.png')
+                plt.savefig(rf'C:\Data\physicsModels\invertedV\primaryBeam_Fitting\fitPhotos\{pitchAngle}deg\FitData_{pitchAngle}deg_{tmeIdx}.png')
                 plt.close()
 
-    def plotSpectrogramFitParameters(data_dict, data_dict_diffFlux):
+    def plotFitParameters(data_dict, data_dict_diffFlux):
 
         # Individualized Toggles
         figure_width = 14  # in inches
@@ -172,7 +170,7 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
             V0 = data_dict['V0'][0][ptchIdx]
             kappa = data_dict['kappa'][0][ptchIdx]
             ChiSquare = data_dict['ChiSquare'][0][ptchIdx]
-            timestamp = data_dict['timestamp_fitData'][0][ptchIdx]
+            timestamp = data_dict['timestamp_fitData'][0]
 
             # Apply restrictions/Filters to the data i.e. don't include bad fits
 
@@ -267,4 +265,4 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
         plotIndividualFits(data_dict, data_dict_diffFlux)
 
     if primaryBeamPlottingToggles.makeFitParameterPlot:
-        plotSpectrogramFitParameters(data_dict, data_dict_diffFlux)
+        plotFitParameters(data_dict, data_dict_diffFlux)

@@ -5,6 +5,7 @@ from copy import deepcopy
 import numpy as np
 
 from src.physicsModels.invertedV_fitting.BackScatter.Evans_Model.parameterizationCurves_Evans1974_classes import *
+from src.physicsModels.invertedV_fitting.simToggles_invertedVFitting import backScatterToggles
 
 class backScatter_class:
 
@@ -147,7 +148,7 @@ class backScatter_class:
         ######################
         # --- BACKSCATTER ---
         ######################
-        nIterations = 10
+        nIterations = backScatterToggles.niterations_backscatter
         R = 0.1
 
         # --- define the outputs ---

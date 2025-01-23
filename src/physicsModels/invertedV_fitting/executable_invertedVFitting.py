@@ -7,17 +7,18 @@
 # --- IMPORTS ---
 #################
 import time
-from simToggles_invertedVFitting import primaryBeamToggles,GenToggles,primaryBeamPlottingToggles,secondaryBackScatterToggles
+from simToggles_invertedVFitting import primaryBeamToggles,GenToggles,primaryBeamPlottingToggles, backScatterToggles
 import spaceToolsLib as stl
 start_time = time.time()
+
 
 #################
 # --- TOGGLES ---
 #################
-primaryBeam_fitting = False
-primaryBeam_Plotting = False
+primaryBeam_fitting = True
+primaryBeam_Plotting = True
 backScatter_Calc = False
-backScatter_Plotting = True
+backScatter_Plotting = False
 
 
 
@@ -43,7 +44,7 @@ if primaryBeam_Plotting:
 if backScatter_Calc:
     stl.prgMsg('Generating Secondary/Backscatter Data')
     from src.physicsModels.invertedV_fitting.BackScatter.backScatter_Generator import generateSecondaryBackScatter
-    generateSecondaryBackScatter(GenToggles, primaryBeamToggles, secondaryBackScatterToggles, showPlot=True)
+    generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterToggles, showPlot=True)
     stl.Done(start_time)
 
 if backScatter_Plotting:

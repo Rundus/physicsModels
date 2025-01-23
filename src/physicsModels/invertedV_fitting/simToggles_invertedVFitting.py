@@ -45,7 +45,7 @@ class primaryBeamToggles:
     useNoGuess = True # use an initial guess?
 
     # --- Levenberg-Marquart Fit toggles ---
-    wPitchsToFit = [2]
+    wPitchsToFit = [10, 20] # give pitch angles in degrees
     wDistributionToFit = 'Kappa' # 'Maxwellian' or 'Kappa'
     numToAverageOver = 5 # HOW many datapoints are averaged together when fitting
 
@@ -77,16 +77,8 @@ class primaryBeamPlottingToggles:
     # -- Fit Statistics Toggles ---
     chiSquare_ThreshRange = [0.1, 100]  # range that the ChiSquare must fall into in order to be counted
 
-class secondaryBackScatterToggles:
-
-    # z_high_flyer = 400
-    # z_iono_cutoff = 300
-    # alpha_cutoff = 80
-
-    N_energyGrid = 2000 # number of points in the energy grid which covers the beam+backscatter/secondaries. >2000 was found in verify_omniDiffFLux_integration to do a decent job
-    wPtchIdx = 0 # Index of Desired Pitch angle in wPitchToFit that will be used in the secondary/backscatter calculations
-    Niterations_secondaries = 10 # number of iterations for the secondaries calculations. >19 iterations is TOO many
-    Niterations_backscatter = 10  # number of iterations for the secondaries calculations.
+class backScatterToggles:
+    niterations_backscatter = 10 # number of iterations for the secondaries calculations. >19 iterations is TOO many
 
 
 
