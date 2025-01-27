@@ -2,9 +2,11 @@
 import numpy as np
 from numpy import power,log,pi
 from spaceToolsLib.variables import kB,gravG,Me,Re
+import spaceToolsLib as stl
+from src.physicsModels.ionosphere.simToggles_Ionosphere import plasmaToggles
 
 
-class fang2019:
+class fang2010:
 
     def __init__(self, altRange,data_dict_neutral,data_dict_plasma,monoEnergyProfile, energyFluxProfile):
         self.paramCoefficents = np.array([
@@ -24,8 +26,6 @@ class fang2019:
         self.data_dict_plasma = data_dict_plasma
         self.monoEnergyProfile = monoEnergyProfile
         self.energyFluxProfile = energyFluxProfile
-
-
 
     def scaleHeight(self):
         T_atm = (self.data_dict_neutral['Tn'][0] + self.data_dict_plasma['Ti'][0] + self.data_dict_plasma['Te'][0]) / 3
@@ -47,7 +47,6 @@ class fang2019:
         return coefficents
 
     def f(self,y,coefficents):
-
         value = np.array([ C[0]*np.power(y[idx],C[1]) * np.exp( -C[2]*np.power(y[idx],C[3])) + C[4]*np.power(y[idx],C[5]) * np.exp( -C[6]*np.power(y[idx],C[7])) for idx,C in enumerate(coefficents)])
         return value
     def ionizationRate(self):
@@ -57,9 +56,44 @@ class fang2019:
         f_profiles = self.f(y,C)
         epsilion = 0.035
         q = np.array([(fluxVal/epsilion)*np.array(f_profiles[idx]/H) for idx, fluxVal in enumerate(self.energyFluxProfile)])
-        return q
+
+        # convert q [cm^-3 s^-1] to m^-3
+        q_m3 = np.power(stl.cm_to_m, 3)*q
+        return q_m3
+
+class vickrey1982:
+
+    def calcRecombinationRate(self,altRange,data_dict):
+
+        alpha = (stl.cm_to_m**3)*(2.5E-6)*np.exp(-altRange/(51.2*stl.m_to_km)) # in m^3s^-1, the factor of 1000 is to account for ki
+        return alpha
 
 
+class schunkNagy2009:
+    def calcRecombinationRate(self, altRange, data_dict):
+        def functionalForm(Te,A,B,exponent):
+            return A*np.power(B/Te,exponent)
 
+        alpha_dissociated = {'NO+':functionalForm(data_dict['Te'][0], 4E-7,300,0.5),
+                             'O2+':functionalForm(data_dict['Te'][0], 2.4E-7,300,0.7),
+                             'N2+':functionalForm(data_dict['Te'][0], 2.2E-7,300,0.39)}
+
+        alpha_radiative = {  'H+':functionalForm(data_dict['Te'][0], 4.8E-12,250,0.7),
+                             'He+': functionalForm(data_dict['Te'][0], 4.8E-12, 250, 0.7),
+                             'N+': functionalForm(data_dict['Te'][0], 3.6E-12, 250, 0.7),
+                             'O+':functionalForm(data_dict['Te'][0], 3.7E-12, 250, 0.7)}
+
+        ni_total = np.sum([data_dict[f"n_{ionNam}"][0] for ionNam in plasmaToggles.wIons],axis=0)
+        partials = []
+
+        for ionNam in plasmaToggles.wIons:
+            try:
+                partials.append(alpha_dissociated[f'{ionNam}'] * data_dict[f'n_{ionNam}'][0])
+            except:
+
+                partials.append(alpha_radiative[f'{ionNam}'] * data_dict[f'n_{ionNam}'][0])
+
+        # Convert to from cm^3 to m^3
+        return np.sum(np.array(partials),axis=0)/(ni_total*np.power(stl.cm_to_m,3))
 
 

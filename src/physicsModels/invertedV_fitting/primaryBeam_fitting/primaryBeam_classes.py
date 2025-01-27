@@ -2,6 +2,7 @@
 import spaceToolsLib as stl
 import numpy as np
 from scipy.special import gamma
+from copy import deepcopy
 
 
 
@@ -29,26 +30,36 @@ class helperFuncs:
             diffNFlux_NoiseCount[idx] = (primaryBeamToggles.countNoiseLevel) / (geo_factor * deltaT * engy)
 
         return diffNFlux_NoiseCount
-    def groupAverageData(self, data_dict_diffFlux, GenToggles, N_avg):
+    def groupAverageData(self, data_dict_diffFlux, targetTimes, N_avg, **kwargs):
         '''
         # Input:
         # data_dict_diffFlux - data_dict with "Differential_Number_Flux", "Pitch_Angle" and "Energy"  variables
-        # pitchIdxs - array of indicies corresponding to specifc pitch values in the "Pitch_Angle" variable
+        # targetTimes - 1D array of [T_min, T_max] where T values are datetimes of the min/max region of the data to average
         # N_avg - scalar indicating the number of Epoch values to average over. Should be odd
+        # fluxType (kwarg) - string. Option of either "diffNFlux" or "diffEFlux" to determine if number flux or energy flux should be used
 
         # Output:
         Epoch, Differential_Number_Flux and stdDevs averaged over N TIME-points specified in the primaryBeamToggles. Dimensions in Pitch and Energy are untouched
         '''
 
-
         if N_avg%2 == 0:
             raise Exception('Number of Points to Average over must be odd')
+
+        # Determine if the output is differential energy or number flux
+        if kwargs.get('fluxType',None) == 'diffEFlux':
+            data = deepcopy(data_dict_diffFlux['Differential_Energy_Flux'][0])
+            data_stdDev = np.multiply( deepcopy(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0]), data_dict_diffFlux['Energy'][0] ,axis=2)
+        else:
+            data = deepcopy(data_dict_diffFlux['Differential_Number_Flux'][0])
+            data_stdDev = deepcopy(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0])
+
+
 
         ##############################
         # --- COLLECT THE FIT DATA ---
         ##############################
         # ensure the data is divided into chunks that can be sub-divided. If not, keep drop points from the end until it can be
-        low_idx, high_idx = np.abs(data_dict_diffFlux['Epoch'][0] - GenToggles.invertedV_times[GenToggles.wRegion][0]).argmin(), np.abs(data_dict_diffFlux['Epoch'][0] - GenToggles.invertedV_times[GenToggles.wRegion][1]).argmin()
+        low_idx, high_idx = np.abs(data_dict_diffFlux['Epoch'][0] - targetTimes[0]).argmin(), np.abs(data_dict_diffFlux['Epoch'][0] - targetTimes[1]).argmin()
 
         if (high_idx - low_idx) % N_avg != 0:
             high_idx -= (high_idx - low_idx) % N_avg
@@ -63,13 +74,13 @@ class helperFuncs:
 
         # create the storage variable
         detectorPitchAngles = data_dict_diffFlux['Pitch_Angle'][0]
-        diffNFlux_avg = np.zeros(shape=(len(EpochFitData), len(detectorPitchAngles), len(data_dict_diffFlux['Energy'][0])))
+        diffFlux_avg = np.zeros(shape=(len(EpochFitData), len(detectorPitchAngles), len(data_dict_diffFlux['Energy'][0])))
         stdDevs_avg = np.zeros(shape=(len(EpochFitData), len(detectorPitchAngles), len(data_dict_diffFlux['Energy'][0])))
 
         for loopIdx, pitchValue in enumerate(detectorPitchAngles):
 
-            chunkedyData = np.split(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, loopIdx, :], round(len(data_dict_diffFlux['Differential_Number_Flux'][0][low_idx:high_idx, loopIdx,:]) / N_avg))
-            chunkedStdDevs = np.split(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, loopIdx, :], round(len(data_dict_diffFlux['Differential_Number_Flux_stdDev'][0][low_idx:high_idx, loopIdx,:]) / N_avg))
+            chunkedyData = np.split(data[low_idx:high_idx, loopIdx, :], round(len(data[low_idx:high_idx, loopIdx,:]) / N_avg))
+            chunkedStdDevs = np.split(data_stdDev[low_idx:high_idx, loopIdx, :], round(len(data_stdDev[low_idx:high_idx, loopIdx,:]) / N_avg))
 
             # --- Average the chunked data ---
             fitData = np.zeros(shape=(len(chunkedyData), len(data_dict_diffFlux['Energy'][0])))
@@ -84,10 +95,10 @@ class helperFuncs:
                 chunkedStdDevs[i][chunkedStdDevs[i] < 0] = np.NaN
                 fitData_stdDev[i] = np.nanmean(chunkedStdDevs[i], axis=0)
 
-            diffNFlux_avg[:, loopIdx, :] = fitData
+            diffFlux_avg[:, loopIdx, :] = fitData
             stdDevs_avg[:, loopIdx, :] = fitData_stdDev
 
-        return EpochFitData, diffNFlux_avg, stdDevs_avg
+        return EpochFitData, diffFlux_avg, stdDevs_avg
     def removeDuplicates(self, a, b):
         from collections import defaultdict
         D = defaultdict(list)

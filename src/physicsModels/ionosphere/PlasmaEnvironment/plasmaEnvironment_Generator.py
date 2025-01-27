@@ -1,9 +1,9 @@
 # --- imports ---
-from src.physicsModels.ionosphere.simToggles_iono import GenToggles
+from src.physicsModels.ionosphere.simToggles_Ionosphere import GenToggles
 from spaceToolsLib.variables import u0,m_e,ep0,q0, Re,kB,ion_dict
 from spaceToolsLib.tools.CDF_load import loadDictFromFile
 from spaceToolsLib.tools.CDF_output import outputCDFdata
-from src.physicsModels.ionosphere.PlasmaEnvironment.model_plasmaEnvironment_classes import *
+from src.physicsModels.ionosphere.PlasmaEnvironment.plasmaEnvironment_classes import *
 import numpy as np
 from copy import deepcopy
 
@@ -131,43 +131,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_Ion_Temperature.png', dpi=dpi)
 
         return data_dict
-    def recombinationRate(altRange, data_dict, **kwargs):
 
-        model = vickrey1982()
-        recombRate_vickrey = model.calcRecombinationRate(altRange, data_dict)
-        model = schunkNagy2009()
-        recombRate_schunkNagy = model.calcRecombinationRate(altRange, data_dict)
-
-        data_dict = {**data_dict, **{'recombRate': [recombRate_vickrey, {'DEPEND_0': 'simAlt', 'UNITS': 'm^3s^-1',
-                                                                            'LABLAXIS': 'Recombination Rate'}]} }
-
-        if kwargs.get('showPlot', False):
-            import matplotlib.pyplot as plt
-            fig, ax = plt.subplots(sharex=True)
-            fig.set_size_inches(figure_width, figure_height * (3 / 2))
-            ax.plot(recombRate_vickrey, altRange / xNorm, linewidth=Plot_LineWidth, label=r"Vickrey 1982")
-            ax.plot(recombRate_schunkNagy, altRange / xNorm, linewidth=Plot_LineWidth, label=r"S&N 2009")
-            ax.set_title('Ionospheric Recombination Rate', fontsize=Title_FontSize)
-            ax.set_xlabel('Recombination Rate [m$^{3}$s$^{-1}$ ]', fontsize=Label_FontSize)
-            ax.set_ylabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
-            ax.axhline(y=400000 / xNorm, label='Observation Height', color='red')
-            ax.set_xscale('log')
-            ax.grid(True)
-            ax.yaxis.set_ticks(np.arange(0, 1000 + 50, 100))
-            ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width,
-                           length=Tick_Length)
-            ax.tick_params(axis='y', which='minor', labelsize=Tick_FontSize_minor,
-                           width=Tick_Width_minor, length=Tick_Length_minor)
-            ax.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width,
-                           length=Tick_Length)
-            ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor,
-                           width=Tick_Width_minor, length=Tick_Length_minor)
-
-            plt.legend(fontsize=Legend_fontSize)
-            plt.tight_layout()
-            plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_recombinationRate.png', dpi=dpi)
-
-        return data_dict
 
     # --- PLASMA DENSITY ---
     # uses the Kletzing Model to return an np.array of plasma density (in m^-3) from [Alt_low, ..., Alt_High]
@@ -472,7 +436,6 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
                         ion_temperatureProfile,
                         electron_plasmaDensityProfile,
                         ion_plasmaDensityProfile,
-                        recombinationRate,
                         plasmaBetaProfile,
                         plasmaFreqProfile,
                         cyclotronProfile,

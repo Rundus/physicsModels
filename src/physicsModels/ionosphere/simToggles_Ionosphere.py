@@ -73,7 +73,7 @@ class plasmaToggles:
 # --- CONDUCTIVITY ---
 ######################
 class conductivityToggles:
-    test = 5
+    useRealData = False # if True, uses the data/toggles from the /invertedV_fitting folder
 
 
 
@@ -81,7 +81,7 @@ class conductivityToggles:
 # --- HEIGHT IONIZATION ---
 ###########################
 class heightIonizationToggles:
-    test = 5
+    placeholder = 5
 
 
 

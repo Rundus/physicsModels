@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from src.physicsModels.invertedV_fitting.BackScatter.Evans_Model.parameterizationCurves_Evans1974_classes import *
+from src.physicsModels.invertedV_fitting.backScatter.Evans_Model.parameterizationCurves_Evans1974_classes import *
 from src.physicsModels.invertedV_fitting.simToggles_invertedVFitting import backScatterToggles
 
 class backScatter_class:
@@ -70,7 +70,7 @@ class backScatter_class:
         '''
         :param energy_Grid: 1D grid of energies for the output curves. Arbitrary Length
         :param beam_Energies: 1D array of energy values the for the input Beam.
-        :param beam_OmniDiffFlux: 1D array of incident electron values of the beam [cm^-2s^-1]. Length = Len(beam_Energies). Calculated from integrating varPhi(E) over a deltaE for each energy to perserve the total number of electrons regardless of energy grid resolution.
+        :param beam_IncidentElectronFlux: 1D array of incident electron values of the beam [cm^-2s^-1]. Length = Len(beam_Energies). Calculated from integrating varPhi(E) over a deltaE for each energy to perserve the total number of electrons regardless of energy grid resolution.
         :return:
         upWard omniDiffFlux (Degraded Primaries) - 1D array of ionospheric degraded primaries flux in units of [cm^-2 s^-1 eV^-1]
         upWard omniDiffFlux (Secondaries) - 1D array of ionospheric secondaries flux in units of [cm^-2 s^-1 eV^-1]
@@ -117,6 +117,7 @@ class backScatter_class:
         :return:
         degradedPrimaries_Flux - 1D array of total electron differential Flux [cm^-2 s^-1 eV^-1] values for degraded primaries which has been iterated 6 times
         secondaries_Flux - 1D array of total electron differential Flux [cm^-2 s^-1 eV^-1] values for secondary electrons which has been iterated 6 times
+        beam_Flux - 1D array of beam flux values at the specific pitch angle
         '''
 
 

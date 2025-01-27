@@ -1,4 +1,4 @@
-# --- executable_iono.py ---
+# --- executable_ionosphere.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: regenerate the IONOSPHERE plasma environment toggles
 
@@ -7,8 +7,10 @@
 # --- IMPORTS ---
 #################
 import time
-from src.physicsModels.ionosphere.simToggles_iono import GenToggles,BgeoToggles,plasmaToggles,neutralsToggles,conductivityToggles,heightIonizationToggles
+from src.physicsModels.ionosphere.simToggles_Ionosphere import GenToggles,BgeoToggles,plasmaToggles,neutralsToggles,conductivityToggles,heightIonizationToggles
 import spaceToolsLib as stl
+import warnings
+warnings.filterwarnings("ignore")
 start_time = time.time()
 
 
@@ -18,7 +20,7 @@ start_time = time.time()
 regenBgeo = False
 regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
-regenHeightIonization = False
+regenHeightIonization = True
 regenIonoConductivity = False
 
 ################################
@@ -30,14 +32,14 @@ regenIonoConductivity = False
 if regenBgeo:
     # geomagnetic field
     stl.prgMsg('Regenerating Bgeo')
-    from src.physicsModels.ionosphere.geomagneticField.ionoGeomagneticField_Generator import generateGeomagneticField
+    from src.physicsModels.ionosphere.geomagneticField.geomagneticField_Generator import generateGeomagneticField
     generateGeomagneticField(outputData=True,GenToggles=GenToggles, BgeoToggles=BgeoToggles,showPlot=True)
     stl.Done(start_time)
 
 if regenPlasmaEnvironment:
     # plasma environment
     stl.prgMsg('Regenerating Plasma Environment')
-    from src.physicsModels.ionosphere.PlasmaEnvironment.ionoPlasmaEnvironment_Generator import generatePlasmaEnvironment
+    from src.physicsModels.ionosphere.PlasmaEnvironment.plasmaEnvironment_Generator import generatePlasmaEnvironment
     generatePlasmaEnvironment(True,GenToggles,plasmaToggles,showPlot=True)
     stl.Done(start_time)
 
@@ -50,14 +52,14 @@ if regenNeutralEnvironment:
 
 if regenHeightIonization:
     # height ionization
-    stl.prgMsg('Regenerating Height Ionization')
-    from src.physicsModels.ionosphere.heightIonization.heightIonization_Generator import generateHeightIonization
+    stl.prgMsg('Regenerating Height Ionization and Recombination')
+    from src.physicsModels.ionosphere.ionizationRecomb.ionizationRecomb_Generator import generateHeightIonization
     generateHeightIonization(GenToggles, heightIonizationToggles, showPlot=True)
     stl.Done(start_time)
 
 if regenIonoConductivity:
     # conductivity
     stl.prgMsg('Regenerating Ionospheric Conductivity')
-    from src.physicsModels.ionosphere.conductivity.ionoConductivity_Generator import generateIonosphericConductivity
+    from src.physicsModels.ionosphere.conductivity.conductivity_Generator import generateIonosphericConductivity
     generateIonosphericConductivity(True, GenToggles,conductivityToggles, showPlot=True)
     stl.Done(start_time)

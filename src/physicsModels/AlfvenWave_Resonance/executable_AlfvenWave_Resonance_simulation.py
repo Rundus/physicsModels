@@ -1,4 +1,4 @@
-# --- executable_iono.py ---
+# --- executable_ionosphere.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: Test particle simulaton that was recreated using ideas from a Knudsen and Wu paper:
 # https://doi. org/10.1029/2020JA028005

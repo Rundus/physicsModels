@@ -36,6 +36,12 @@ class GenToggles:
 ##########################
 class primaryBeamToggles:
 
+    # denote where the data should be taken from
+    inputDataPath = GenToggles.input_diffNFiles[GenToggles.wFlyerFit]
+    outputFolder = 'C:\Data\physicsModels\invertedV\primaryBeam_Fitting'
+    targetTimes = [GenToggles.invertedV_times[GenToggles.wRegion][0],
+                   GenToggles.invertedV_times[GenToggles.wRegion][1]]
+
     # --- controlling the noise floor ---
     countNoiseLevel = 2
 
@@ -45,40 +51,49 @@ class primaryBeamToggles:
     useNoGuess = True # use an initial guess?
 
     # --- Levenberg-Marquart Fit toggles ---
-    wPitchsToFit = [10, 20] # give pitch angles in degrees
+    wPitchsToFit = [10, 20, 30, 40, 50, 60, 70, 80, 90] # give pitch angles in degrees
     wDistributionToFit = 'Kappa' # 'Maxwellian' or 'Kappa'
     numToAverageOver = 5 # HOW many datapoints are averaged together when fitting
 
     # Determine guesses for the fitted data
     V0_deviation = 0.18
     n_bounds = [0.001, 10]  # n [cm^-3]
-    Te_bounds = [10, 500]
+    Te_bounds = [10, 300]
     kappa_bounds = [1.5, 101]
 
     if wDistributionToFit == 'Maxwellian':
         n_guess = 1
-        T_guess = 300
+        T_guess = 100
         # can't do V0 guess, that's generated in the code itself
     elif wDistributionToFit == 'Kappa':
         n_guess = 1
-        T_guess = 300
+        T_guess = 100
         kappa_guess = 20
 
     # --- fit refinement ---
-    useFitRefinement = False
-    beta_guess = 6 # altitude of the inverted-V
-    n0guess_deviation = 0.8
+    useFitRefinement = True
+    beta_guess = 12 # altitude of the inverted-V
+    n0guess_deviation = 0.99
 
 class primaryBeamPlottingToggles:
-
-    makeIndividualFitPlots = True
-    makeFitParameterPlot = True
 
     # -- Fit Statistics Toggles ---
     chiSquare_ThreshRange = [0.1, 100]  # range that the ChiSquare must fall into in order to be counted
 
 class backScatterToggles:
-    niterations_backscatter = 10 # number of iterations for the secondaries calculations. >19 iterations is TOO many
+
+    outputFolder = r'C:\Data\physicsModels\invertedV\backScatter'
+
+    # --- ENERGY GRID ---
+    N_energyGrid = 50
+    model_energyGrid = np.linspace(10, 4E3, N_energyGrid)
+
+    # --- model parameters ---
+    modelParametersPitchAngle = 10 # scalar [degrees] - which pitch angle to use for the "primary beam"
+
+    # --- Calculating backScatter ---
+    betaChoice = 6 # which beta value to pick i.e. the height above the rocket of the invertedV
+    niterations_backscatter = 4  # number of iterations for the secondaries calculations. >19 iterations is TOO many
 
 
 

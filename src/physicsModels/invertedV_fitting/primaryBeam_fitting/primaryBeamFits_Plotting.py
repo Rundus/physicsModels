@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import os, shutil
 import datetime as dt
+from glob import glob
 
 ##################
 # --- PLOTTING ---
@@ -39,16 +40,16 @@ cbarTickLabelSize = 14
 cbar_Fontsize = 20
 
 
-def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlottingToggles , **kwargs):
+def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, **kwargs):
 
     ##########################
     # --- --- --- --- --- ---
     # --- LOADING THE DATA ---
     # --- --- --- --- --- ---
     ##########################
-    data_dict_diffFlux = stl.loadDictFromFile(inputFilePath=GenToggles.input_diffNFiles[GenToggles.wFlyerFit])
-    data_dict = stl.loadDictFromFile(inputFilePath=rf'C:\Data\physicsModels\invertedV\primaryBeam_Fitting\primaryBeam_fitting_parameters.cdf')
-
+    paramFiles = glob(f'{primaryBeamToggles.outputFolder}\*primaryBeam_fitting_parameters.cdf*')
+    data_dict_params = stl.loadDictFromFile(inputFilePath=paramFiles[0])
+    data_dict_diffFlux = stl.loadDictFromFile(inputFilePath=primaryBeamToggles.inputDataPath)
 
     def plotIndividualFits(data_dict, data_dict_diffFlux):
 
@@ -62,7 +63,7 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
             ptchIdx = np.abs(data_dict_diffFlux['Pitch_Angle'][0] - pitchAngle).argmin()
 
             # delete all images in the directory
-            imagefolder = rf'C:\Data\physicsModels\invertedV\primaryBeam_Fitting\fitPhotos\{pitchAngle}deg'
+            imagefolder = rf'{primaryBeamToggles.outputFolder}\fitPhotos\{pitchAngle}deg'
             for filename in os.listdir(imagefolder):
                 file_path = os.path.join(imagefolder, filename)
                 try:
@@ -75,7 +76,7 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
 
             # get the groupAveraged Data
             Epoch_groupAverage, fitData_groupAverage, stdDev_groupAverage = helperFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
-                                                                                                            GenToggles= GenToggles,
+                                                                                                            targetTimes= primaryBeamToggles.targetTimes,
                                                                                                         N_avg=primaryBeamToggles.numToAverageOver)
             # create new images
             for tmeIdx, tmeStamp in tqdm(enumerate(Epoch_groupAverage)):
@@ -149,7 +150,7 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
                 # ax.text(70, 5E4, s='Secondaries/Backscatter', fontsize=Text_FontSize, weight='bold', va='center', ha='center')
                 ax.legend(fontsize=Legend_fontSize)
 
-                plt.savefig(rf'C:\Data\physicsModels\invertedV\primaryBeam_Fitting\fitPhotos\{pitchAngle}deg\FitData_{pitchAngle}deg_{tmeIdx}.png')
+                plt.savefig(rf'{primaryBeamToggles.outputFolder}\fitPhotos\{pitchAngle}deg\FitData_{pitchAngle}deg_{tmeIdx}.png')
                 plt.close()
 
     def plotFitParameters(data_dict, data_dict_diffFlux):
@@ -162,14 +163,16 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
         lowIdx,highIdx = np.abs(data_dict_diffFlux['Epoch'][0] - GenToggles.invertedV_times[GenToggles.wRegion][0] ).argmin(),np.abs(data_dict_diffFlux['Epoch'][0] - GenToggles.invertedV_times[GenToggles.wRegion][1] ).argmin()
 
 
-        for ptchIdx,ptchVal in enumerate(primaryBeamToggles.wPitchsToFit):
+        for pLoopIdx, ptchVal in enumerate(primaryBeamToggles.wPitchsToFit):
+
+            ptchIdx = np.abs(data_dict_diffFlux['Pitch_Angle'][0] - ptchVal).argmin()
 
             # get the fit parameters
-            ne = data_dict['n'][0][ptchIdx]
-            Te = data_dict['Te'][0][ptchIdx]
-            V0 = data_dict['V0'][0][ptchIdx]
-            kappa = data_dict['kappa'][0][ptchIdx]
-            ChiSquare = data_dict['ChiSquare'][0][ptchIdx]
+            ne = data_dict['n'][0][:,ptchIdx]
+            Te = data_dict['Te'][0][:,ptchIdx]
+            V0 = data_dict['V0'][0][:,ptchIdx]
+            kappa = data_dict['kappa'][0][:,ptchIdx]
+            ChiSquare = data_dict['ChiSquare'][0][:,ptchIdx]
             timestamp = data_dict['timestamp_fitData'][0]
 
             # Apply restrictions/Filters to the data i.e. don't include bad fits
@@ -179,11 +182,11 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
             fig.set_size_inches(figure_width, figure_height)
 
             # Make the title
-            fig.suptitle(rf'ACES-II ($\alpha = {data_dict_diffFlux["Pitch_Angle"][0][ptchVal]}$)' + '$^{\circ}$\n' +
+            fig.suptitle(rf'ACES-II ($\alpha = {data_dict_diffFlux["Pitch_Angle"][0][ptchIdx]}$)' + '$^{\circ}$\n' +
                          f'{timestamp[0].strftime("%H:%M:%S")} to {timestamp[-1].strftime("%H:%M:%S")} UTC', fontsize=Title_FontSize, weight='bold')
 
             # raw data spectrogram
-            cmap = ax[0].pcolormesh(data_dict_diffFlux['Epoch'][0][lowIdx:highIdx+1], data_dict_diffFlux['Energy'][0], data_dict_diffFlux['Differential_Number_Flux'][0][lowIdx:highIdx+1,ptchVal,:].T, cmap=my_cmap, vmin=cbarMin, vmax=cbarMax, norm='log') # plot spectrogram
+            cmap = ax[0].pcolormesh(data_dict_diffFlux['Epoch'][0][lowIdx:highIdx+1], data_dict_diffFlux['Energy'][0], data_dict_diffFlux['Differential_Number_Flux'][0][lowIdx:highIdx+1,ptchIdx,:].T, cmap=my_cmap, vmin=cbarMin, vmax=cbarMax, norm='log') # plot spectrogram
 
             ax[0].set_ylabel(rf'Energy [eV]', fontsize=Label_FontSize, labelpad=Label_Padding)
             ax[0].set_yscale('log')
@@ -253,16 +256,14 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, primaryBeamPlott
 
             fig.subplots_adjust(left=0.12, bottom=0.07, right=0.91, top=0.93, wspace=0.04,hspace=0.1)  # remove the space between plots
 
-            plt.savefig(rf'C:\Data\physicsModels\invertedV\primaryBeam_Fitting\FitParameters_{data_dict_diffFlux["Pitch_Angle"][0][ptchVal]}deg.png')
+            plt.savefig(rf'{primaryBeamToggles.outputFolder}\FitParameters_{data_dict_diffFlux["Pitch_Angle"][0][ptchIdx]}deg.png')
             plt.close()
-
-
 
     ######################
     # --- OUTPUT PLOTS ---
     ######################
-    if primaryBeamPlottingToggles.makeIndividualFitPlots:
-        plotIndividualFits(data_dict, data_dict_diffFlux)
+    if kwargs.get('individualPlots', False):
+        plotIndividualFits(data_dict_params, data_dict_diffFlux)
 
-    if primaryBeamPlottingToggles.makeFitParameterPlot:
-        plotFitParameters(data_dict, data_dict_diffFlux)
+    if kwargs.get('parameterPlots', False):
+        plotFitParameters(data_dict_params, data_dict_diffFlux)

@@ -1,14 +1,14 @@
-# --- ionoConductivity_Generator.py ---
+# --- conductivity_Generator.py ---
 # Description: Model the ionospheric conductivity
 
 
 
 # --- imports ---
 
-from src.physicsModels.ionosphere.simToggles_iono import GenToggles, plasmaToggles,neutralsToggles
+from src.physicsModels.ionosphere.simToggles_Ionosphere import GenToggles, plasmaToggles,neutralsToggles
 from spaceToolsLib.variables import m_to_km,Re
 from spaceToolsLib.tools.CDF_load import loadDictFromFile
-from src.physicsModels.ionosphere.conductivity.model_conductivity_classes import *
+from src.physicsModels.ionosphere.conductivity.conductivity_classes import *
 import numpy as np
 from copy import deepcopy
 from spaceToolsLib.tools.CDF_output import outputCDFdata
@@ -45,7 +45,7 @@ data_dict_neutral = loadDictFromFile(rf'{GenToggles.simFolderPath}\neutralEnviro
 # get the ionospheric plasma data dict
 data_dict_plasma = loadDictFromFile(rf'{GenToggles.simFolderPath}\plasmaEnvironment\plasmaEnvironment.cdf')
 
-def generateIonosphericConductivity(outputData,GenToggles,conductivityToggles, **kwargs):
+def generateIonosphericConductivity(outputData,GenToggles, conductivityToggles, **kwargs):
     data_dict = {}
 
     # --- Electron mobility ---
@@ -53,7 +53,9 @@ def generateIonosphericConductivity(outputData,GenToggles,conductivityToggles, *
 
         # electron-neutral collisions
         model = Leda2019()
-        nu_en = [model.electronNeutral_CollisionFreq(data_dict_neutral= data_dict_neutral, data_dict_plasma= data_dict_plasma,neutralKey=key) for key in neutralsToggles.wNeutrals]
+        nu_en = [model.electronNeutral_CollisionFreq(data_dict_neutral= data_dict_neutral,
+                                                     data_dict_plasma= data_dict_plasma,
+                                                     neutralKey=key) for key in neutralsToggles.wNeutrals]
 
         # electron-ion collisions
         model = Johnson1961()
@@ -61,7 +63,7 @@ def generateIonosphericConductivity(outputData,GenToggles,conductivityToggles, *
 
 
         # total collision fre
-        nu_e_total = nu_ei + np.sum(nu_en,axis=0)
+        nu_e_total = nu_ei + np.sum(nu_en, axis=0)
 
         data_dict = {**data_dict,
                      **{'nu_e_total': [nu_e_total, {'DEPEND_0': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': 'nu_e'}]}
@@ -102,7 +104,9 @@ def generateIonosphericConductivity(outputData,GenToggles,conductivityToggles, *
     def ion_collisionFreqProfile(altRange, data_dict, **kwargs):
 
         model = Leda2019()
-        nu_in = [model.ionNeutral_CollisionsFreq(data_dict_neutral= data_dict_neutral, data_dict_plasma= data_dict_plasma, ionKey=key) for key in plasmaToggles.wIons] # NOp, Op, O2p
+        nu_in = [model.ionNeutral_CollisionsFreq(data_dict_neutral= data_dict_neutral,
+                                                 data_dict_plasma= data_dict_plasma,
+                                                 ionKey=key) for key in plasmaToggles.wIons] # NOp, Op, O2p
 
         # total collision freq
         nu_i_total = np.sum(nu_in,axis=0)
