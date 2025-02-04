@@ -15,12 +15,11 @@ start_time = time.time()
 #################
 # --- TOGGLES ---
 #################
-primaryBeam_fitting = False
-primaryBeam_individualPlots = False
+primaryBeam_fitting = True
+primaryBeam_individualPlots = True
 primaryBeam_fitParamPlots = False
-backScatter_Calc = True
+backScatter_Calc = False
 backScatter_Plotting = False
-
 
 
 ################################
@@ -49,13 +48,13 @@ if primaryBeam_fitParamPlots:
     stl.Done(start_time)
 
 if backScatter_Calc:
-    stl.prgMsg('Generating Secondary/Backscatter Data')
+    stl.prgMsg('Generating Secondary/Backscatter Data\n')
     from src.physicsModels.invertedV_fitting.backScatter.backScatter_Generator import generateSecondaryBackScatter
     generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterToggles, showPlot=True)
     stl.Done(start_time)
 
 if backScatter_Plotting:
-    stl.prgMsg('Plotting backScatter Beam Fits\n')
+    stl.prgMsg('Plotting backScatter Beam Fits')
     from src.physicsModels.invertedV_fitting.backScatter.backScatter_Plotting import generateBackScatterPlots
-    generateBackScatterPlots(GenToggles)
+    generateBackScatterPlots(GenToggles,backScatterToggles,primaryBeamToggles,individualPlots=True )
     stl.Done(start_time)

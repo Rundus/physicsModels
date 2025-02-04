@@ -32,13 +32,14 @@ class BgeoToggles:
     Lshell = 8.7
     useConstantBval = False
     ConstantBval = 50000E-9 # in tesla. Set == None to NOT use a constant Bval
+    outputFolder = 'C:\Data\physicsModels\ionosphere\geomagneticField'
 
 ##########################
 # --- NEUTRALS TOGGLES ---
 ##########################
 class neutralsToggles:
+    outputFolder = r'C:\Data\physicsModels\ionosphere\neutralEnvironment'
     NRLMSIS_filePath = r'C:\Data\physicsModels\ionosphere\NRLMSIS\ACESII\NRLMSIS2.0.3D.2022324.nc'
-
     wNeutrals = ['N2','O2','O'] # which neutrals to consider in the simulation, use the key format in spacetoolsLib
 
 
@@ -47,6 +48,8 @@ class neutralsToggles:
 # --- PLASMA DENSITY ---
 ########################
 class plasmaToggles:
+    outputFolder = 'C:\Data\physicsModels\ionosphere\plasmaEnvironment'
+
     # --- --- --- ---
     ### ELECTRONS ###
     # --- --- --- ---
@@ -74,14 +77,15 @@ class plasmaToggles:
 ######################
 class conductivityToggles:
     useRealData = False # if True, uses the data/toggles from the /invertedV_fitting folder
+    outputFolder = 'C:\Data\physicsModels\ionosphere\conductivity'
 
 
 
 ###########################
 # --- HEIGHT IONIZATION ---
 ###########################
-class heightIonizationToggles:
-    placeholder = 5
+class ionizationRecombToggles:
+    outputFolder = 'C:\Data\physicsModels\ionosphere\ionizationRecomb'
 
 
 

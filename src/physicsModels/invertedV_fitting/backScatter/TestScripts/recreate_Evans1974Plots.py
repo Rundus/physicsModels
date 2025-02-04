@@ -363,7 +363,6 @@ if show_Fig5_modelMaxwellianInvertedV_withBackscatter:
     X, Y = np.meshgrid(np.logspace(*xLim,base=10,num=dim2), np.logspace(*yLim,base=10,num=dim1))
     ax[0].pcolormesh(np.flip(X),Y,np.flip(image[:,:,2]),cmap='gray')
 
-
     imageFile45deg = r'C:\Users\cfelt\PycharmProjects\physicsModels\src\physicsModels\invertedV_fitting\BackScatter\Evans_Model\EvansOutput_45deg.PNG'
     image = plt.imread(imageFile45deg)
     dim1 = len(image)

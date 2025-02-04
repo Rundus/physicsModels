@@ -1,5 +1,5 @@
 # --- imports ---
-from src.physicsModels.ionosphere.simToggles_Ionosphere import GenToggles
+from src.physicsModels.ionosphere.simToggles_Ionosphere import BgeoToggles
 from spaceToolsLib.variables import u0,m_e,ep0,q0, Re,kB,ion_dict
 from spaceToolsLib.tools.CDF_load import loadDictFromFile
 from spaceToolsLib.tools.CDF_output import outputCDFdata
@@ -30,7 +30,7 @@ xNorm = m_to_km # use m_to_km otherwise
 xLabel = '$R_{E}$' if xNorm == Re else 'km'
 
 # get the geomagnetic field data dict
-data_dict_Bgeo = loadDictFromFile(rf'{GenToggles.simFolderPath}\geomagneticField\geomagneticField.cdf')
+data_dict_Bgeo = loadDictFromFile(rf'{BgeoToggles.outputFolder}\geomagneticField.cdf')
 
 def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
     plotting = kwargs.get('showPlot', False)
@@ -90,7 +90,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
 
             plt.legend(fontsize=Legend_fontSize)
             plt.tight_layout()
-            plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_Electron_Temperature.png', dpi=dpi)
+            plt.savefig(f'{BgeoToggles.outputFolder}\MODEL_Electron_Temperature.png', dpi=dpi)
 
         # update the data_dict
         return data_dict
@@ -128,7 +128,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
 
             plt.legend(fontsize=Legend_fontSize)
             plt.tight_layout()
-            plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_Ion_Temperature.png', dpi=dpi)
+            plt.savefig(f'{BgeoToggles.outputFolder}\MODEL_Ion_Temperature.png', dpi=dpi)
 
         return data_dict
 
@@ -166,7 +166,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             ax.grid(True)
             plt.legend(fontsize=Legend_fontSize)
             plt.tight_layout()
-            plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_electron_density',dpi=dpi)
+            plt.savefig(f'{BgeoToggles.outputFolder}\MODEL_electron_density',dpi=dpi)
 
         return data_dict
 
@@ -217,9 +217,10 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
 
             plt.legend(fontsize=Legend_fontSize)
             plt.tight_layout()
-            plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_ionDensity.png', dpi=dpi)
+            plt.savefig(f'{BgeoToggles.outputFolder}\MODEL_ionDensity.png', dpi=dpi)
 
         return data_dict
+
 
     # --- PLASMA BETA ---
     def plasmaBetaProfile(altRange,data_dict,**kwargs):
@@ -248,7 +249,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             ax.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
             ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
             plt.tight_layout()
-            plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_beta.png',dpi=dpi)
+            plt.savefig(f'{BgeoToggles.outputFolder}\MODEL_beta.png',dpi=dpi)
 
         return data_dict
 
@@ -275,7 +276,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             ax.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
             ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor, length=Tick_Length_minor)
             plt.tight_layout()
-            plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_plasFreq.png',dpi=dpi)
+            plt.savefig(f'{BgeoToggles.outputFolder}\MODEL_plasFreq.png',dpi=dpi)
 
         return data_dict
 
@@ -336,7 +337,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
                 ax[i].tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor,
                                   width=Tick_Width_minor, length=Tick_Length_minor)
             plt.tight_layout()
-            plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_ionCyclo.png', dpi=dpi)
+            plt.savefig(f'{BgeoToggles.outputFolder}\MODEL_ionCyclo.png', dpi=dpi)
 
 
         return data_dict
@@ -377,7 +378,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             ax.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
             ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor,length=Tick_Length_minor)
             plt.tight_layout()
-            plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_ionLarmor.png',dpi=dpi)
+            plt.savefig(f'{BgeoToggles.outputFolder}\MODEL_ionLarmor.png',dpi=dpi)
 
         return data_dict
 
@@ -419,7 +420,7 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor, width=Tick_Width_minor,length=Tick_Length_minor)
             plt.legend(fontsize=Legend_fontSize)
             plt.tight_layout()
-            plt.savefig(f'{GenToggles.simFolderPath}\plasmaEnvironment\MODEL_alfMHD.png',dpi=dpi)
+            plt.savefig(f'{BgeoToggles.outputFolder}\MODEL_alfMHD.png',dpi=dpi)
 
 
 
@@ -469,5 +470,5 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
 
             data_dict[key][1] = newAttrs
 
-        outputPath = rf'{GenToggles.simFolderPath}\plasmaEnvironment\plasmaEnvironment.cdf'
+        outputPath = rf'{BgeoToggles.outputFolder}\plasmaEnvironment.cdf'
         outputCDFdata(outputPath, data_dict)

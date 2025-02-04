@@ -86,7 +86,7 @@ def generateNeutralEnvironment(GenToggles, neutralsToggles, **kwargs):
                            length=Tick_Length_minor)
             plt.legend(fontsize=Legend_fontSize)
             plt.tight_layout()
-            plt.savefig(rf'{GenToggles.simFolderPath}\neutralEnvironment\MODEL_{var.name}.png', dpi=dpi)
+            plt.savefig(rf'{neutralsToggles.outputFolder}\MODEL_{var.name}.png', dpi=dpi)
 
 
     # add the ionosphere simulation altitude
@@ -104,5 +104,5 @@ def generateNeutralEnvironment(GenToggles, neutralsToggles, **kwargs):
     # --- OUTPUT DATA ---
     #####################
 
-    outputPath = rf'{GenToggles.simFolderPath}\neutralEnvironment\neutralEnvironment.cdf'
+    outputPath = rf'{neutralsToggles.outputFolder}\neutralEnvironment.cdf'
     outputCDFdata(outputPath, data_dict)

@@ -17,7 +17,7 @@ class helperFuncs:
         # output: distribution function [s^3m^-6]
         Energy = 0.5 * mass * (Vperp ** 2 + Vpara ** 2) / charge
         return 0.5 * np.power((100 * mass / charge), 2) * diffNFlux / Energy
-    def generateNoiseLevel(self, energyData, primaryBeamToggles):
+    def generateNoiseLevel(self, energyData, countNoiseLevel):
         count_interval = 0.8992E-3
         geo_factor = 8.63E-5
         deadtime = 324E-9
@@ -26,8 +26,8 @@ class helperFuncs:
         diffNFlux_NoiseCount = np.zeros(shape=(len(energyData)))
 
         for idx,engy in enumerate(energyData):
-            deltaT = (count_interval) - (primaryBeamToggles.countNoiseLevel * deadtime)
-            diffNFlux_NoiseCount[idx] = (primaryBeamToggles.countNoiseLevel) / (geo_factor * deltaT * engy)
+            deltaT = (count_interval) - (countNoiseLevel * deadtime)
+            diffNFlux_NoiseCount[idx] = (countNoiseLevel) / (geo_factor * deltaT * engy)
 
         return diffNFlux_NoiseCount
     def groupAverageData(self, data_dict_diffFlux, targetTimes, N_avg, **kwargs):

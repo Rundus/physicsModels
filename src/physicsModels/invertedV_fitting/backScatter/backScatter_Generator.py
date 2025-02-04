@@ -2,10 +2,13 @@
 # --- Author: C. Feltman ---
 # DESCRIPTION: Take in the primary data fits and produce secondary/backscatter curves for each. Use the
 # parameterized Evans 1964 curves to determine the curves.
+import matplotlib.pyplot as plt
+
 
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
+import numpy as np
 from src.physicsModels.invertedV_fitting.backScatter.backScatter_classes import *
 from src.physicsModels.invertedV_fitting.primaryBeam_fitting.primaryBeam_classes import *
 import spaceToolsLib as stl
@@ -60,6 +63,7 @@ def generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterTogg
     beamFlux_output = np.zeros(shape=(len(EpochFitData),  len(data_dict_diffFlux['Pitch_Angle'][0]), len(model_energyGrid)))
     secondariesFlux_output = np.zeros(shape=(len(EpochFitData),  len(data_dict_diffFlux['Pitch_Angle'][0]), len(model_energyGrid)))
     dgdPrimFlux_output = np.zeros(shape=(len(EpochFitData),  len(data_dict_diffFlux['Pitch_Angle'][0]), len(model_energyGrid)))
+    beam_energyGrid_output = np.zeros(shape=(len(EpochFitData), len(model_energyGrid)))
 
 
     for tmeIdx in tqdm(range(len(EpochFitData))):
@@ -72,7 +76,8 @@ def generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterTogg
         Te_fitParam = data_dict_beamFits['Te'][0][tmeIdx][modelParamsIdx]
 
         # get the energy grid of the beam
-        beam_EnergyGrid = model_energyGrid+V0_fitParam
+        beam_EnergyGrid = deepcopy(model_energyGrid)+V0_fitParam
+        beam_energyGrid_output[tmeIdx] = deepcopy(beam_EnergyGrid)
 
         # construct jN for the beam
         if primaryBeamToggles.wDistributionToFit == 'Kappa':
@@ -83,12 +88,14 @@ def generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterTogg
             params = [n0_fitParam, Te_fitParam, V0_fitParam]
             model_beam_diffNFlux = primaryBeam_class().diffNFlux_fitFunc_Maxwellian(beam_EnergyGrid, *params)
 
+
         ############################
         # --- CALC IONO RESPONSE ---
         ############################
 
         for loopIdx, PitchValue in enumerate(data_dict_diffFlux['Pitch_Angle'][0]):
-            if PitchValue in [-10,100,110,120,130,140,150,160,170,180,190]:
+
+            if PitchValue in np.setdiff1d(data_dict_diffFlux['Pitch_Angle'][0],[0, 10, 20, 30, 40, 50, 60, 70, 80, 90]): # calculates BackScatter only on wPitchToFit angles
                 dgdPrimaries, secondaries, beam_jN_targetPitch = np.zeros(shape=(len(model_energyGrid))),np.zeros(shape=(len(model_energyGrid))),np.zeros(shape=(len(model_energyGrid)))
             else:
                 dgdPrimaries, secondaries, beam_jN_targetPitch = backScatter_class().calcIonosphericResponse(
@@ -105,12 +112,13 @@ def generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterTogg
             dgdPrimFlux_output[tmeIdx][loopIdx] = dgdPrimaries
             secondariesFlux_output[tmeIdx][loopIdx] = secondaries
 
+
     # output the data
     data_dict['jN_beam'][0] = beamFlux_output
     data_dict['jN_dgdPrim'][0] = dgdPrimFlux_output
     data_dict['jN_sec'][0] = secondariesFlux_output
     data_dict['energy_Grid'][0] = model_energyGrid
-    data_dict['beam_energy_Grid'][0] = beam_EnergyGrid
+    data_dict['beam_energy_Grid'][0] = beam_energyGrid_output
     data_dict['Epoch'][0] = EpochFitData
 
     # --- --- --- --- --- ---

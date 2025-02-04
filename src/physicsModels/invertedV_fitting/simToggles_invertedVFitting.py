@@ -16,8 +16,9 @@ class GenToggles:
 
 
     if wFlyerFit == 0: # ACES-II Data
-        wRegion = 2  # pick the region below to use in the inverted-V times
+        wRegion = 3  # pick the region below to use in the inverted-V times
         invertedV_times = [
+                            [datetime(2022, 11, 20, 17, 25, 1, 000000), datetime(2022, 11, 20, 17, 25, 3, 000000)], # Dispersive Region
                             [datetime(2022, 11, 20, 17, 24, 12, 162000), datetime(2022, 11, 20, 17, 24, 18, 812000)], # Very First ,Inverted-V, the high energy one
                             [datetime(2022, 11, 20, 17, 24, 45, 862000), datetime(2022, 11, 20, 17, 24, 49, 312000)], # small inverted-V, after the High energy One
                             [datetime(2022, 11, 20, 17, 25, 23, 762000), datetime(2022, 11, 20, 17, 26, 8, 212000)],  # Primary inverted-V
@@ -46,13 +47,13 @@ class primaryBeamToggles:
     countNoiseLevel = 2
 
     # --- accelerating potential toggles ---
-    engy_Thresh = 100  # minimum allowable energy of the inverted-V potential
+    engy_Thresh = 120  # minimum allowable energy of the inverted-V potential
     maxfev = int(1E4) # number of iterations the LM fit is allowed
     useNoGuess = True # use an initial guess?
 
     # --- Levenberg-Marquart Fit toggles ---
     wPitchsToFit = [10, 20, 30, 40, 50, 60, 70, 80, 90] # give pitch angles in degrees
-    wDistributionToFit = 'Kappa' # 'Maxwellian' or 'Kappa'
+    wDistributionToFit = 'Maxwellian' # 'Maxwellian' or 'Kappa'
     numToAverageOver = 5 # HOW many datapoints are averaged together when fitting
 
     # Determine guesses for the fitted data
@@ -71,7 +72,7 @@ class primaryBeamToggles:
         kappa_guess = 20
 
     # --- fit refinement ---
-    useFitRefinement = True
+    useFitRefinement = False
     beta_guess = 12 # altitude of the inverted-V
     n0guess_deviation = 0.99
 
@@ -85,14 +86,14 @@ class backScatterToggles:
     outputFolder = r'C:\Data\physicsModels\invertedV\backScatter'
 
     # --- ENERGY GRID ---
-    N_energyGrid = 50
-    model_energyGrid = np.linspace(10, 4E3, N_energyGrid)
+    N_energyGrid = 1000
+    model_energyGrid = np.linspace(1, 4E3, N_energyGrid)
 
     # --- model parameters ---
     modelParametersPitchAngle = 10 # scalar [degrees] - which pitch angle to use for the "primary beam"
 
     # --- Calculating backScatter ---
-    betaChoice = 6 # which beta value to pick i.e. the height above the rocket of the invertedV
+    betaChoice = 20 # which beta value to pick i.e. the height above the rocket of the invertedV
     niterations_backscatter = 4  # number of iterations for the secondaries calculations. >19 iterations is TOO many
 
 

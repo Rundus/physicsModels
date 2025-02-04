@@ -106,11 +106,17 @@ class backScatter_class:
 
         return degradedPrimFlux, secondariesFlux
 
-    def calcIonosphericResponse(self, beta, V0, targetPitch, response_energy_Grid, beam_EnergyGrid, beam_diffNFlux):
+    def calcCutoffEnergyTargetPitch(self, beta, V0):
+        '''
+        :param beta:
+        :param V0:
+        :return:
+        '''
+
+    def calcIonosphericResponse(self, beta, V0, response_energy_Grid, beam_EnergyGrid, beam_diffNFlux):
         '''
         :param beta: - Scalar. Value of B_max/B_min indicating the height of the lower boundary of the Inverted-V
         :param response_energy_Grid: - 1D array of energy values with arbitrary number of points. Must be between 0 to 1keV.
-        :param targetPitch: - Scalar. Pitch angle (in deg) indicating the slice in angular space of the outputted secondary/backscatter values
         :param beam_Energies: - 1D array of energy grid values for the Primary Inverted-V beam of electrons. Arbitrary number of points allowed i.e. raw data or model data accepted.
         :param beam_diffNFlux: - 1D array of differential number flux values (j_N) for the beam.
         :param V0: parallel potential value of inverted-V
@@ -131,35 +137,15 @@ class backScatter_class:
         # At an arbitrary altitude the beam will widen due to (2), thus the beam itself may not be visible at certain eneriges for a given pitch angle
         # e.g. at low energies, the beam is really collimated, so low energies may not show up at ~60deg for a given altitude
 
-        # inverted-V lower boundary - maximum pitch angles of the beam for a given energy
         alpha_m = deepcopy((180 / np.pi) * np.arcsin(np.sqrt(response_energy_Grid / (response_energy_Grid + V0))))
 
         # atmosphere boundary - pitch angle of beam electrons which had the highest pitch for a given energy
-        alpha_atm = np.degrees(np.arcsin(np.sqrt(beta) * np.sin(np.radians(alpha_m))))
-        alpha_atm = np.nan_to_num(alpha_atm, nan=90)
-
-        # atmosphere boundary - beam pitch angle required to reach 90deg at Z_atm
-        alpha_M_star = np.degrees(np.arcsin(1 / np.sqrt(beta)))
-
-        # atmosphere boundary - filter beam for electrons that have widened enough to reach "target_pitch"
-        # BE CAREFUL: alpha_m corresponds to the BEAM pitch angles, NOT the response_energy_Grid pitch angles.
-        jN_targetPitch = deepcopy(beam_diffNFlux)
-        jN_targetPitch[np.where(alpha_atm < targetPitch)[0]] = 0
-
-        ######################
-        # --- BACKSCATTER ---
-        ######################
-        nIterations = backScatterToggles.niterations_backscatter
-        R = 0.1
-
-        # --- define the outputs ---
-        sec_Flux = deepcopy(np.zeros(shape=(nIterations + 1, len(response_energy_Grid))))
-        dgdPrim_Flux = deepcopy(np.zeros(shape=(nIterations + 1, len(response_energy_Grid))))
+        alpha_I = np.degrees(np.arcsin(np.sqrt(beta) * np.sin(np.radians(alpha_m))))
+        Gamma = np.nan_to_num(alpha_I, nan=90)
 
         # --- get varPhi(E) of the beam [cm^-2 s^-1 eV^-1]---
         # Description: Integrate the beam over pitch angle by implementing a Gamma angle
-        Gamma = deepcopy(np.array([alpha_atm[i] if alpha_m[i] < alpha_M_star else 90 for i in range(len(alpha_atm))]))
-        varPhi_E_beam = np.pi * jN_targetPitch * np.power(np.sin(np.radians(Gamma)), 2)
+        varPhi_E_beam = np.pi * beam_diffNFlux * np.power(np.sin(np.radians(Gamma)), 2)
 
         # --- incident Electron Flux ---
         # desciption: We integrate each varPhi(E) point around a deltaE to get the total number of electrons at that energy.
@@ -174,27 +160,22 @@ class backScatter_class:
             for idx in range(len(varPhi_E_beam))])
         incident_ElecEnergy = beam_EnergyGrid
 
+        ######################
+        # --- BACKSCATTER ---
+        ######################
+        nIterations = backScatterToggles.niterations_backscatter
+        R = 0.1
+
+        # --- define the outputs ---
+        sec_Flux = deepcopy(np.zeros(shape=(nIterations + 1, len(response_energy_Grid))))
+        dgdPrim_Flux = deepcopy(np.zeros(shape=(nIterations + 1, len(response_energy_Grid))))
+
         # --- initial Impact ---
         degradedPrimaries, secondaries = self.calcBackscatter(
             energy_Grid=response_energy_Grid,
             beam_Energies=incident_ElecEnergy,
             beam_IncidentElectronFlux=incident_ElecFlux
         )
-
-        # --- apply the G(E) factor ---
-        # this accounts for electrons with enough energy to escape the parallel potential
-        lostCondition = V0 * (beta / (beta - np.power(np.sin(np.radians(targetPitch)),2)))
-        G_E = []
-
-        for idx, eVal in enumerate(response_energy_Grid):
-            if eVal > lostCondition:
-                G_E.append(0)
-            elif V0 <= eVal <= lostCondition:
-                G_E.append(1 - beta*(1 - V0/eVal))
-            else:
-                G_E.append(1)
-
-        G_E = deepcopy(np.array(G_E))
 
         # store the first beam fluxes
         sec_Flux[0] = secondaries / (1 - R)  # account for the ENTIRE secondaries cascade by multiplying by 1/(1-R)
@@ -203,10 +184,24 @@ class backScatter_class:
         ####################
         # --- ITERATIONS ---
         ####################
+
+        # --- determine the G(E) factor ---
+        # this accounts for electrons with enough energy to escape the parallel potential (see my notebook about this)
+        # ONLY applies to backscatter that reaches/escapes from the inverted-V, NOT the primary beam
+        G_E = []
+        for idx, eVal in enumerate(response_energy_Grid):
+            if eVal > V0 * (beta / (beta - 1)):
+                G_E.append(0)
+            elif V0 <= eVal <= V0 * (beta / (beta - 1)):
+                G_E.append(1 - beta * (1 - V0 / eVal))
+            else:
+                G_E.append(1)
+        G_E = deepcopy(np.array(G_E))
+
         # Perform same operation nIteration more times
         for loopIdx in range(1, nIterations + 1):
             # --- second impact ---
-            varPhi_E_previous = dgdPrim_Flux[loopIdx - 1]
+            varPhi_E_previous = G_E*dgdPrim_Flux[loopIdx - 1] # apply G(E) factor to the backscatter varPhi FLux only
             beamSpline = CubicSpline(y=varPhi_E_previous, x=response_energy_Grid)
             deltaE = (response_energy_Grid[1] - response_energy_Grid[0]) / 2
             incident_ElecFlux = np.array([
@@ -232,8 +227,8 @@ class backScatter_class:
         dgdPrim_total = np.sum(dgdPrim_Flux, axis=0) / np.pi
 
         # Apply G(E) factor
-        sec_total = np.array(G_E)*sec_total
-        dgdPrim_total = np.array(G_E)*dgdPrim_total
+        sec_total = sec_total
+        dgdPrim_total = dgdPrim_total
 
-        return dgdPrim_total, sec_total, jN_targetPitch
+        return dgdPrim_total, sec_total
 

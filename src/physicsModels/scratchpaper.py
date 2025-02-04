@@ -1,5 +1,6 @@
 import numpy as np
-a = np.array([10,10,10])
-a[np.where(a >20)[0]] = 0
-print(a)
 
+a = 0.666207232
+b = 0.674019840
+
+print(1/(b-a))

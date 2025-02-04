@@ -106,7 +106,7 @@ def generatePrimaryBeamFitPlots(GenToggles, primaryBeamToggles, **kwargs):
 
 
                 # Generate the noise level
-                yData_noise = helperFuncs().generateNoiseLevel(xData_raw, primaryBeamToggles)
+                yData_noise = helperFuncs().generateNoiseLevel(xData_raw, countNoiseLevel=primaryBeamToggles.countNoiseLevel)
 
                 # --- MAKE THE PLOTS ---
                 fig, ax = plt.subplots()

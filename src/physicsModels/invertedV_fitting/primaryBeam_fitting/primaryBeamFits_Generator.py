@@ -138,7 +138,7 @@ def generatePrimaryBeamFit(primaryBeamToggles, outputFolder):
     # --- LOOP THROUGH DATA TO FIT ---
     # --------------------------------
     ##################################
-    noiseData = helperFuncs().generateNoiseLevel(data_dict_diffFlux['Energy'][0], primaryBeamToggles)
+    noiseData = helperFuncs().generateNoiseLevel(data_dict_diffFlux['Energy'][0], countNoiseLevel=primaryBeamToggles.countNoiseLevel)
 
     EpochFitData, fitData, fitData_stdDev = helperFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
                                                                               targetTimes=primaryBeamToggles.targetTimes,

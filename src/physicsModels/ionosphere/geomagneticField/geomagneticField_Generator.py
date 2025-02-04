@@ -90,7 +90,7 @@ def generateGeomagneticField(outputData, GenToggles, BgeoToggles, **kwargs):
                                            width=Tick_Width_minor, length=Tick_Length_minor)
 
             plt.subplots_adjust(left=0.08, bottom=0.13, right=0.89, top=0.9, wspace=None, hspace=None)
-            plt.savefig(f'{GenToggles.simFolderPath}\geomagneticField\MODEL_Bgeo.png',dpi=dpi)
+            plt.savefig(f'{BgeoToggles.outputFolder}\MODEL_Bgeo.png',dpi=dpi)
             # plt.show()
 
         return Bgeo, Bgrad
@@ -122,5 +122,5 @@ def generateGeomagneticField(outputData, GenToggles, BgeoToggles, **kwargs):
 
             data_dict[key][1] = newAttrs
 
-        outputPath = rf'{GenToggles.simFolderPath}\geomagneticField\geomagneticfield.cdf'
+        outputPath = rf'{BgeoToggles.outputFolder}\geomagneticfield.cdf'
         outputCDFdata(outputPath, data_dict)

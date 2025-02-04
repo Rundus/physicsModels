@@ -7,7 +7,7 @@
 # --- IMPORTS ---
 #################
 import time
-from src.physicsModels.ionosphere.simToggles_Ionosphere import GenToggles,BgeoToggles,plasmaToggles,neutralsToggles,conductivityToggles,heightIonizationToggles
+from src.physicsModels.ionosphere.simToggles_Ionosphere import GenToggles,BgeoToggles,plasmaToggles,neutralsToggles,conductivityToggles,ionizationRecombToggles
 import spaceToolsLib as stl
 import warnings
 warnings.filterwarnings("ignore")
@@ -53,8 +53,8 @@ if regenNeutralEnvironment:
 if regenHeightIonization:
     # height ionization
     stl.prgMsg('Regenerating Height Ionization and Recombination')
-    from src.physicsModels.ionosphere.ionizationRecomb.ionizationRecomb_Generator import generateHeightIonization
-    generateHeightIonization(GenToggles, heightIonizationToggles, showPlot=True)
+    from src.physicsModels.ionosphere.ionizationRecomb.TestScripts.verify_IonizationRecombinationModels import generateHeightIonization
+    generateHeightIonization(ionizationRecombToggles, showPlot=True)
     stl.Done(start_time)
 
 if regenIonoConductivity:
