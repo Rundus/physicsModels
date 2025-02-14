@@ -7,7 +7,7 @@
 # --- IMPORTS ---
 #################
 import time
-from simToggles_invertedVFitting import primaryBeamToggles,GenToggles,primaryBeamPlottingToggles, backScatterToggles
+from simToggles_invertedVFitting import primaryBeamToggles, GenToggles, primaryBeamPlottingToggles, backScatterToggles
 import spaceToolsLib as stl
 start_time = time.time()
 
@@ -16,9 +16,9 @@ start_time = time.time()
 # --- TOGGLES ---
 #################
 primaryBeam_fitting = True
-primaryBeam_individualPlots = True
+primaryBeam_individualPlots = False
 primaryBeam_fitParamPlots = False
-backScatter_Calc = False
+backScatter_Calc = True
 backScatter_Plotting = False
 
 

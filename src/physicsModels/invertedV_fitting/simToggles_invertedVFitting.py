@@ -94,7 +94,7 @@ class backScatterToggles:
 
     # --- Calculating backScatter ---
     betaChoice = 20 # which beta value to pick i.e. the height above the rocket of the invertedV
-    niterations_backscatter = 4  # number of iterations for the secondaries calculations. >19 iterations is TOO many
+    niterations_backscatter = 6  # number of iterations for the secondaries calculations. >19 iterations is TOO many
 
 
 

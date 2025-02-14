@@ -9,8 +9,6 @@ from copy import deepcopy
 from scipy.integrate import simpson
 from scipy.interpolate import CubicSpline
 
-#TODO: Something isn't correct with the accelerated Maxwellian Example. It's TOO SMALL
-
 #################
 # --- TOGGLES ---
 #################
@@ -315,22 +313,46 @@ if show_Fig5_modelMaxwellianInvertedV_withBackscatter:
     ############################################
     # --- Calculate the Ionospheric Response ---
     ############################################
-    dgdPrim_Total_0deg, sec_Total_0deg, jN_0deg = backScatter_class().calcIonosphericResponse(
+    beam_num_flux, dgdPrim_num_flux, sec_num_flux = backScatter_class().calcIonosphericResponse(
         beta=beta,
         V0=model_V0,
-        targetPitch = 0,
-        response_energy_Grid=deepcopy(model_energyGrid),
-        beam_EnergyGrid=deepcopy(beam_energyGrid),
-        beam_diffNFlux = deepcopy(jN)
+        response_energy_grid=deepcopy(model_energyGrid),
+        beam_energy_grid=deepcopy(beam_energyGrid),
+        beam_jN = deepcopy(jN)
     )
 
-    dgdPrim_Total_targetPitch, sec_Total_targetPitch, jN_targetPitch = backScatter_class().calcIonosphericResponse(
-        beta=beta,
+    # fig, ax = plt.subplots()
+    # ax.plot(beam_energyGrid, jN)
+    # ax.plot(beam_energyGrid, beam_num_flux/(np.pi))
+    # ax.set_xscale('log')
+    # ax.set_yscale('log')
+    # ax.set_xlim(1E1, 1E4)
+    # ax.set_ylim(1E4, 1E7)
+    # plt.show()
+
+    # --- determine the jN profile at various pitch angles ---
+    # 0 deg
+    dgdPrim_Total_0deg, sec_Total_0deg,jN_0deg = backScatter_class().calc_jN_at_target_pitch(
         V0=model_V0,
-        targetPitch=targetPitch,
-        response_energy_Grid=deepcopy(model_energyGrid),
-        beam_EnergyGrid=deepcopy(beam_energyGrid),
-        beam_diffNFlux=deepcopy(jN)
+        beta=beta,
+        beam_jN=deepcopy(jN),
+        beam_energy_grid = beam_energyGrid,
+        sec_num_flux=sec_num_flux,
+        dgdPrim_num_flux=dgdPrim_num_flux,
+        energy_grid=model_energyGrid,
+        target_pitch=0
+    )
+
+    # --- targetPitch ---
+    dgdPrim_Total_targetPitch, sec_Total_targetPitch, jN_targetPitch = backScatter_class().calc_jN_at_target_pitch(
+        V0=model_V0,
+        beta=beta,
+        beam_jN=deepcopy(jN),
+        beam_energy_grid=beam_energyGrid,
+        sec_num_flux=sec_num_flux,
+        dgdPrim_num_flux=dgdPrim_num_flux,
+        energy_grid=model_energyGrid,
+        target_pitch=targetPitch
     )
 
     ##################
@@ -338,7 +360,7 @@ if show_Fig5_modelMaxwellianInvertedV_withBackscatter:
     ##################
     # Plot Everything
     fig, ax = plt.subplots(ncols=2)
-    fig.suptitle(f'Observations at {model_Zatm} km\n N-Iterations {6}')
+    fig.suptitle(f'Observations at {model_Zatm} km\n N-Iterations {10}')
     fig.set_size_inches(16, 8)
     yLim = [4, 7]
     xLim = [1, 4]
@@ -381,8 +403,6 @@ if show_Fig5_modelMaxwellianInvertedV_withBackscatter:
         ax[i].legend(fontsize=Legend_Fontsize)
 
     plt.savefig(rf'C:\Data\physicsModels\invertedV\backScatter\testScripts\Evans1974_Fig5_compare.png')
-    plt.tight_layout()
-    # plt.show()
 
 
 

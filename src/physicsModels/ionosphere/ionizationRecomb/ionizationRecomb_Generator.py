@@ -45,7 +45,7 @@ def generateIonizationRecomb(ionizationRecombToggles):
     # --- GET THE BEAM DATA ---
     ###########################
     Epoch = deepcopy(data_dict['Epoch'][0])
-    altRange = deepcopy(data_dict['simAlt'][0])
+    alt_range = deepcopy(data_dict['simAlt'][0])
 
 
     ################################
@@ -54,9 +54,9 @@ def generateIonizationRecomb(ionizationRecombToggles):
     # --- --- --- --- --- --- --- --
     ################################
 
-    data_dict['recombRate'][0] = np.zeros(shape=(len(Epoch),len(altRange)))
-    data_dict['qtot'][0] = np.zeros(shape=(len(Epoch), len(altRange)))
-    data_dict['ne_IonRcmb'][0] = np.zeros(shape=(len(Epoch), len(altRange)))
+    data_dict['recombRate'][0] = np.zeros(shape=(len(Epoch),len(alt_range)))
+    data_dict['qtot'][0] = np.zeros(shape=(len(Epoch), len(alt_range)))
+    data_dict['ne_IonRcmb'][0] = np.zeros(shape=(len(Epoch), len(alt_range)))
 
     for tmeIdx in tqdm(range(len(Epoch))):
 
@@ -65,7 +65,7 @@ def generateIonizationRecomb(ionizationRecombToggles):
         ############################
         # get the recombination rate. It does NOT change over the epoch
         model = schunkNagy2009()
-        recombRate = model.calcRecombinationRate(altRange, data_dict_plasma)
+        recombRate = model.calcRecombinationRate(alt_range, data_dict_plasma)
         data_dict['recombRate'][0][tmeIdx] = recombRate
 
         ##########################
@@ -73,18 +73,22 @@ def generateIonizationRecomb(ionizationRecombToggles):
         ##########################
 
         # get the beam data for ALL pitch angles between 0 to 90deg
-        jN_beam = data_dict_backScatter
-        jN_sec =
-        jN_dgdPrim =
-        beam_energyGrid =
-        response_energyGrid =
+        jN_beam = data_dict_backScatter['jN_beam'][0][tmeIdx][0:10+1]
+        jN_sec = data_dict_backScatter['jN_dgdPrim'][0][tmeIdx][0:10+1]
+        jN_dgdPrim = data_dict_backScatter['jN_sec'][0][tmeIdx][0:10+1]
+        beam_energyGrid = data_dict_backScatter['beam_energy_Grid'][0]
+        response_energyGrid = data_dict_backScatter['energy_Grid'][0]
+
+        # integrate beam data to get parallel energy flux (Phi_E) in keV/cm^-2s^-1
+
+
 
         # --- Get the energy/energyFluxes of the incident beam ---
         monoEnergyProfile = np.array([0.01, 0.1, 1, 10, 100, 1000])  # 100eV and 100keV, IN UNITS OF KEV
         energyFluxProfile = (6.242E8) * np.array([1 for i in range( len(monoEnergyProfile))])  # provide in ergs but convert from ergs/cm^-2s^-1 to keV/cm^-2s^-1
 
         # CHOOSE THE MODEL
-        model = fang2010(altRange, data_dict_neutral, data_dict_plasma, monoEnergyProfile, energyFluxProfile)
+        model = fang2010(alt_range, data_dict_neutral, data_dict_plasma, monoEnergyProfile, energyFluxProfile)
         H = model.scaleHeight()
         y = model.atmColumnMass(monoEnergyProfile)
         f = model.f(y, model.calcCoefficents(monoEnergyProfile))

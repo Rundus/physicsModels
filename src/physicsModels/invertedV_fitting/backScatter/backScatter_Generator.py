@@ -35,8 +35,14 @@ def generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterTogg
 
     # --- prepare the output data_dict ---
     data_dict = {'jN_beam': [[], {'DEPEND_0': 'Epoch','DEPEND_1': 'Pitch_Angle', 'DEPEND_2': 'beam_energy_Grid', 'UNITS': 'cm^-2 s^-1 sr^-1 eV^-1', 'LABLAXIS': 'beamFlux'}],
+                 'num_flux_beam': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'beam_energy_Grid', 'UNITS': 'cm^-2 s^-1', 'LABLAXIS': 'beam number flux'}],
+
                  'jN_dgdPrim': [[], {'DEPEND_0': 'Epoch','DEPEND_1': 'Pitch_Angle', 'DEPEND_2': 'energy_Grid', 'UNITS': 'cm^-2 s^-1sr^-1 eV^-1', 'LABLAXIS': 'degradedPriamryFlux'}],
+                 'num_flux_dgdPrim': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'energy_Grid', 'UNITS': 'cm^-2 s^-1', 'LABLAXIS': 'degraded primaries number flux'}],
+
                  'jN_sec':[[], {'DEPEND_0': 'Epoch','DEPEND_1': 'Pitch_Angle', 'DEPEND_2': 'energy_Grid', 'UNITS': 'cm^-2 s^-1 sr^-1eV^-1', 'LABLAXIS': 'secondaryFlux'}],
+                 'num_flux_sec': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'energy_Grid', 'UNITS': 'cm^-2 s^-1', 'LABLAXIS': 'secondaries number flux'}],
+
                  'energy_Grid': [[], {'DEPEND_0': None, 'UNITS': 'eV', 'LABLAXIS': 'Energy'}],
                  'beam_energy_Grid': [[], {'DEPEND_0': None, 'UNITS': 'eV', 'LABLAXIS': 'Energy'}],
                  'Epoch':[[], {'DEPEND_0': None, 'UNITS': 'ns', 'LABLAXIS': 'Epoch'}],
@@ -60,11 +66,16 @@ def generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterTogg
     ########################################
 
     # prepare the output variables
-    beamFlux_output = np.zeros(shape=(len(EpochFitData),  len(data_dict_diffFlux['Pitch_Angle'][0]), len(model_energyGrid)))
-    secondariesFlux_output = np.zeros(shape=(len(EpochFitData),  len(data_dict_diffFlux['Pitch_Angle'][0]), len(model_energyGrid)))
-    dgdPrimFlux_output = np.zeros(shape=(len(EpochFitData),  len(data_dict_diffFlux['Pitch_Angle'][0]), len(model_energyGrid)))
-    beam_energyGrid_output = np.zeros(shape=(len(EpochFitData), len(model_energyGrid)))
+    beam_jN_output = np.zeros(shape=(len(EpochFitData),  len(data_dict_diffFlux['Pitch_Angle'][0]), len(model_energyGrid)))
+    beam_para_num_flux_output = np.zeros( shape=(len(EpochFitData), len(model_energyGrid)))
 
+    sec_jN_output = np.zeros(shape=(len(EpochFitData),  len(data_dict_diffFlux['Pitch_Angle'][0]), len(model_energyGrid)))
+    sec_para_num_flux_output = np.zeros(shape=(len(EpochFitData), len(model_energyGrid)))
+
+    dgdPrim_jN_output = np.zeros(shape=(len(EpochFitData),  len(data_dict_diffFlux['Pitch_Angle'][0]), len(model_energyGrid)))
+    dgdPrim_para_num_flux_output = np.zeros(shape=(len(EpochFitData), len(model_energyGrid)))
+
+    beam_energy_grid_output = np.zeros(shape=(len(EpochFitData), len(model_energyGrid)))
 
     for tmeIdx in tqdm(range(len(EpochFitData))):
 
@@ -77,48 +88,67 @@ def generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterTogg
 
         # get the energy grid of the beam
         beam_EnergyGrid = deepcopy(model_energyGrid)+V0_fitParam
-        beam_energyGrid_output[tmeIdx] = deepcopy(beam_EnergyGrid)
+        beam_energy_grid_output[tmeIdx] = deepcopy(beam_EnergyGrid)
 
-        # construct jN for the beam
+        # construct jN for the beam (Assume the beam is isotropic)
         if primaryBeamToggles.wDistributionToFit == 'Kappa':
             kappa_fitParam = data_dict_beamFits['kappa'][0][tmeIdx][modelParamsIdx]
             params = [n0_fitParam, Te_fitParam, V0_fitParam, kappa_fitParam]
-            model_beam_diffNFlux = primaryBeam_class().diffNFlux_fitFunc_Kappa(beam_EnergyGrid, *params) # Assume the beam is isotropic
+            model_beam_jN = primaryBeam_class().diffNFlux_fitFunc_Kappa(beam_EnergyGrid, *params)
         elif primaryBeamToggles.wDistributionToFit == 'Maxwellian':
             params = [n0_fitParam, Te_fitParam, V0_fitParam]
-            model_beam_diffNFlux = primaryBeam_class().diffNFlux_fitFunc_Maxwellian(beam_EnergyGrid, *params)
-
+            model_beam_jN = primaryBeam_class().diffNFlux_fitFunc_Maxwellian(beam_EnergyGrid, *params)
 
         ############################
         # --- CALC IONO RESPONSE ---
         ############################
-
-        for loopIdx, PitchValue in enumerate(data_dict_diffFlux['Pitch_Angle'][0]):
-
-            if PitchValue in np.setdiff1d(data_dict_diffFlux['Pitch_Angle'][0],[0, 10, 20, 30, 40, 50, 60, 70, 80, 90]): # calculates BackScatter only on wPitchToFit angles
-                dgdPrimaries, secondaries, beam_jN_targetPitch = np.zeros(shape=(len(model_energyGrid))),np.zeros(shape=(len(model_energyGrid))),np.zeros(shape=(len(model_energyGrid)))
-            else:
-                dgdPrimaries, secondaries, beam_jN_targetPitch = backScatter_class().calcIonosphericResponse(
+        para_num_flux_beam, para_num_flux_dgdPrim, para_num_flux_sec =backScatter_class().calcIonosphericResponse(
                     beta=backScatterToggles.betaChoice,
                     V0=V0_fitParam,
-                    targetPitch=PitchValue,
-                    response_energy_Grid=model_energyGrid,
-                    beam_EnergyGrid=beam_EnergyGrid,
-                    beam_diffNFlux=model_beam_diffNFlux,
+                    response_energy_grid=model_energyGrid,
+                    beam_energy_grid=beam_EnergyGrid,
+                    beam_jN=deepcopy(model_beam_jN)
+                )
+
+        # get the jN value for each pitch angle - used to compare the model to the real data
+        for loopIdx, PitchValue in enumerate(data_dict_diffFlux['Pitch_Angle'][0]):
+            if PitchValue in np.setdiff1d(data_dict_diffFlux['Pitch_Angle'][0],[0, 10, 20, 30, 40, 50, 60, 70, 80, 90]): # calculates BackScatter only on wPitchToFit angles
+                dgdPrim_target_pitch, secondaries_target_pitch, beam_jN_target_pitch = np.zeros(shape=(len(model_energyGrid))),np.zeros(shape=(len(model_energyGrid))),np.zeros(shape=(len(model_energyGrid)))
+            else:
+                dgdPrim_target_pitch, secondaries_target_pitch, beam_jN_target_pitch = backScatter_class().calc_jN_at_target_pitch(
+                    beta=backScatterToggles.betaChoice,
+                    V0=V0_fitParam,
+                    target_pitch=PitchValue,
+                    energy_grid=model_energyGrid,
+                    dgdPrim_num_flux= para_num_flux_dgdPrim,
+                    sec_num_flux= para_num_flux_sec,
+                    beam_energy_grid = beam_EnergyGrid,
+                    beam_jN = deepcopy(model_beam_jN),
                 )
 
             # --- output all the data ---
-            beamFlux_output[tmeIdx][loopIdx] = beam_jN_targetPitch
-            dgdPrimFlux_output[tmeIdx][loopIdx] = dgdPrimaries
-            secondariesFlux_output[tmeIdx][loopIdx] = secondaries
+            beam_jN_output[tmeIdx][loopIdx] = beam_jN_target_pitch
+            dgdPrim_jN_output[tmeIdx][loopIdx] = dgdPrim_target_pitch
+            sec_jN_output[tmeIdx][loopIdx] = secondaries_target_pitch
 
+
+        # store the parallel number flux data
+        beam_para_num_flux_output[tmeIdx] = para_num_flux_beam
+        sec_para_num_flux_output[tmeIdx] = para_num_flux_sec
+        dgdPrim_para_num_flux_output[tmeIdx] = para_num_flux_dgdPrim
 
     # output the data
-    data_dict['jN_beam'][0] = beamFlux_output
-    data_dict['jN_dgdPrim'][0] = dgdPrimFlux_output
-    data_dict['jN_sec'][0] = secondariesFlux_output
+    data_dict['jN_beam'][0] = beam_jN_output
+    data_dict['num_flux_beam'][0] = beam_para_num_flux_output
+
+    data_dict['jN_dgdPrim'][0] = dgdPrim_jN_output
+    data_dict['num_flux_dgdPrim'][0] = sec_para_num_flux_output
+
+    data_dict['jN_sec'][0] = sec_jN_output
+    data_dict['num_flux_sec'][0] = dgdPrim_para_num_flux_output
+
     data_dict['energy_Grid'][0] = model_energyGrid
-    data_dict['beam_energy_Grid'][0] = beam_energyGrid_output
+    data_dict['beam_energy_Grid'][0] = beam_energy_grid_output
     data_dict['Epoch'][0] = EpochFitData
 
     # --- --- --- --- --- ---
