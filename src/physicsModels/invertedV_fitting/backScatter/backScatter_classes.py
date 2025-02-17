@@ -240,7 +240,7 @@ class backScatter_class:
         return para_num_flux_beam, para_num_flux_dgdPrim, para_num_flux_sec
 
 
-    def calc_jN_at_target_pitch(self, V0, beta , beam_jN, beam_energy_grid, sec_num_flux, dgdPrim_num_flux, energy_grid, target_pitch):
+    def calc_response_at_target_pitch(self, V0, beta , beam_jN, beam_energy_grid, sec_num_flux, dgdPrim_num_flux, energy_grid, target_pitch):
         '''
         :param V0:
         :param beta:
@@ -271,7 +271,6 @@ class backScatter_class:
         sec_targetPitch[np.where(energy_grid > lostCondition)[0]] = 0
 
         # modify the primary beam
-        # jN_targetPitch = deepcopy(beam_jN)/(np.pi*np.power(np.sin(np.radians(Gamma)), 2))
         jN_targetPitch = beam_jN
         jN_targetPitch[np.where(beam_energy_grid < lostCondition)[0]] = 0
         jN_targetPitch[np.where(beam_energy_grid < V0)[0]] = 0

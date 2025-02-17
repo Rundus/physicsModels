@@ -115,7 +115,7 @@ def generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterTogg
             if PitchValue in np.setdiff1d(data_dict_diffFlux['Pitch_Angle'][0],[0, 10, 20, 30, 40, 50, 60, 70, 80, 90]): # calculates BackScatter only on wPitchToFit angles
                 dgdPrim_target_pitch, secondaries_target_pitch, beam_jN_target_pitch = np.zeros(shape=(len(model_energyGrid))),np.zeros(shape=(len(model_energyGrid))),np.zeros(shape=(len(model_energyGrid)))
             else:
-                dgdPrim_target_pitch, secondaries_target_pitch, beam_jN_target_pitch = backScatter_class().calc_jN_at_target_pitch(
+                dgdPrim_target_pitch, secondaries_target_pitch, beam_jN_target_pitch = backScatter_class().calc_response_at_target_pitch(
                     beta=backScatterToggles.betaChoice,
                     V0=V0_fitParam,
                     target_pitch=PitchValue,
@@ -137,7 +137,7 @@ def generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterTogg
         sec_para_num_flux_output[tmeIdx] = para_num_flux_sec
         dgdPrim_para_num_flux_output[tmeIdx] = para_num_flux_dgdPrim
 
-    # output the data
+    # output the all data
     data_dict['jN_beam'][0] = beam_jN_output
     data_dict['num_flux_beam'][0] = beam_para_num_flux_output
 

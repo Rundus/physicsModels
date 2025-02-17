@@ -298,7 +298,7 @@ if show_Fig5_modelMaxwellianInvertedV_withBackscatter:
     targetPitch = 45
 
     # create a model beam at 0deg pitch
-    N = 2000
+    N = backScatterToggles.N_energyGrid
     model_energyGrid = np.linspace(10, 1E4, N)  # models the energies of the non-acceleration maxwellian
     beam_energyGrid = np.linspace(10, 1E4, N) + model_V0  # models the energies of the beam
     distributionFunc = distributions_class().generate_Maxwellian_Espace(n=model_n,
@@ -307,8 +307,6 @@ if show_Fig5_modelMaxwellianInvertedV_withBackscatter:
 
     jN = distributions_class().calc_diffNFlux_Espace(dist=distributionFunc,
                                                      energy_Grid=beam_energyGrid)
-
-
 
     ############################################
     # --- Calculate the Ionospheric Response ---
@@ -321,18 +319,9 @@ if show_Fig5_modelMaxwellianInvertedV_withBackscatter:
         beam_jN = deepcopy(jN)
     )
 
-    # fig, ax = plt.subplots()
-    # ax.plot(beam_energyGrid, jN)
-    # ax.plot(beam_energyGrid, beam_num_flux/(np.pi))
-    # ax.set_xscale('log')
-    # ax.set_yscale('log')
-    # ax.set_xlim(1E1, 1E4)
-    # ax.set_ylim(1E4, 1E7)
-    # plt.show()
-
     # --- determine the jN profile at various pitch angles ---
     # 0 deg
-    dgdPrim_Total_0deg, sec_Total_0deg,jN_0deg = backScatter_class().calc_jN_at_target_pitch(
+    dgdPrim_Total_0deg, sec_Total_0deg,jN_0deg = backScatter_class().calc_response_at_target_pitch(
         V0=model_V0,
         beta=beta,
         beam_jN=deepcopy(jN),
@@ -344,7 +333,7 @@ if show_Fig5_modelMaxwellianInvertedV_withBackscatter:
     )
 
     # --- targetPitch ---
-    dgdPrim_Total_targetPitch, sec_Total_targetPitch, jN_targetPitch = backScatter_class().calc_jN_at_target_pitch(
+    dgdPrim_Total_targetPitch, sec_Total_targetPitch, jN_targetPitch = backScatter_class().calc_response_at_target_pitch(
         V0=model_V0,
         beta=beta,
         beam_jN=deepcopy(jN),

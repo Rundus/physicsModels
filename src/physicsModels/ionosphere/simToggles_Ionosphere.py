@@ -15,7 +15,7 @@ class GenToggles:
     simAltLow = 50*m_to_km # low altitude (in meters)
     simAltHigh = 1000*m_to_km # high altitude (in meters)
     obsHeight = 400*m_to_km # height of observation (in meters)
-    alt_Rez = 2000 # number of points in the altitude grid
+    alt_Rez = 1000 # number of points in the altitude grid
 
     # calculatd quantities
     simAlt = np.linspace(simAltLow, simAltHigh, alt_Rez)  # in METERS
@@ -69,7 +69,6 @@ class plasmaToggles:
 
     wIons = ['NO+','O+','O2+']  # which neutrals to consider in the simulation, use the key format in spaceToolsLib
     # wIons = ['NO+','H+','N+','He+', 'O+', 'O2+']  # all ions
-
 
 
 ######################

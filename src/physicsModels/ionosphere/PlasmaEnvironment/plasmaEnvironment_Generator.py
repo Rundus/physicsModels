@@ -470,5 +470,5 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
 
             data_dict[key][1] = newAttrs
 
-        outputPath = rf'{BgeoToggles.outputFolder}\plasmaEnvironment.cdf'
+        outputPath = rf'{plasmaToggles.outputFolder}\plasmaEnvironment.cdf'
         outputCDFdata(outputPath, data_dict)

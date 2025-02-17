@@ -20,7 +20,7 @@ start_time = time.time()
 regenBgeo = False
 regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
-regenHeightIonization = True
+ionRecomb_ne_Calc = True
 regenIonoConductivity = False
 
 ################################
@@ -50,11 +50,10 @@ if regenNeutralEnvironment:
     generateNeutralEnvironment(GenToggles, neutralsToggles, showPlot=True)
     stl.Done(start_time)
 
-if regenHeightIonization:
-    # height ionization
-    stl.prgMsg('Regenerating Height Ionization and Recombination')
-    from src.physicsModels.ionosphere.ionizationRecomb.TestScripts.verify_IonizationRecombinationModels import generateHeightIonization
-    generateHeightIonization(ionizationRecombToggles, showPlot=True)
+if ionRecomb_ne_Calc:
+    stl.prgMsg('Generating electron density from Ionization/Recombination\n')
+    from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_Generator import generateIonizationRecomb
+    generateIonizationRecomb(GenToggles,ionizationRecombToggles)
     stl.Done(start_time)
 
 if regenIonoConductivity:

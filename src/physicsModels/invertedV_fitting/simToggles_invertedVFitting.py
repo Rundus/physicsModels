@@ -14,11 +14,10 @@ class GenToggles:
         r'C:\Data\ACESII\attitude\high\ACESII_36359_Attitude_Solution.cdf'
     ]
 
-
     if wFlyerFit == 0: # ACES-II Data
         wRegion = 3  # pick the region below to use in the inverted-V times
         invertedV_times = [
-                            [datetime(2022, 11, 20, 17, 25, 1, 000000), datetime(2022, 11, 20, 17, 25, 3, 000000)], # Dispersive Region
+                            [datetime(2022, 11, 20, 17, 25,  1, 000000), datetime(2022, 11, 20, 17, 25, 3, 000000)], # Dispersive Region
                             [datetime(2022, 11, 20, 17, 24, 12, 162000), datetime(2022, 11, 20, 17, 24, 18, 812000)], # Very First ,Inverted-V, the high energy one
                             [datetime(2022, 11, 20, 17, 24, 45, 862000), datetime(2022, 11, 20, 17, 24, 49, 312000)], # small inverted-V, after the High energy One
                             [datetime(2022, 11, 20, 17, 25, 23, 762000), datetime(2022, 11, 20, 17, 26, 8, 212000)],  # Primary inverted-V
@@ -86,8 +85,8 @@ class backScatterToggles:
     outputFolder = r'C:\Data\physicsModels\invertedV\backScatter'
 
     # --- ENERGY GRID ---
-    N_energyGrid = 1000
-    model_energyGrid = np.linspace(1, 4E3, N_energyGrid)
+    N_energyGrid = 500
+    model_energyGrid = np.logspace(1, np.log10(2000), N_energyGrid)
 
     # --- model parameters ---
     modelParametersPitchAngle = 10 # scalar [degrees] - which pitch angle to use for the "primary beam"

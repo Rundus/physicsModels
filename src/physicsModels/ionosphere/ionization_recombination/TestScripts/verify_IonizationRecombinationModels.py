@@ -1,14 +1,16 @@
 # --- verify_IonizationRecombinationModels.py ---
-# Description: Use a ionizationRecomb Method to create electron density
+# Description: Use a ionization_recombination Method to create electron density
 # altitude profiles via Fang Parameterization or RangeDepth Methods. Offers
 # ability to insert real ESA data or made up data
+
+# TODO: Make this script run without needing to be called by executable
 
 # --- imports ---
 import time
 start_time = time.time()
 from src.physicsModels.ionosphere.simToggles_Ionosphere import *
 from spaceToolsLib.tools.CDF_load import loadDictFromFile
-from src.physicsModels.ionosphere.ionizationRecomb.ionizationRecomb_classes import *
+from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_classes import *
 from src.physicsModels.ionosphere.PlasmaEnvironment.plasmaEnvironment_classes import *
 import numpy as np
 from copy import deepcopy
