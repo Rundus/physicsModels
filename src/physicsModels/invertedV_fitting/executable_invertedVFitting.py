@@ -22,13 +22,11 @@ backScatter_Calc = True
 backScatter_Plotting = False
 
 
-
 ################################
 # --- --- --- --- --- --- --- --
 # --- ENVIRONMENT GENERATORS ---
 # --- --- --- --- --- --- --- --
 ################################
-
 
 if primaryBeam_fitting:
     stl.prgMsg('Generating Primary Beam Fit Parameters\n')

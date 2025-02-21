@@ -55,18 +55,17 @@ class fang2010:
         C = self.calcCoefficents(self.monoEnergyProfile)
         f_profiles = self.f(y,C)
         epsilion = 0.035
-        q = np.array([(fluxVal/epsilion)*np.array(f_profiles[idx]/H) for idx, fluxVal in enumerate(self.energyFluxProfile)])
-
-        # convert q [cm^-3 s^-1] to m^-3
-        q_m3 = np.power(stl.cm_to_m, 3)*q
-        return q_m3
+        q_profiles = np.array([(fluxVal/epsilion)*np.array(f_profiles[idx]/H) for idx, fluxVal in enumerate(self.energyFluxProfile)])
+        q_total = np.sum(q_profiles, axis=0)
+        return q_profiles, q_total
 
 class vickrey1982:
 
-    def calcRecombinationRate(self,altRange,data_dict):
+    def calcRecombinationRate(self, altRange, data_dict):
 
-        alpha = (stl.cm_to_m**3)*(2.5E-6)*np.exp(-altRange/(51.2*stl.m_to_km)) # in m^3s^-1, the factor of 1000 is to account for ki
-        return alpha
+        alpha = (2.5E-6)*np.exp(-altRange/(51.2*stl.m_to_km)) # in cm^3s^-1
+        # alpha_m3 = alpha/(stl.cm_to_m**3) # convert to m^3s6-1
+        return alpha, []
 
 
 class schunkNagy2009:
@@ -90,10 +89,12 @@ class schunkNagy2009:
             try:
                 partials.append(alpha_dissociated[f'{ionNam}'] * data_dict[f'n_{ionNam}'][0])
             except:
-
                 partials.append(alpha_radiative[f'{ionNam}'] * data_dict[f'n_{ionNam}'][0])
 
-        # Convert to from cm^3 to m^3
-        return np.sum(np.array(partials),axis=0)/(ni_total*np.power(stl.cm_to_m,3))
+        # output with units cm^3s^-1
+        alpha_total = np.sum(np.array(partials),axis=0)/(ni_total)
+        alpha_profiles = np.array(partials)/ni_total
+
+        return alpha_total, alpha_profiles
 
 

@@ -34,7 +34,7 @@ def generateIonizationRecomb(GenToggles, ionizationRecombToggles):
 
     # --- prepare the output data_dict ---
     data_dict_output = {
-                 'ne_IonRecomb': [[], {'DEPEND_0': 'Epoch','DEPEND_1':'simAlt', 'UNITS': 'cm^-3', 'LABLAXIS': 'Electron Density'}],
+                 'ne_IonRecomb': [[], {'DEPEND_0': 'Epoch','DEPEND_1':'simAlt', 'UNITS': 'm^-3', 'LABLAXIS': 'Electron Density'}],
                  'simAlt': [deepcopy(GenToggles.simAlt), {'DEPEND_0': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'simAlt'}],
                   'q_total': [[], {'DEPEND_0': 'Epoch','DEPEND_1':'simAlt', 'UNITS': 'm^-3s^-1', 'LABLAXIS': 'qtot'}],
                  'recombRate': [[], {'DEPEND_0': 'Epoch','DEPEND_1':'simAlt', 'UNITS': 'm^3s^-1', 'LABLAXIS': 'Recombination Rate'}],
@@ -55,43 +55,47 @@ def generateIonizationRecomb(GenToggles, ionizationRecombToggles):
     data_dict_output['ne_IonRecomb'][0] = np.zeros(shape=(len(Epoch), len(alt_range)))
 
     for tmeIdx in tqdm(range(len(Epoch))):
-    # for tmeIdx in tqdm([0,1]):
 
         ############################
         # --- RECOMBINATION RATE ---
         ############################
         # get the recombination rate. It does NOT change over the epoch
-        model = schunkNagy2009()
-        recombRate = model.calcRecombinationRate(alt_range, data_dict_plasma)
-        data_dict_output['recombRate'][0][tmeIdx] = recombRate
+        model = vickrey1982()
+        alpha_total, alpha_profiles = model.calcRecombinationRate(alt_range, data_dict_plasma)
+        data_dict_output['recombRate'][0][tmeIdx] = alpha_total
 
-        ##########################
-        # --- IONIZATION RATE  ---
-        ##########################
+        num_flux_beam = deepcopy(data_dict_backScatter['num_flux_beam'][0][tmeIdx])
+        num_flux_sec = deepcopy(data_dict_backScatter['num_flux_sec'][0][tmeIdx])
+        num_flux_dgdPrim = deepcopy(data_dict_backScatter['num_flux_dgdPrim'][0][tmeIdx])
 
-        # get the number flux data for the backscatter and number flux to units keV/cm^-2s^-1
-        beam_energyGrid = deepcopy( data_dict_backScatter['beam_energy_Grid'][0][tmeIdx])
-        response_energyGrid =deepcopy( data_dict_backScatter['energy_Grid'][0])
-        engy_flux_beam = np.multiply(deepcopy(data_dict_backScatter['num_flux_beam'][0][tmeIdx]), beam_energyGrid/1000)
-        engy_flux_sec = np.multiply(deepcopy(data_dict_backScatter['num_flux_sec'][0][tmeIdx]), response_energyGrid/1000)
-        engy_flux_dgdPrim = np.multiply(deepcopy(data_dict_backScatter['num_flux_dgdPrim'][0][tmeIdx]), response_energyGrid/1000)
+        # if the input data is good, only then fit it
+        # print([ not np.any(num_flux_beam), not np.any(num_flux_sec), not np.any(num_flux_dgdPrim) ])
+        if [np.any(num_flux_beam), np.any(num_flux_sec), np.any(num_flux_dgdPrim) ] == [True, True, True]:
+            ##########################
+            # --- IONIZATION RATE  ---
+            ##########################
 
-        # --- Get the energy/energyFluxes of the incident beam + backscatter electrons ---
-        monoEnergyProfile = np.append(response_energyGrid/1000, beam_energyGrid/1000)  # IN UNITS OF KEV
-        energyFluxProfile = np.append(engy_flux_dgdPrim+engy_flux_sec, engy_flux_beam)
+            # get the number flux data for the backscatter and number flux to units keV/cm^-2s^-1
+            beam_energyGrid = deepcopy(data_dict_backScatter['beam_energy_Grid'][0][tmeIdx])
+            response_energyGrid = deepcopy(data_dict_backScatter['energy_Grid'][0])
 
-        # CHOOSE THE MODEL
-        model = fang2010(alt_range, data_dict_neutral, data_dict_plasma, monoEnergyProfile, energyFluxProfile)
-        q_profiles = model.ionizationRate()  # in m^-3 s^-1
-        data_dict_output['q_total'][0][tmeIdx] = np.sum(q_profiles)
+            engy_flux_beam = np.multiply(num_flux_beam, beam_energyGrid/1000)
+            engy_flux_sec = np.multiply(num_flux_sec, response_energyGrid/1000)
+            engy_flux_dgdPrim = np.multiply(num_flux_dgdPrim, response_energyGrid/1000)
 
-        ##################################
-        # --- ELECTRON DENSITY (MODEL) ---
-        ##################################
-        q = deepcopy(data_dict_output['q_total'][0][tmeIdx])  # sum up the recombination rates from all the incoming electrons
-        alpha = deepcopy(data_dict_output['recombRate'][0][tmeIdx])
-        n_e = np.sqrt(q / alpha)  # in m^-3
-        data_dict_output['ne_IonRecomb'][0][tmeIdx] = n_e / (np.power(stl.cm_to_m, 3))
+            # --- Get the energy/energyFluxes of the incident beam + backscatter electrons ---
+            monoEnergyProfile = np.append(response_energyGrid/1000, beam_energyGrid/1000)  # IN UNITS OF KEV
+            energyFluxProfile = np.append(engy_flux_dgdPrim+engy_flux_sec, engy_flux_beam)
+
+            # CHOOSE THE MODEL
+            model = fang2010(alt_range, data_dict_neutral, data_dict_plasma, monoEnergyProfile, energyFluxProfile)
+            q_profiles, q_total = model.ionizationRate()  # in cm^-3 s^-1
+            data_dict_output['q_total'][0][tmeIdx] = q_total
+
+            ##################################
+            # --- ELECTRON DENSITY (MODEL) ---
+            ##################################
+            data_dict_output['ne_IonRecomb'][0][tmeIdx] = (stl.cm_to_m**3)*np.sqrt(deepcopy(data_dict_output['q_total'][0][tmeIdx]) / deepcopy(data_dict_output['recombRate'][0][tmeIdx]))  # in m^-3
 
     #####################
     # --- OUTPUT DATA ---

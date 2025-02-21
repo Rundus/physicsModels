@@ -349,7 +349,9 @@ if show_Fig5_modelMaxwellianInvertedV_withBackscatter:
     ##################
     # Plot Everything
     fig, ax = plt.subplots(ncols=2)
-    fig.suptitle(f'Observations at {model_Zatm} km\n N-Iterations {10}')
+    fig.suptitle(f'Observations at {model_Zatm} km\n '
+                 f'N-Iterations: {backScatterToggles.niterations_backscatter}\n'
+                 f'N-Energy GridPoint: {backScatterToggles.N_energyGrid}')
     fig.set_size_inches(16, 8)
     yLim = [4, 7]
     xLim = [1, 4]

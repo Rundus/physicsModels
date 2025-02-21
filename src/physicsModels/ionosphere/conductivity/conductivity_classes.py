@@ -13,14 +13,13 @@ class Nicolet1953:
         # This equation ONLY applies to N2, O2 -electron collisions.
         return (5.4E-10)*nn*power(Te,0.5)
 
-    def electronIon_CollisionFreq(self,data_dict_neutral,data_dict_plasma):
+    def electronIon_CollisionFreq(self,data_dict_neutral, data_dict_plasma):
         # nn is given as m^-3 and must be converted to cubic centimeters
         ne = 1E-6 * data_dict_plasma['ne'][0]
         Te = data_dict_plasma['Te'][0]  # convert back to kelvin
         A = np.log(1 + np.power(((4/(np.sqrt(pi)*np.power(q0,3)*np.sqrt(ne)))*np.power(kB*Te/2,3/2)),2)) # mean distance between particles. Can be debeye, can be 1/(2ne). We choose debeye
         u = 0
         return (4/3) * ((pi*np.power(q0,4))/np.sqrt(2*pi*m_e*np.power(kB*Te,3))) * (1+u)*ne*A
-
 
 class Evans1977:
     def ionNeutral_CollisionsFreq(self,data_dict_neutral,data_dict_plasma):
@@ -42,10 +41,15 @@ class Johnson1961:
         # This equation ONLY applies to N2, O2 -electron collisions.
         return (2.6E-9) * (nn + ni) * np.power(A, -0.5)
 
-    def electronIon_CollisionFreq(self,data_dict_neutral,data_dict_plasma):
+    def electronIon_CollisionFreq(self,data_dict_neutral, data_dict_plasma, **kwargs):
         Te = data_dict_plasma['Te'][0]
-        ne = data_dict_plasma['ne'][0]*1E-6
+
+        if list(kwargs.get('ne_data', [])) != []:
+            ne = kwargs.get('ne_data')*1E-6 # convert from m^-3 to cm^-3
+        else:
+            ne = data_dict_plasma['ne'][0]*1E-6 # convert from m^-3 to cm^-3
         return np.power(Te, -3/2)*ne*(34 + 4.18*np.log(np.power(Te,3)/ne))
+
 class Leda2019:
 
     # The Leda model posits that the dominat ions in the ionosphere are: No+, O2+, O+
@@ -55,7 +59,7 @@ class Leda2019:
     # (1) nonresonant electric-polarization collisions. Occurs at lower temperatures (occurs between all ion-neutral pairs)
     # (2) resonant charge-exchange collisions. Occurs at ~higher temperatures (ONLY occurs between alike-elements e.g. O2+ and O2, O+ and O etc.)
 
-    def ionNeutral_CollisionsFreq(self,data_dict_neutral,data_dict_plasma,ionKey):
+    def ionNeutral_CollisionsFreq(self, data_dict_neutral, data_dict_plasma, ionKey):
         # ion key options: ['Op', 'O2p', 'NOp']
         # This method returns BOTH the resonant and non-resonant collision freq combined
 
@@ -83,7 +87,7 @@ class Leda2019:
         else:
             raise Exception('Invalid Ion Key')
 
-    def electronNeutral_CollisionFreq(self,data_dict_neutral,data_dict_plasma,neutralKey):
+    def electronNeutral_CollisionFreq(self,data_dict_neutral,data_dict_plasma, neutralKey):
         Te = data_dict_plasma['Te'][0]
         n_N2 = data_dict_neutral['N2'][0]
         n_O2 = data_dict_neutral['O2'][0]
@@ -96,5 +100,5 @@ class Leda2019:
         elif neutralKey == 'O':
             return 1E-16*0.89*(1 + Te*(5.7E-4))*np.sqrt(Te)*n_O
         else:
-            raise Exception('Invalid Ion Key')
+            raise Exception('Invalid Neutral Key')
 

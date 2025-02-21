@@ -7,7 +7,7 @@
 # --- IMPORTS ---
 #################
 import time
-from src.physicsModels.ionosphere.simToggles_Ionosphere import GenToggles,BgeoToggles,plasmaToggles,neutralsToggles,conductivityToggles,ionizationRecombToggles
+from src.physicsModels.ionosphere.simToggles_Ionosphere import *
 import spaceToolsLib as stl
 import warnings
 warnings.filterwarnings("ignore")
@@ -21,7 +21,7 @@ regenBgeo = False
 regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
 ionRecomb_ne_Calc = True
-regenIonoConductivity = False
+calc_IonoConductivity = False
 
 ################################
 # --- --- --- --- --- --- --- --
@@ -33,14 +33,14 @@ if regenBgeo:
     # geomagnetic field
     stl.prgMsg('Regenerating Bgeo')
     from src.physicsModels.ionosphere.geomagneticField.geomagneticField_Generator import generateGeomagneticField
-    generateGeomagneticField(outputData=True,GenToggles=GenToggles, BgeoToggles=BgeoToggles,showPlot=True)
+    generateGeomagneticField(GenToggles=GenToggles, BgeoToggles=BgeoToggles,showPlot=True)
     stl.Done(start_time)
 
 if regenPlasmaEnvironment:
     # plasma environment
     stl.prgMsg('Regenerating Plasma Environment')
     from src.physicsModels.ionosphere.PlasmaEnvironment.plasmaEnvironment_Generator import generatePlasmaEnvironment
-    generatePlasmaEnvironment(True,GenToggles,plasmaToggles,showPlot=True)
+    generatePlasmaEnvironment(GenToggles,plasmaToggles,showPlot=True)
     stl.Done(start_time)
 
 if regenNeutralEnvironment:
@@ -56,9 +56,9 @@ if ionRecomb_ne_Calc:
     generateIonizationRecomb(GenToggles,ionizationRecombToggles)
     stl.Done(start_time)
 
-if regenIonoConductivity:
+if calc_IonoConductivity:
     # conductivity
-    stl.prgMsg('Regenerating Ionospheric Conductivity')
+    stl.prgMsg('Calculating Ionospheric Conductivity')
     from src.physicsModels.ionosphere.conductivity.conductivity_Generator import generateIonosphericConductivity
-    generateIonosphericConductivity(True, GenToggles,conductivityToggles, showPlot=True)
+    generateIonosphericConductivity(GenToggles, conductivityToggles)
     stl.Done(start_time)
