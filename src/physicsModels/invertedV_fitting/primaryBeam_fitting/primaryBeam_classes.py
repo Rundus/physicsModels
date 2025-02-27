@@ -33,10 +33,14 @@ class helperFuncs:
     def groupAverageData(self, data_dict_diffFlux, targetTimes, N_avg, **kwargs):
         '''
         # Input:
-        # data_dict_diffFlux - data_dict with "Differential_Number_Flux", "Pitch_Angle" and "Energy"  variables
-        # targetTimes - 1D array of [T_min, T_max] where T values are datetimes of the min/max region of the data to average
-        # N_avg - scalar indicating the number of Epoch values to average over. Should be odd
-        # fluxType (kwarg) - string. Option of either "diffNFlux" or "diffEFlux" to determine if number flux or energy flux should be used
+        # data_dict_diffFlux - data_dict
+            "Differential_Number_Flux", "Pitch_Angle" and "Energy"  variables
+        # targetTimes - 1D array
+            [T_min, T_max] where T values are datetimes of the min/max region of the data to average
+        # N_avg - scalar
+            the number of Epoch values to average over. Should be odd
+        # fluxType (kwarg) - string.
+            Option of either "diffNFlux" or "diffEFlux" to determine if number flux or energy flux should be used
 
         # Output:
         Epoch, Differential_Number_Flux and stdDevs averaged over N TIME-points specified in the primaryBeamToggles. Dimensions in Pitch and Energy are untouched
@@ -68,6 +72,8 @@ class helperFuncs:
         # Handle the Epoch
         chunkedEpoch = np.split(data_dict_diffFlux['Epoch'][0][low_idx:high_idx], round(len(data_dict_diffFlux['Epoch'][0][low_idx:high_idx]) / N_avg))
         EpochFitData = np.array([chunkedEpoch[i][int((N_avg - 1) / 2)] for i in range(len(chunkedEpoch))])
+        chunkedIlat = np.split(data_dict_diffFlux['ILat'][0][low_idx:high_idx], round(len(data_dict_diffFlux['ILat'][0][low_idx:high_idx]) / N_avg))
+        ILatFitData = np.array([chunkedIlat[i][int((N_avg - 1) / 2)] for i in range(len(chunkedIlat))])
 
 
         # --- handle the multi-dimenional data ---
@@ -98,7 +104,7 @@ class helperFuncs:
             diffFlux_avg[:, loopIdx, :] = fitData
             stdDevs_avg[:, loopIdx, :] = fitData_stdDev
 
-        return EpochFitData, diffFlux_avg, stdDevs_avg
+        return EpochFitData, ILatFitData, diffFlux_avg, stdDevs_avg
     def removeDuplicates(self, a, b):
         from collections import defaultdict
         D = defaultdict(list)

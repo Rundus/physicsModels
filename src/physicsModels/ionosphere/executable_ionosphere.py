@@ -20,8 +20,8 @@ start_time = time.time()
 regenBgeo = False
 regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
-ionRecomb_ne_Calc = True
-calc_IonoConductivity = False
+ionRecomb_ne_Calc = False
+calc_IonoConductivity = True
 
 ################################
 # --- --- --- --- --- --- --- --

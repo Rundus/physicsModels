@@ -27,30 +27,29 @@ def generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterTogg
     data_dict_diffFlux = stl.loadDictFromFile(inputFilePath=GenToggles.input_diffNFiles[GenToggles.wFlyerFit],
                                               wKeys_Reduce=['Differential_Number_Flux',
                                                             'Epoch',
-                                                            'Differential_Number_Flux_stdDev'])
+                                                            'Differential_Number_Flux_stdDev',
+                                                            'ILat'])
 
     data_dict_beamFits = stl.loadDictFromFile(inputFilePath=rf"{primaryBeamToggles.outputFolder}\primaryBeam_fitting_parameters.cdf")
 
-    # --- prepare the output data_dict ---
-    data_dict = {'jN_beam': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle', 'DEPEND_2': 'beam_energy_Grid', 'UNITS': 'cm^-2 s^-1 sr^-1 eV^-1', 'LABLAXIS': 'beamFlux'}],
-                 'num_flux_beam': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'beam_energy_Grid', 'UNITS': 'cm^-2 s^-1', 'LABLAXIS': 'beam number flux'}],
-
-                 'jN_dgdPrim': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle', 'DEPEND_2': 'energy_Grid', 'UNITS': 'cm^-2 s^-1sr^-1 eV^-1', 'LABLAXIS': 'degradedPriamryFlux'}],
-                 'num_flux_dgdPrim': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'energy_Grid', 'UNITS': 'cm^-2 s^-1', 'LABLAXIS': 'degraded primaries number flux'}],
-
-                 'jN_sec':[[], {'DEPEND_0': 'Epoch','DEPEND_1': 'Pitch_Angle', 'DEPEND_2': 'energy_Grid', 'UNITS': 'cm^-2 s^-1 sr^-1eV^-1', 'LABLAXIS': 'secondaryFlux'}],
-                 'num_flux_sec': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'energy_Grid', 'UNITS': 'cm^-2 s^-1', 'LABLAXIS': 'secondaries number flux'}],
-
-                 'energy_Grid': [[], {'DEPEND_0': None, 'UNITS': 'eV', 'LABLAXIS': 'Energy'}],
-                 'beam_energy_Grid': [[], {'DEPEND_0': None, 'UNITS': 'eV', 'LABLAXIS': 'Energy'}],
-                 'Epoch':[[], {'DEPEND_0': None, 'UNITS': 'ns', 'LABLAXIS': 'Epoch'}],
-                 'Pitch_Angle': deepcopy(data_dict_diffFlux['Pitch_Angle']),
-                 }
-
     # Re-construct the 5-Averaged data. Only the Epoch dimension is reduced from original data
-    EpochFitData, diffNFlux_avg, stdDev_avg = helperFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
+    EpochFitData, ILatFitData, diffNFlux_avg, stdDev_avg = helperFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
                                                                                 targetTimes=[data_dict_diffFlux['Epoch'][0][0], data_dict_diffFlux['Epoch'][0][-1]],
                                                                                 N_avg=primaryBeamToggles.numToAverageOver)
+
+    # --- prepare the output data_dict ---
+    data_dict_output = {'jN_beam': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle', 'DEPEND_2': 'beam_energy_Grid', 'UNITS': 'cm^-2 s^-1 sr^-1 eV^-1', 'LABLAXIS': 'beamFlux'}],
+                        'num_flux_beam': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'beam_energy_Grid', 'UNITS': 'cm^-2 s^-1', 'LABLAXIS': 'beam number flux'}],
+                        'jN_dgdPrim': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle', 'DEPEND_2': 'energy_Grid', 'UNITS': 'cm^-2 s^-1sr^-1 eV^-1', 'LABLAXIS': 'degradedPriamryFlux'}],
+                        'num_flux_dgdPrim': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'energy_Grid', 'UNITS': 'cm^-2 s^-1', 'LABLAXIS': 'degraded primaries number flux'}],
+                        'jN_sec': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle', 'DEPEND_2': 'energy_Grid', 'UNITS': 'cm^-2 s^-1 sr^-1eV^-1', 'LABLAXIS': 'secondaryFlux'}],
+                        'num_flux_sec': [[], {'DEPEND_0': 'Epoch', 'DEPEND_1': 'energy_Grid', 'UNITS': 'cm^-2 s^-1', 'LABLAXIS': 'secondaries number flux'}],
+                        'energy_Grid': [[], {'DEPEND_0': None, 'UNITS': 'eV', 'LABLAXIS': 'Energy'}],
+                        'beam_energy_Grid': [[], {'DEPEND_0': None, 'UNITS': 'eV', 'LABLAXIS': 'Energy'}],
+                        'Epoch': [EpochFitData, deepcopy(data_dict_diffFlux['Epoch'][1])],
+                        'ILat': [ILatFitData, deepcopy(data_dict_diffFlux['ILat'][1])],
+                        'Pitch_Angle': deepcopy(data_dict_diffFlux['Pitch_Angle']),
+                        }
 
     #####################
     # --- ENERGY GRID ---
@@ -151,18 +150,17 @@ def generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterTogg
                 sec_jN_output[tmeIdx][loopIdx] = np.zeros(shape=(len(model_energyGrid)))
 
     # output the all data
-    data_dict['jN_beam'][0] = beam_jN_output
-    data_dict['num_flux_beam'][0] = beam_para_num_flux_output
+    data_dict_output['jN_beam'][0] = beam_jN_output
+    data_dict_output['num_flux_beam'][0] = beam_para_num_flux_output
 
-    data_dict['jN_dgdPrim'][0] = dgdPrim_jN_output
-    data_dict['num_flux_dgdPrim'][0] = dgdPrim_para_num_flux_output
+    data_dict_output['jN_dgdPrim'][0] = dgdPrim_jN_output
+    data_dict_output['num_flux_dgdPrim'][0] = dgdPrim_para_num_flux_output
 
-    data_dict['jN_sec'][0] = sec_jN_output
-    data_dict['num_flux_sec'][0] = sec_para_num_flux_output
+    data_dict_output['jN_sec'][0] = sec_jN_output
+    data_dict_output['num_flux_sec'][0] = sec_para_num_flux_output
 
-    data_dict['energy_Grid'][0] = model_energyGrid
-    data_dict['beam_energy_Grid'][0] = beam_energy_grid_output
-    data_dict['Epoch'][0] = EpochFitData
+    data_dict_output['energy_Grid'][0] = model_energyGrid
+    data_dict_output['beam_energy_Grid'][0] = beam_energy_grid_output
 
     # --- --- --- --- --- ---
     # --- OUTPUT THE DATA ---
@@ -173,18 +171,18 @@ def generateSecondaryBackScatter(GenToggles, primaryBeamToggles, backScatterTogg
                   'SCALETYP': 'linear', 'LABLAXIS': None}
 
     # update the data dict attrs
-    for key, val in data_dict.items():
+    for key, val in data_dict_output.items():
 
         # convert the data to numpy arrays
-        data_dict[key][0] = np.array(data_dict[key][0])
+        data_dict_output[key][0] = np.array(data_dict_output[key][0])
 
         # update the attributes
         newAttrs = deepcopy(exampleVar)
 
-        for subKey, subVal in data_dict[key][1].items():
+        for subKey, subVal in data_dict_output[key][1].items():
             newAttrs[subKey] = subVal
 
-        data_dict[key][1] = newAttrs
+        data_dict_output[key][1] = newAttrs
 
     outputPath = rf'{backScatterToggles.outputFolder}\backScatter.cdf'
-    stl.outputCDFdata(outputPath=outputPath,data_dict=data_dict)
+    stl.outputCDFdata(outputPath=outputPath,data_dict=data_dict_output)

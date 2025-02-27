@@ -54,6 +54,6 @@ if backScatter_Calc:
 
 if backScatter_Plotting:
     stl.prgMsg('Plotting backScatter Beam Fits')
-    from src.physicsModels.invertedV_fitting.backScatter.backScatter_Plotting import generateBackScatterPlots
+    from src.physicsModels.invertedV_fitting.backScatter.plotting.backScatter_Plotting import generateBackScatterPlots
     generateBackScatterPlots(GenToggles,backScatterToggles,primaryBeamToggles,individualPlots=True )
     stl.Done(start_time)

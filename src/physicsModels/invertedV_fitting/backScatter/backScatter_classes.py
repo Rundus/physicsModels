@@ -113,7 +113,6 @@ class backScatter_class:
 
         return degradedPrimFlux, secondariesFlux
 
-
     def calcIonosphericResponse(self, beta, V0, response_energy_grid, beam_energy_grid, beam_jN):
         '''
         :param beta: - Scalar.
@@ -238,7 +237,6 @@ class backScatter_class:
         para_num_flux_dgdPrim = np.sum(dgdPrim_Flux, axis=0)
 
         return para_num_flux_beam, para_num_flux_dgdPrim, para_num_flux_sec
-
 
     def calc_response_at_target_pitch(self, V0, beta , beam_jN, beam_energy_grid, sec_num_flux, dgdPrim_num_flux, energy_grid, target_pitch):
         '''

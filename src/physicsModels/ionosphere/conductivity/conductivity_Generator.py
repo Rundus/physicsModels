@@ -3,7 +3,6 @@
 
 # --- imports ---
 from src.physicsModels.ionosphere.simToggles_Ionosphere import *
-from spaceToolsLib.variables import m_to_km,Re,q0
 from spaceToolsLib.tools.CDF_load import loadDictFromFile
 from src.physicsModels.ionosphere.conductivity.conductivity_classes import *
 import numpy as np
@@ -24,18 +23,35 @@ def generateIonosphericConductivity(GenToggles,conductivityToggles, **kwargs):
     # get the ionospheric plasma data dict
     data_dict_plasma = loadDictFromFile(rf'{GenToggles.simFolderPath}\plasmaEnvironment\plasmaEnvironment.cdf')
 
-    # get the model electron density from recombination/ionization
-    data_dict_ion_recomb = loadDictFromFile(rf'{GenToggles.simFolderPath}\ionizationRecomb\ionizationRecomb.cdf')
+    # get the BEAM derived n(z, ILat) profile
+    if conductivityToggles.use_eepaa_beam:
+        # get the model electron density from recombination/ionization
+        data_dict_ni_beam = loadDictFromFile(rf'{GenToggles.simFolderPath}\ionizationRecomb\ionizationRecomb.cdf')
+
+    elif conductivityToggles.use_evans1974_beam:
+        # get the model electron density from recombination/ionization
+        data_dict_ni_beam = loadDictFromFile(rf'{GenToggles.simFolderPath}\ionizationRecomb\ionizationRecomb.cdf')
+    else:
+        raise Exception('Must select dataset for n(z,ILat) BEAM')
+
+    # get the BACKGROUND n(z, ILat) profile
+    if conductivityToggles.use_eepaa_background:
+
+    elif conductivityToggles.use_IRI_background:
+    else:
+        raise Exception('Must select dataset for n(z,ILat) BACKGROUND')
+
+
+    # construct the density profile n(z, ILat) - Inverted-V density + Ionospheric base density
+    n_e = deepcopy(data_dict_ion_recomb['ne_IonRecomb'][0]) + data_dict_plasma['ne'][0]
+
 
     # prepare the output
-    data_dict_output = {'Epoch': deepcopy(data_dict_ion_recomb['Epoch']),
-                        'simAlt': deepcopy(data_dict_ion_recomb['simAlt'])
+    data_dict_output = {'Epoch': deepcopy(data_dict_ni_beam['Epoch']),
+                        'simAlt': deepcopy(data_dict_ni_beam['simAlt']),
+                        'ILat': deepcopy(data_dict_ni_beam['ILat']),
+                        'n_e': [n_e, {'DEPEND_0': 'Epoch', 'DEPEND_1': 'simAlt', 'UNITS': 'm^-3','LABLAXIS': 'Electron Density'}]
                         }
-
-    # determine the electron density - Inverted-V density + Ionospheric base density
-    n_e = deepcopy(data_dict_ion_recomb['ne_IonRecomb'][0]) + data_dict_plasma['ne'][0]
-    data_dict_output = {**data_dict_output,
-                        **{'n_e': [n_e, {'DEPEND_0': 'Epoch', 'DEPEND_1': 'simAlt', 'UNITS': 'm^-3', 'LABLAXIS': 'Electron Density'}]}}
 
     #################################
     # --- Electron Collision Freq ---

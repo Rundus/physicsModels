@@ -141,7 +141,7 @@ def generatePrimaryBeamFit(primaryBeamToggles, outputFolder):
     ##################################
     noiseData = helperFuncs().generateNoiseLevel(data_dict_diffFlux['Energy'][0], countNoiseLevel=primaryBeamToggles.countNoiseLevel)
 
-    EpochFitData, fitData, fitData_stdDev = helperFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
+    EpochFitData, IlatFitData, fitData, fitData_stdDev = helperFuncs().groupAverageData(data_dict_diffFlux=data_dict_diffFlux,
                                                                               targetTimes=[data_dict_diffFlux['Epoch'][0][0], data_dict_diffFlux['Epoch'][0][-1]],
                                                                               N_avg=primaryBeamToggles.numToAverageOver)
 
@@ -156,7 +156,8 @@ def generatePrimaryBeamFit(primaryBeamToggles, outputFolder):
 
     data_dict_output ={**data_dict_output,
                        **{'Pitch_Angle': deepcopy(data_dict_diffFlux['Pitch_Angle']),
-                          'Epoch': [EpochFitData, deepcopy(data_dict_diffFlux['Epoch'][1])]
+                          'Epoch': [EpochFitData, deepcopy(data_dict_diffFlux['Epoch'][1])],
+                          'ILat': [IlatFitData, deepcopy(data_dict_diffFlux['ILat'][1])]
                           }
                        }
 
