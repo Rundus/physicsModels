@@ -9,7 +9,7 @@ import numpy as np
 from copy import deepcopy
 from spaceToolsLib.tools.CDF_output import outputCDFdata
 
-def generateIonosphericConductivity(GenToggles,conductivityToggles, **kwargs):
+def generateIonosphericConductivity(GenToggles, conductivityToggles, **kwargs):
 
     #######################
     # --- LOAD THE DATA ---
@@ -23,28 +23,32 @@ def generateIonosphericConductivity(GenToggles,conductivityToggles, **kwargs):
     # get the ionospheric plasma data dict
     data_dict_plasma = loadDictFromFile(rf'{GenToggles.simFolderPath}\plasmaEnvironment\plasmaEnvironment.cdf')
 
-    # get the BEAM derived n(z, ILat) profile
-    if conductivityToggles.use_eepaa_beam:
-        # get the model electron density from recombination/ionization
+    ###################################
+    # --- BEAM - n(z, ILat) profile ---
+    ###################################
+    if conductivityToggles.use_eepaa_beam:# get the model electron density from raw data
+        data_dict_ni_beam = ''
+        ni_beam = ''
+    elif conductivityToggles.use_evans1974_beam:# get the model electron density from recombination/ionization
         data_dict_ni_beam = loadDictFromFile(rf'{GenToggles.simFolderPath}\ionizationRecomb\ionizationRecomb.cdf')
-
-    elif conductivityToggles.use_evans1974_beam:
-        # get the model electron density from recombination/ionization
-        data_dict_ni_beam = loadDictFromFile(rf'{GenToggles.simFolderPath}\ionizationRecomb\ionizationRecomb.cdf')
+        ni_beam = deepcopy(data_dict_ni_beam['ne_IonRecomb'][0])
     else:
         raise Exception('Must select dataset for n(z,ILat) BEAM')
 
-    # get the BACKGROUND n(z, ILat) profile
-    if conductivityToggles.use_eepaa_background:
 
+    #########################################
+    # --- BACKGROUND - n(z, ILat) profile ---
+    #########################################
+    if conductivityToggles.use_eepaa_background:
+        data_dict_ni_background = loadDictFromFile(rf'C:\Data\ACESII\science\Langmuir\ni_spectrum.cdf')
+        ni_background = deepcopy(data_dict_ni_beam['ni_spectrum'][0])
     elif conductivityToggles.use_IRI_background:
+        ni_background = data_dict_plasma['ne'][0]
     else:
         raise Exception('Must select dataset for n(z,ILat) BACKGROUND')
 
-
     # construct the density profile n(z, ILat) - Inverted-V density + Ionospheric base density
-    n_e = deepcopy(data_dict_ion_recomb['ne_IonRecomb'][0]) + data_dict_plasma['ne'][0]
-
+    n_e = ni_beam + ni_background
 
     # prepare the output
     data_dict_output = {'Epoch': deepcopy(data_dict_ni_beam['Epoch']),

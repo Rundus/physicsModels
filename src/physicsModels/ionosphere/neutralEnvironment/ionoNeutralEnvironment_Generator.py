@@ -9,6 +9,7 @@ from spaceToolsLib.variables import m_to_km,Re,netural_dict
 from numpy import datetime64,squeeze
 import pymsis
 import numpy as np
+from src.physicsModels.ionosphere.simToggles_Ionosphere import GenToggles,neutralsToggles
 
 
 ##################
@@ -33,7 +34,7 @@ Legend_fontSize = 16
 dpi = 100
 
 
-def generateNeutralEnvironment(GenToggles, neutralsToggles, **kwargs):
+def generateNeutralEnvironment(**kwargs):
     showPlot = kwargs.get('showPlot', False)
 
     # get the NRLMSIS data

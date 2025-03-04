@@ -9,6 +9,7 @@ from numpy.linalg import norm
 from datetime import datetime
 from spacepy import coordinates as coord
 from spacepy.time import Ticktock
+from src.physicsModels.ionosphere.simToggles_Ionosphere import BgeoToggles,GenToggles
 
 
 
@@ -16,7 +17,7 @@ from spacepy.time import Ticktock
 # --- GENERATE THE B-FIELD & TOGGLES ---
 ########################################
 
-def generateGeomagneticField(outputData, GenToggles, BgeoToggles, **kwargs):
+def generateGeomagneticField(**kwargs):
     plotting = kwargs.get('showPlot', False)
 
     def geomagneticFieldProfile(altRange, **kwargs):
@@ -99,28 +100,27 @@ def generateGeomagneticField(outputData, GenToggles, BgeoToggles, **kwargs):
         # get all the variables and plot them if required
         geomagneticFieldProfile(altRange=GenToggles.simAlt, showPlot=plotting)
 
-    if outputData:
 
-        # get all the variables and plot them if required
-        Bgeo, Bgrad = geomagneticFieldProfile(altRange=GenToggles.simAlt)
+    # get all the variables and plot them if required
+    Bgeo, Bgrad = geomagneticFieldProfile(altRange=GenToggles.simAlt)
 
-        # --- Construct the Data Dict ---
-        exampleVar = {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': -9223372036854775808,
-                      'FORMAT': 'I5', 'UNITS': 'm', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'data',
-                      'SCALETYP': 'linear', 'LABLAXIS': 'simAlt'}
+    # --- Construct the Data Dict ---
+    exampleVar = {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': -9223372036854775808,
+                  'FORMAT': 'I5', 'UNITS': 'm', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'data',
+                  'SCALETYP': 'linear', 'LABLAXIS': 'simAlt'}
 
-        data_dict = {'Bgeo': [Bgeo, {'DEPEND_0':'simAlt', 'UNITS':'T', 'LABLAXIS': 'Bgeo'}],
-                      'Bgrad': [Bgrad, {'DEPEND_0':'simAlt', 'UNITS':'T', 'LABLAXIS': 'Bgrad'}],
-                      'simAlt': [GenToggles.simAlt, {'DEPEND_0':'simAlt', 'UNITS':'m', 'LABLAXIS': 'simAlt'}]}
+    data_dict = {'Bgeo': [Bgeo, {'DEPEND_0':'simAlt', 'UNITS':'T', 'LABLAXIS': 'Bgeo'}],
+                  'Bgrad': [Bgrad, {'DEPEND_0':'simAlt', 'UNITS':'T', 'LABLAXIS': 'Bgrad'}],
+                  'simAlt': [GenToggles.simAlt, {'DEPEND_0':'simAlt', 'UNITS':'m', 'LABLAXIS': 'simAlt'}]}
 
-        # update the data dict attrs
-        for key, val in data_dict.items():
-            newAttrs = deepcopy(exampleVar)
+    # update the data dict attrs
+    for key, val in data_dict.items():
+        newAttrs = deepcopy(exampleVar)
 
-            for subKey, subVal in data_dict[key][1].items():
-                newAttrs[subKey] = subVal
+        for subKey, subVal in data_dict[key][1].items():
+            newAttrs[subKey] = subVal
 
-            data_dict[key][1] = newAttrs
+        data_dict[key][1] = newAttrs
 
-        outputPath = rf'{BgeoToggles.outputFolder}\geomagneticfield.cdf'
-        outputCDFdata(outputPath, data_dict)
+    outputPath = rf'{BgeoToggles.outputFolder}\geomagneticfield.cdf'
+    outputCDFdata(outputPath, data_dict)

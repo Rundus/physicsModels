@@ -74,6 +74,8 @@ class helperFuncs:
         EpochFitData = np.array([chunkedEpoch[i][int((N_avg - 1) / 2)] for i in range(len(chunkedEpoch))])
         chunkedIlat = np.split(data_dict_diffFlux['ILat'][0][low_idx:high_idx], round(len(data_dict_diffFlux['ILat'][0][low_idx:high_idx]) / N_avg))
         ILatFitData = np.array([chunkedIlat[i][int((N_avg - 1) / 2)] for i in range(len(chunkedIlat))])
+        chunkedAlt = np.split(data_dict_diffFlux['Alt'][0][low_idx:high_idx],round(len(data_dict_diffFlux['Alt'][0][low_idx:high_idx]) / N_avg))
+        AltFitData = np.array([chunkedIlat[i][int((N_avg - 1) / 2)] for i in range(len(chunkedAlt))])
 
 
         # --- handle the multi-dimenional data ---
@@ -104,7 +106,7 @@ class helperFuncs:
             diffFlux_avg[:, loopIdx, :] = fitData
             stdDevs_avg[:, loopIdx, :] = fitData_stdDev
 
-        return EpochFitData, ILatFitData, diffFlux_avg, stdDevs_avg
+        return EpochFitData, ILatFitData, AltFitData, diffFlux_avg, stdDevs_avg
     def removeDuplicates(self, a, b):
         from collections import defaultdict
         D = defaultdict(list)

@@ -6,6 +6,7 @@ from spaceToolsLib.tools.CDF_output import outputCDFdata
 from src.physicsModels.ionosphere.PlasmaEnvironment.plasmaEnvironment_classes import *
 import numpy as np
 from copy import deepcopy
+from src.physicsModels.ionosphere.simToggles_Ionosphere import GenToggles, plasmaToggles
 
 
 ##################
@@ -32,7 +33,7 @@ xLabel = '$R_{E}$' if xNorm == Re else 'km'
 # get the geomagnetic field data dict
 data_dict_Bgeo = loadDictFromFile(rf'{BgeoToggles.outputFolder}\geomagneticField.cdf')
 
-def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
+def generatePlasmaEnvironment(**kwargs):
     plotting = kwargs.get('showPlot', False)
     data_dict = {}
     Imasses = np.array([ion_dict[key] for key in plasmaToggles.wIons])
@@ -134,7 +135,6 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
 
 
     # --- PLASMA DENSITY ---
-    # uses the Kletzing Model to return an np.array of plasma density (in m^-3) from [Alt_low, ..., Alt_High]
     def electron_plasmaDensityProfile(altRange,data_dict,**kwargs):
 
 
@@ -145,7 +145,6 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
             ne_density = 1E6*deepcopy(data_dict_IRI['Ne'][0]) # convert data into m^-3
 
         data_dict = {**data_dict,**{'ne': [ne_density, {'DEPEND_0': 'simAlt', 'UNITS': 'm!A-3!N', 'LABLAXIS': 'ne'}]}}
-
 
         if kwargs.get('showPlot', False):
             import matplotlib.pyplot as plt
@@ -450,25 +449,24 @@ def generatePlasmaEnvironment(outputData,GenToggles,plasmaToggles, **kwargs):
     #####################
     # --- OUTPUT DATA ---
     #####################
-    if outputData:
 
-        # include the simulation altt
-        data_dict = {**data_dict,**{'simAlt': [GenToggles.simAlt, {'DEPEND_0': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'simAlt'}]}}
+    # include the simulation altt
+    data_dict = {**data_dict,**{'simAlt': [GenToggles.simAlt, {'DEPEND_0': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'simAlt'}]}}
 
-        # --- Construct the Data Dict ---
-        exampleVar = {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': -9223372036854775808,
-                      'FORMAT': 'I5', 'UNITS': 'm', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'data',
-                      'SCALETYP': 'linear', 'LABLAXIS': 'simAlt'}
+    # --- Construct the Data Dict ---
+    exampleVar = {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': -9223372036854775808,
+                  'FORMAT': 'I5', 'UNITS': 'm', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'data',
+                  'SCALETYP': 'linear', 'LABLAXIS': 'simAlt'}
 
 
-        # update the data dict attrs
-        for key, val in data_dict.items():
-            newAttrs = deepcopy(exampleVar)
+    # update the data dict attrs
+    for key, val in data_dict.items():
+        newAttrs = deepcopy(exampleVar)
 
-            for subKey, subVal in data_dict[key][1].items():
-                newAttrs[subKey] = subVal
+        for subKey, subVal in data_dict[key][1].items():
+            newAttrs[subKey] = subVal
 
-            data_dict[key][1] = newAttrs
+        data_dict[key][1] = newAttrs
 
-        outputPath = rf'{plasmaToggles.outputFolder}\plasmaEnvironment.cdf'
-        outputCDFdata(outputPath, data_dict)
+    outputPath = rf'{plasmaToggles.outputFolder}\plasmaEnvironment.cdf'
+    outputCDFdata(outputPath, data_dict)

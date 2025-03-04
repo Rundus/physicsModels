@@ -1,6 +1,7 @@
 # --- imports ---
 import numpy as np
 from spaceToolsLib.variables import m_to_km
+from spaceToolsLib.tools.CDF_load import loadDictFromFile
 from datetime import datetime
 
 ######################
@@ -9,16 +10,16 @@ from datetime import datetime
 class GenToggles:
     target_Latitude = 70  # used to pull from the IRI model
     target_Longitude = 16  # used to pull from the IRI model
-    target_time = datetime(2022, 11, 20, 17, 20)
-    # target_time = datetime(2012, 3, 30, 12, 00)
+    target_time = datetime(2022, 11, 20, 17, 20) # used to pull from the IRI model
 
+    # altitude
     simAltLow = 50*m_to_km # low altitude (in meters)
-    simAltHigh = 1000*m_to_km # high altitude (in meters)
-    obsHeight = 400*m_to_km # height of observation (in meters)
-    alt_Rez = 1000 # number of points in the altitude grid
+    simAltHigh = 400*m_to_km # high altitude (in meters)
+    obsHeight = 403*m_to_km # height of observation (in meters)
+    alt_Rez = 5*m_to_km # number of points in the altitude grid
 
     # calculatd quantities
-    simAlt = np.linspace(simAltLow, simAltHigh, alt_Rez)  # in METERS
+    simAlt = np.linspace(simAltLow, simAltHigh, int((simAltHigh-simAltLow)/alt_Rez +1))  # in METERS
 
     # extra
     fps = 10
@@ -67,8 +68,21 @@ class plasmaToggles:
     IRI_filePath = r'C:\Data\physicsModels\ionosphere\IRI\ACESII\IRI_3D_2022324.cdf'
     # IRI_filePath = r'C:\Data\physicsModels\ionosphere\IRI\Leda2019'
 
-    wIons = ['NO+','O+','O2+']  # which neutrals to consider in the simulation, use the key format in spaceToolsLib
+    wIons = ['NO+', 'O+', 'O2+']  # which neutrals to consider in the simulation, use the key format in spaceToolsLib
     # wIons = ['NO+','H+','N+','He+', 'O+', 'O2+']  # all ions
+
+
+
+###########################
+# --- HEIGHT IONIZATION ---
+###########################
+class ionizationRecombToggles:
+    outputFolder = 'C:\Data\physicsModels\ionosphere\ionizationRecomb'
+
+    # --- BEAM n_E: which dataset to use for the n_e profile ---
+    # Description: use Evans1974 beam model for n(z) OR a real-data derived model n(z)
+    use_evans1974_beam = False
+    use_eepaa_beam = False  # if True, uses the n_e profile derived from the High Flyer Data.
 
 
 ######################
@@ -89,11 +103,7 @@ class conductivityToggles:
     use_eepaa_background = False  # if True, uses the n_e profile derived from the High Flyer Data.
 
 
-###########################
-# --- HEIGHT IONIZATION ---
-###########################
-class ionizationRecombToggles:
-    outputFolder = 'C:\Data\physicsModels\ionosphere\ionizationRecomb'
+
 
 
 
