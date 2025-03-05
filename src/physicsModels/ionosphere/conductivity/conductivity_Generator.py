@@ -35,7 +35,6 @@ def generateIonosphericConductivity(GenToggles, conductivityToggles, **kwargs):
     else:
         raise Exception('Must select dataset for n(z,ILat) BEAM')
 
-
     #########################################
     # --- BACKGROUND - n(z, ILat) profile ---
     #########################################
