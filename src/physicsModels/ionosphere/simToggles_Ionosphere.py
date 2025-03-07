@@ -17,12 +17,7 @@ class GenToggles:
 
 
 
-###########################
-# --- GEOMAGNETIC FIELD ---
-###########################
-class BgeoToggles:
-    Lshell = 8.7
-    outputFolder = 'C:\Data\physicsModels\ionosphere\geomagneticField'
+
 
 ##########################
 # --- NEUTRALS TOGGLES ---

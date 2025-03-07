@@ -33,7 +33,7 @@ calc_IonoConductivity = False
 if regenSpatial:
     # spatial environment
     stl.prgMsg('Regenerating Spatial Environment')
-    from src.physicsModels.ionosphere.spatialEnvironment.spatialEnvironment_Generator import generate_spatialEnvironment
+    from src.physicsModels.ionosphere.spatial_environment.spatial_environment_Generator import generate_spatialEnvironment
     generate_spatialEnvironment()
     stl.Done(start_time)
 
@@ -47,14 +47,14 @@ if regenBgeo:
 if regenPlasmaEnvironment:
     # plasma environment
     stl.prgMsg('Regenerating Plasma Environment')
-    from src.physicsModels.ionosphere.PlasmaEnvironment.plasmaEnvironment_Generator import generatePlasmaEnvironment
+    from src.physicsModels.ionosphere.plasma_environment.plasmaEnvironment_Generator import generatePlasmaEnvironment
     generatePlasmaEnvironment(showPlot=True)
     stl.Done(start_time)
 
 if regenNeutralEnvironment:
     # neutral atmosphere
     stl.prgMsg('Regenerating Neutral Environment')
-    from src.physicsModels.ionosphere.neutralEnvironment.ionoNeutralEnvironment_Generator import generateNeutralEnvironment
+    from src.physicsModels.ionosphere.neutral_environment.ionoNeutralEnvironment_Generator import generateNeutralEnvironment
     generateNeutralEnvironment(showPlot=True)
     stl.Done(start_time)
 

@@ -7,7 +7,7 @@ from src.physicsModels.ionosphere.simToggles_Ionosphere import *
 from src.physicsModels.invertedV_fitting.simToggles_invertedVFitting import *
 from spaceToolsLib.tools.CDF_load import loadDictFromFile
 from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_classes import *
-from src.physicsModels.ionosphere.PlasmaEnvironment.plasmaEnvironment_classes import *
+from src.physicsModels.ionosphere.plasma_environment.plasmaEnvironment_classes import *
 import numpy as np
 from copy import deepcopy
 from spaceToolsLib.tools.CDF_output import outputCDFdata

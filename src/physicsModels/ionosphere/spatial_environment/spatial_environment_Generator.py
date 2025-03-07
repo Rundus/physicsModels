@@ -9,9 +9,10 @@ import numpy as np
 
 def generate_spatialEnvironment():
     # import the toggles
-    from src.physicsModels.ionosphere.simToggles_Ionosphere import SpatialToggles
+    from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
     altRange = SpatialToggles.simAlt
     LShellRange = SpatialToggles.simLShell
+    LongGeomRange = SpatialToggles.simGeomLong
 
     # prepare the output
     data_dict_output = {}
@@ -26,13 +27,13 @@ def generate_spatialEnvironment():
     grid_alt = np.array([altRange for i in range(len(LShellRange))])
     grid_LShell = np.array([[LShellRange[i] for k in range(len(altRange))] for i in range(len(LShellRange))])
 
-    for Lval, idx in enumerate(LShellRange):
+    for idx, Lval in enumerate(LShellRange):
 
         # get the geomagnetic coordinate of the P.O.I. based on L-Shell
-        geomagAlts = [((alt + (stl.Re * stl.m_to_km)) / (stl.Re * stl.m_to_km)) for alt in altRange]
-        geomagLats = np.array([np.degrees(np.arccos(radi / Lval)) for radi in geomagAlts])
-        geomagLongs = np.array([111.83 for i in range(len(altRange))])
-        times = [datetime(2022, 11, 20, 17, 20, 00, 000) for i in range(len(altRange))]
+        geomagAlts = [((alt + stl.Re * stl.m_to_km) / (stl.Re * stl.m_to_km)) for alt in altRange]
+        geomagLats = np.array([np.degrees(np.arccos(np.sqrt(radi / Lval))) for radi in geomagAlts])
+        geomagLongs = np.array([LongGeomRange[idx] for i in range(len(altRange))])
+        times = [SpatialToggles.target_time for i in range(len(altRange))]
 
         # Convert to geographic coordinates
         Pos = np.array([geomagAlts, geomagLats, geomagLongs]).transpose()
@@ -41,28 +42,20 @@ def generate_spatialEnvironment():
         cvals_MAG.ticks = Ticktock(ISOtime, 'ISO')
         cvals_GDZ = cvals_MAG.convert('GEO', 'sph')
 
-        Lat_geo = cvals_GDZ.lati
-        Long_geo = cvals_GDZ.long
-
-        print(Long_geo)
-        print(Long_geo)
-
         # store the data
-        grid_lat[idx] = Lat_geo
-        grid_long[idx] = Long_geo
-
-
+        grid_lat[idx] = cvals_GDZ.lati
+        grid_long[idx] = cvals_GDZ.long
 
     # --- Construct the output data dict ---
     data_dict_output = {**data_dict_output,
                         **{
                            'simAlt' : [altRange, {'UNITS': 'm', 'LABLAXIS': 'simAlt'}],
-                            'simLShell': [altRange, {'UNITS': None, 'LABLAXIS': 'simLShell'}],
-                           'grid_lat': [grid_lat, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'deg', 'LABLAXIS': 'latitude'}],
-                            'grid_alt': [grid_alt, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'Altitude'}],
-                           'grid_LShell': [grid_LShell, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'LShell'}],
-                            'grid_long': [grid_long, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'deg', 'LABLAXIS': 'Longitude'}],
+                            'simLShell': [LShellRange, {'UNITS': None, 'LABLAXIS': 'simLShell'}],
+                           'grid_lat': [grid_lat, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'deg', 'LABLAXIS': 'latitude', 'var_type':'data'}],
+                            'grid_alt': [grid_alt, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'Altitude', 'var_type':'data'}],
+                           'grid_LShell': [grid_LShell, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'LShell', 'var_type':'data'}],
+                            'grid_long': [grid_long, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'deg', 'LABLAXIS': 'Longitude', 'var_type':'data'}],
                            }}
 
-    outputPath = rf'{SpatialToggles.outputFolder}\spatialEnvironment.cdf'
+    outputPath = rf'{SpatialToggles.outputFolder}\spatial_environment.cdf'
     stl.outputCDFdata(outputPath, data_dict_output)

@@ -4,9 +4,7 @@ from spaceToolsLib import m_to_km
 
 class SpatialToggles:
 
-    # target_Latitude = 70  # used to pull from the IRI model
-    # target_Longitude = 16  # used to pull from the IRI model
-    target_time = dt.datetime(2022, 11, 20, 17, 20)  # used to pull from the IRI model
+    target_time = dt.datetime(2022, 11, 20, 17, 20)
 
     # Altitude Grid
     sim_alt_low = 50 * m_to_km  # low altitude (in meters)
@@ -18,6 +16,11 @@ class SpatialToggles:
     sim_Lshell_Low = 6.8
     sim_Lshell_High = 10.5
     LShell_rez = 0.002 # there are 8659 records between 70ILat to 73.5 ILat on the HF. Choose an appropriate resolution.
-    simLShell = np.linspace(sim_Lshell_Low, sim_Lshell_High, int((sim_Lshell_High - sim_Lshell_Low) / LShell_rez + 1))  # in Degrees
+    simLShell = np.linspace(sim_Lshell_Low, sim_Lshell_High, int((sim_Lshell_High - sim_Lshell_Low) / LShell_rez + 1))  # unitless
 
-    outputFolder = 'C:\Data\physicsModels\ionosphere\spatialEnvironment'
+    # geomagnetic Longitude Grid - Used to ensure the simulated R.O.I. is about right
+    sim_geomLong_low = 111.828
+    sim_geomLong_high = 117.1
+    simGeomLong = np.linspace(sim_geomLong_low, sim_geomLong_high, int((sim_geomLong_high - sim_geomLong_low) / LShell_rez + 1))  # in Degrees
+
+    outputFolder = 'C:\Data\physicsModels\ionosphere\spatial_environment'

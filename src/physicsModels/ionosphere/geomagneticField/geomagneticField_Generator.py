@@ -10,18 +10,16 @@ import numpy as np
 def generate_GeomagneticField():
 
     # import the toggles
-    from src.physicsModels.ionosphere.simToggles_Ionosphere import BgeoToggles, SpatialToggles
-    altRange = SpatialToggles.simAlt
-    LShellRange = SpatialToggles.simLShell
-
+    from src.physicsModels.ionosphere.geomagneticField.geomagneticField_toggles import BgeoToggles
 
     # prepare the output
     data_dict_output = {}
+    grid_Bgeo =
 
     #######################
     # --- LOAD THE DATA ---
     #######################
-    data_dict_spatial = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\spatialEnvironment\spatialEnvironment.cdf')
+    data_dict_spatial = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\spatialEnvironment\spatial_environment.cdf')
 
     ########################################
     # --- GENERATE THE B-FIELD & TOGGLES ---
