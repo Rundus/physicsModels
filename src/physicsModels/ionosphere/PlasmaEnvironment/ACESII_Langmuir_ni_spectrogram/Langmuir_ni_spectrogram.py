@@ -11,31 +11,29 @@ __version__ = "1.0.0"
 
 import matplotlib.pyplot as plt
 import numpy as np
-from src.my_imports import *
 import time
 start_time = time.time()
 # --- --- --- --- ---
 
-# --- OutputData ---
-bool_output_data = True
+
 
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.mission_attributes import *
-from src.data_paths import DataPaths
 from scipy.optimize import curve_fit
+import spaceToolsLib as stl
+from copy import deepcopy
+from src.physicsModels.ionosphere.simToggles_Ionosphere import SpatialToggles
 
 
 #################
 # --- TOGGLES ---
 #################
-fitting_altitude_bin_rez = 10 # in Kilometers
 fitting_Ilat_bin_rez = 0.25 # in degrees
-# fitting_altitude_bin_rez = 100 # in Kilometers
-# fitting_Ilat_bin_rez = 2# in degrees
 
-bool_show_num_points_plot = True
+# --- OutputData ---
+bool_show_num_points_plot = False
+bool_output_data = True
 
 
 def linear(x,a,b):
@@ -51,27 +49,15 @@ def langmuir_ni_spectrogram():
     data_dict_LF_statistics = stl.loadDictFromFile('C:\Data\ACESII\science\Langmuir\low\ACESII_36364_langmuir_ni_statistics.cdf')
     data_dicts = [data_dict_HF_statistics,  data_dict_LF_statistics]
 
-    # get the simulation information data
-    data_dict_simInputData = stl.loadDictFromFile('C:\Data\physicsModels\input_data\ACESII\ACESII_36359_eepaa_avg.cdf')
-    data_dict_simAlt = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\geomagneticField\geomagneticfield.cdf')
-
     ######################
     # --- BIN THE DATA ---
     ######################
-
-    # create the fitting array dimensions
-    # max_val = max(data_dict_HF_statistics['quiet_alts'][0])
-    # min_val = min(data_dict_HF_statistics['quiet_alts'][0])
-    # alt_bins = np.linspace(min_val, max_val, int((max_val - min_val)/(fitting_altitude_bin_rez*stl.m_to_km) + 1))
-
-    alt_bins = data_dict_simAlt['simAlt'][0]
-    simILats = data_dict_simInputData['ILat'][0]
-
+    alt_bins = SpatialToggles.simAlt
+    simILats = SpatialToggles.simILat
     max_val = max(data_dict_HF_statistics['quiet_ILats'][0])
     min_val = min(data_dict_HF_statistics['quiet_ILats'][0])
     ilat_bins = np.linspace(min_val, max_val, int((max_val - min_val)/fitting_Ilat_bin_rez + 1))
-
-    fit_array = [ [[] for alt in alt_bins] for ilat in ilat_bins]
+    fit_array = [[[] for alt in alt_bins] for ilat in ilat_bins]
 
     # populate the fitting array with both flyer's data
     for wflyer in range(2):
@@ -110,7 +96,7 @@ def langmuir_ni_spectrogram():
 
         # get the data to fit
         density_vals = [fit_array[i][alt_idx] for i in range(len(ilat_bins))]
-        ilat_vals = [[ilat_bins[idx] for val in range(len(lst))] for idx, lst in enumerate(density_vals) if len(lst) > 1]
+        ilat_vals = [[ilat_bins[idx] for val in range(len(lst))] for idx, lst in enumerate(density_vals) if len(lst) >= 1]
         density_vals = [val for sublist in density_vals for val in sublist]
 
         if len(ilat_vals) == 1:
@@ -124,7 +110,9 @@ def langmuir_ni_spectrogram():
             # evaluate the fit at a specific region
             density_spectrum_T[alt_idx] = linear(simILats, *params)
 
+    density_spectrum_T[np.where(density_spectrum_T == 0.0)[0]] = 51395
     density_spectrum = density_spectrum_T.T
+
 
     if bool_output_data:
         data_dict_output = {
@@ -141,8 +129,8 @@ def langmuir_ni_spectrogram():
         data_dict_output['ni_spectrum'][1]['DEPEND_1'] = 'alt_bins'
         data_dict_output['alt_bins'][1]['UNITS'] = 'm'
 
-        output_folder = 'C:\Data\ACESII\science\Langmuir'
-        stl.outputCDFdata(outputPath=output_folder + '\\ni_spectrum.cdf',
+        output_folder = 'C:\Data\physicsModels\ionosphere\plasmaEnvironment'
+        stl.outputCDFdata(outputPath=output_folder + '\\ACESII_ni_spectrum.cdf',
                           data_dict=data_dict_output)
 
 

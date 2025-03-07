@@ -11,6 +11,6 @@ plot_BField = True
 outputData_Bool = True if not runFullSimulation else True
 
 # --- EXECUTE ---
-from src.physicsModels.ionosphere.geomagneticField.geomagneticField_Generator import generateGeomagneticField
+from src.physicsModels.ionosphere.geomagneticField.test_scripts.verify_geomagneticField import generateGeomagneticField
 generateGeomagneticField(outputData=outputData_Bool,GenToggles=GenToggles, BgeoToggles=BgeoToggles,plotting=plot_BField)
 

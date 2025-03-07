@@ -9,9 +9,6 @@ __version__ = "1.0.0"
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-
-from src.my_imports import *
 import time
 start_time = time.time()
 # --- --- --- --- ---
@@ -27,27 +24,31 @@ wRocket = 4
 
 
 # --- OutputData ---
-outputData = False
+outputData = True
 
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.mission_attributes import *
-from src.data_paths import DataPaths
+import spaceToolsLib as stl
 stl.setupPYCDF()
 from spacepy import pycdf
+from copy import deepcopy
+
 
 
 def collect_langmuir_density_altitude_statistics(wflyer):
-    rocket_ID = ACESII.payload_IDs[wflyer]
+    rocket_ID = ['36359', '36364'][wflyer]
+    ACES_data_folder = r'C:\Data\\ACESII\\'
+
     stl.prgMsg(f'Loading ACES-II {rocket_ID} Data')
 
+
     # load the specific data_dict
-    wFlyer = ACESII.fliers[wflyer]
-    data_dict_eepaa = stl.loadDictFromFile(DataPaths.ACES_data_folder + f'\\L2\\{wFlyer}\\ACESII_{rocket_ID}_l2_eepaa_fullCal.cdf')
-    data_dict_energy_flux = stl.loadDictFromFile(DataPaths.ACES_data_folder + f'\\L3\\Energy_Flux\\{wFlyer}\\ACESII_{rocket_ID}_eepaa_Energy_Flux.cdf')
-    data_dict_LP = stl.loadDictFromFile(DataPaths.ACES_data_folder + f'\\L3\\Langmuir\\{wFlyer}\\ACESII_{rocket_ID}_l3_langmuir_fixed.cdf')
-    data_dict_attitude = stl.loadDictFromFile(DataPaths.ACES_data_folder + f'\\attitude\\{wFlyer}\\ACESII_{rocket_ID}_Attitude_Solution.cdf')
+    wFlyer = ['high', 'low'][wflyer]
+    data_dict_eepaa = stl.loadDictFromFile(ACES_data_folder + f'\\L2\\{wFlyer}\\ACESII_{rocket_ID}_l2_eepaa_fullCal.cdf')
+    data_dict_energy_flux = stl.loadDictFromFile(ACES_data_folder + f'\\L3\\Energy_Flux\\{wFlyer}\\ACESII_{rocket_ID}_l3_eepaa_Flux.cdf')
+    data_dict_LP = stl.loadDictFromFile(ACES_data_folder + f'\\L3\\Langmuir\\{wFlyer}\\ACESII_{rocket_ID}_l3_langmuir_fixed.cdf')
+    data_dict_attitude = stl.loadDictFromFile(ACES_data_folder + f'\\attitude\\{wFlyer}\\ACESII_{rocket_ID}_Attitude_Solution.cdf')
     stl.Done(start_time)
 
     # store the EEPAA data
@@ -72,9 +73,11 @@ def collect_langmuir_density_altitude_statistics(wflyer):
 
     # use the parallel downward energy flux to determine quiet vs non-quiet regions
     #   find all the regions where the is no eepaa data --> these are quiet regions
-    downward_energy_flux = data_dict_energy_flux['Energy_Flux_Downward'][0]
-    quiet_indicies = np.array([idx for idx, val in enumerate(downward_energy_flux) if val != val or val == 0.0])
-    active_indices = np.array([idx for idx, val in enumerate(downward_energy_flux) if val == val and val != 0.0])
+    downward_Phi_E_flux = data_dict_energy_flux['Phi_E'][0]
+    quiet_indicies = np.array([idx for idx, val in enumerate(downward_Phi_E_flux) if val != val or val <= 1E12])
+    active_indices = np.array([idx for idx, val in enumerate(downward_Phi_E_flux) if val == val or val >= 1E12])
+    # quiet_indicies = np.array([idx for idx, slice in enumerate(downward_varPhi_flux) if np.all(slice == np.zeros(shape=(len(slice)))) or np.isnan(np.min(slice))])
+    # active_indices = np.array([idx for idx, slice in enumerate(downward_varPhi_flux) if np.all(slice != np.zeros(shape=(len(slice)))) or not np.isnan(np.min(slice))])
 
     # get the quiet statistics
     quiet_ni = data_dict_LP['ni'][0][quiet_indicies]
@@ -110,7 +113,7 @@ def collect_langmuir_density_altitude_statistics(wflyer):
 
     if outputData:
         # output the High Flyer data
-        stl.outputCDFdata(outputPath=output_folder + f'{ACESII.fliers[wflyer]}\\ACESII_{rocket_ID}_langmuir_ni_statistics.cdf',
+        stl.outputCDFdata(outputPath=output_folder + f'{wFlyer}\\ACESII_{rocket_ID}_langmuir_ni_statistics.cdf',
                           data_dict=data_dict_output)
 
 

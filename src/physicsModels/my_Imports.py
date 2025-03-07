@@ -1,4 +1,4 @@
-# --- myImports.py ---
+# --- my_Imports.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: There are some common imports that every file uses. In order to de-clutter my code
 # I can place these imports here. Only the imports which EVERY file uses will go here.

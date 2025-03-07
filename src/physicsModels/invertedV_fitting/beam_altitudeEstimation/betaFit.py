@@ -6,7 +6,7 @@
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.physicsModels.myImports import *
+from src.physicsModels.my_Imports import *
 from my_matplotlib_Assets.colorbars.apl_rainbow_black0 import apl_rainbow_black0_cmap
 from myspaceToolsLib.physicsVariables import q0,m_e
 from Science.InvertedV.Evans_class_var_funcs import velocitySpace_to_PitchEnergySpace, loadDiffNFluxData,mapping_VelSpace_magMirror,calc_velSpace_DistFuncDiffNFluxGrid
