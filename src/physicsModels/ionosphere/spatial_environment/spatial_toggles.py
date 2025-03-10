@@ -15,7 +15,8 @@ class SpatialToggles:
     # ILat Grid
     sim_Lshell_Low = 6.8
     sim_Lshell_High = 10.5
-    LShell_rez = 0.002 # there are 8659 records between 70ILat to 73.5 ILat on the HF. Choose an appropriate resolution.
+    # LShell_rez = 0.002 # there are 8659 records between 70ILat to 73.5 ILat on the HF. Choose an appropriate resolution.
+    LShell_rez = 0.02  # there are 8659 records between 70ILat to 73.5 ILat on the HF. Choose an appropriate resolution.
     simLShell = np.linspace(sim_Lshell_Low, sim_Lshell_High, int((sim_Lshell_High - sim_Lshell_Low) / LShell_rez + 1))  # unitless
 
     # geomagnetic Longitude Grid - Used to ensure the simulated R.O.I. is about right

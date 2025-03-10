@@ -3,7 +3,7 @@ from src.physicsModels.ionosphere.simToggles_Ionosphere import BgeoToggles
 from spaceToolsLib.variables import u0,m_e,ep0,q0, Re,kB,ion_dict
 from spaceToolsLib.tools.CDF_load import loadDictFromFile
 from spaceToolsLib.tools.CDF_output import outputCDFdata
-from src.physicsModels.ionosphere.plasma_environment.plasmaEnvironment_classes import *
+from src.physicsModels.ionosphere.plasma_environment.plasma_environment_classes import *
 import numpy as np
 from copy import deepcopy
 from src.physicsModels.ionosphere.simToggles_Ionosphere import GenToggles, plasmaToggles

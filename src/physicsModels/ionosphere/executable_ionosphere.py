@@ -17,11 +17,11 @@ start_time = time.time()
 #################
 # --- TOGGLES ---
 #################
-regenSpatial = True
+regenSpatial = False
 regenBgeo = False
 regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
-ionRecomb_ne_Calc = False
+ionRecomb_ne_Calc = True
 calc_IonoConductivity = False
 
 ################################
@@ -39,23 +39,23 @@ if regenSpatial:
 
 if regenBgeo:
     # geomagnetic field
-    stl.prgMsg('Regenerating Bgeo')
-    from src.physicsModels.ionosphere.geomagneticField.test_scripts.verify_geomagneticField import generateGeomagneticField
-    generateGeomagneticField(showPlot=True)
+    stl.prgMsg('Regenerating Bgeo\n')
+    from src.physicsModels.ionosphere.geomagneticField.geomagneticField_Generator import generate_GeomagneticField
+    generate_GeomagneticField()
     stl.Done(start_time)
 
 if regenPlasmaEnvironment:
     # plasma environment
     stl.prgMsg('Regenerating Plasma Environment')
-    from src.physicsModels.ionosphere.plasma_environment.plasmaEnvironment_Generator import generatePlasmaEnvironment
-    generatePlasmaEnvironment(showPlot=True)
+    from src.physicsModels.ionosphere.plasma_environment.plasma_environment_Generator import generatePlasmaEnvironment
+    generatePlasmaEnvironment()
     stl.Done(start_time)
 
 if regenNeutralEnvironment:
     # neutral atmosphere
     stl.prgMsg('Regenerating Neutral Environment')
-    from src.physicsModels.ionosphere.neutral_environment.ionoNeutralEnvironment_Generator import generateNeutralEnvironment
-    generateNeutralEnvironment(showPlot=True)
+    from src.physicsModels.ionosphere.neutral_environment.neutral_environment_Generator import generateNeutralEnvironment
+    generateNeutralEnvironment()
     stl.Done(start_time)
 
 if ionRecomb_ne_Calc:

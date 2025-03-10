@@ -51,10 +51,10 @@ def generate_spatialEnvironment():
                         **{
                            'simAlt' : [altRange, {'UNITS': 'm', 'LABLAXIS': 'simAlt'}],
                             'simLShell': [LShellRange, {'UNITS': None, 'LABLAXIS': 'simLShell'}],
-                           'grid_lat': [grid_lat, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'deg', 'LABLAXIS': 'latitude', 'var_type':'data'}],
-                            'grid_alt': [grid_alt, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'Altitude', 'var_type':'data'}],
-                           'grid_LShell': [grid_LShell, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'LShell', 'var_type':'data'}],
-                            'grid_long': [grid_long, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'deg', 'LABLAXIS': 'Longitude', 'var_type':'data'}],
+                           'grid_lat': [grid_lat, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'deg', 'LABLAXIS': 'latitude'}],
+                            'grid_alt': [grid_alt, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'Altitude'}],
+                           'grid_LShell': [grid_LShell, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'LShell'}],
+                            'grid_long': [grid_long, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'deg', 'LABLAXIS': 'Longitude'}],
                            }}
 
     outputPath = rf'{SpatialToggles.outputFolder}\spatial_environment.cdf'

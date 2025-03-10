@@ -23,7 +23,7 @@ start_time = time.time()
 from scipy.optimize import curve_fit
 import spaceToolsLib as stl
 from copy import deepcopy
-from src.physicsModels.ionosphere.simToggles_Ionosphere import SpatialToggles
+from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
 
 
 #################

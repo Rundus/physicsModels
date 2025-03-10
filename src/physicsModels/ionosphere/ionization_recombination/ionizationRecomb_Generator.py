@@ -3,11 +3,8 @@
 # altitude profiles via Fang Parameterization.
 
 # --- imports ---
-from src.physicsModels.ionosphere.simToggles_Ionosphere import *
 from src.physicsModels.invertedV_fitting.simToggles_invertedVFitting import *
-from spaceToolsLib.tools.CDF_load import loadDictFromFile
 from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_classes import *
-from src.physicsModels.ionosphere.plasma_environment.plasmaEnvironment_classes import *
 import numpy as np
 from copy import deepcopy
 from spaceToolsLib.tools.CDF_output import outputCDFdata
@@ -24,13 +21,13 @@ def generateIonizationRecomb(GenToggles, ionizationRecombToggles):
     ##########################
 
     # get the ionospheric neutral data dict
-    data_dict_neutral = loadDictFromFile(rf'{neutralsToggles.outputFolder}\neutralEnvironment.cdf')
+    data_dict_neutral = stl.loadDictFromFile(rf'{neutralsToggles.outputFolder}\neutralEnvironment.cdf')
 
     # get the ionospheric plasma data dict
-    data_dict_plasma = loadDictFromFile(rf'{plasmaToggles.outputFolder}\plasmaEnvironment.cdf')
+    data_dict_plasma = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\plasmaEnvironment.cdf')
 
     # get the ionospheric backscatter data dict (Real Data)
-    data_dict_backScatter = loadDictFromFile(rf'{backScatterToggles.outputFolder}\backScatter.cdf')
+    data_dict_backScatter = stl.loadDictFromFile(rf'{backScatterToggles.outputFolder}\backScatter.cdf')
 
     # --- prepare the output data_dict ---
     data_dict_output = {
