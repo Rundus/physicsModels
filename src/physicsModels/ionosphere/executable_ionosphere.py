@@ -59,9 +59,9 @@ if regenNeutralEnvironment:
     stl.Done(start_time)
 
 if ionRecomb_ne_Calc:
-    stl.prgMsg('Generating electron density from Ionization/Recombination\n')
+    stl.prgMsg('Generating electron density from Ionization/Recombination')
     from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_Generator import generateIonizationRecomb
-    generateIonizationRecomb(GenToggles,ionizationRecombToggles)
+    generateIonizationRecomb()
     stl.Done(start_time)
 
 if calc_IonoConductivity:

@@ -3,12 +3,12 @@ import numpy as np
 from numpy import power,log,pi
 from spaceToolsLib.variables import kB,gravG,Me,Re
 import spaceToolsLib as stl
-from src.physicsModels.ionosphere.simToggles_Ionosphere import plasmaToggles
+from src.physicsModels.ionosphere.plasma_environment.plasma_toggles import plasmaToggles
 
 
 class fang2010:
 
-    def __init__(self, altRange,data_dict_neutral,data_dict_plasma,monoEnergyProfile, energyFluxProfile):
+    def __init__(self, altRange, Tn, m_eff_n, rho_n, inputEnergies, varPhi_E):
         self.paramCoefficents = np.array([
             #      j =0           j=1          j=2          j=3
             [  1.24516E0,    1.45903E0, -2.42269E-1,  5.95459E-2], # i=1
@@ -20,16 +20,16 @@ class fang2010:
             [-6.45454E-1,   8.49555E-4, -4.28581E-2, -2.99302E-3], # i=7
             [ 9.48930E-1,   1.97385E-1, -2.50660E-3, -2.06938E-3]  # i=8
         ])
-
         self.altRange = altRange
-        self.data_dict_neutral = data_dict_neutral
-        self.data_dict_plasma = data_dict_plasma
-        self.monoEnergyProfile = monoEnergyProfile
-        self.energyFluxProfile = energyFluxProfile
+        self.Tn = Tn
+        self.m_eff_n = m_eff_n
+        self.rho_n = rho_n
+        self.inputEnergies = inputEnergies
+        self.varPhi_E = varPhi_E
 
     def scaleHeight(self):
-        T_atm = (self.data_dict_neutral['Tn'][0] + self.data_dict_plasma['Ti'][0] + self.data_dict_plasma['Te'][0]) / 3
-        m_avg = self.data_dict_neutral['m_eff_n'][0]
+        T_atm = self.Tn
+        m_avg = self.m_eff_n
         grav_accel = (Me*gravG)/(np.power(Re*1000 + self.altRange, 2)) # in meters/sec^2
 
         # scale height needs to be in centimetres (cm), hence the *100
@@ -37,35 +37,41 @@ class fang2010:
         return H
 
     def atmColumnMass(self, engyVal):
-        rho = 1E-3*self.data_dict_neutral['rho_n'][0] #atmosphere mass density in g/cm^3
+        rho = 1E-3*self.rho_n #atmosphere mass density in g/cm^3
         H = self.scaleHeight()
         y =np.array( [np.array([2 * np.power(engy/6E-6, 0.7) for engy in rho*H])/ val for val in engyVal])
         return y
 
     def calcCoefficents(self, engyVal):
-        coefficents = np.array([np.array([np.exp(np.sum([self.paramCoefficents[i][j] * np.power(np.log(engy), j) for j in range(4)],axis=0)) for i in range(8)]) for engy in engyVal ])
+        coefficents = np.array([np.array([np.exp(np.sum([self.paramCoefficents[i][j] * np.power(np.log(engy), j) for j in range(4)],axis=0)) for i in range(8)]) for engy in engyVal])
         return coefficents
 
     def f(self,y,coefficents):
         value = np.array([ C[0]*np.power(y[idx],C[1]) * np.exp( -C[2]*np.power(y[idx],C[3])) + C[4]*np.power(y[idx],C[5]) * np.exp( -C[6]*np.power(y[idx],C[7])) for idx,C in enumerate(coefficents)])
         return value
+
     def ionizationRate(self):
         H = self.scaleHeight() # length: (2000)
-        y = self.atmColumnMass(self.monoEnergyProfile) # length: (len(monoEnergyProfile),2000)
-        C = self.calcCoefficents(self.monoEnergyProfile)
-        f_profiles = self.f(y,C)
+        y = self.atmColumnMass(self.inputEnergies) # length: (len(monoEnergyProfile),2000)
+        C = self.calcCoefficents(self.inputEnergies)
+        f_profiles = self.f(y, C)
         epsilion = 0.035
-        q_profiles = np.array([(fluxVal/epsilion)*np.array(f_profiles[idx]/H) for idx, fluxVal in enumerate(self.energyFluxProfile)])
+        q_profiles = np.array([(fluxVal/epsilion)*np.array(f_profiles[idx]/H) for idx, fluxVal in enumerate(self.varPhi_E)])
         q_total = np.sum(q_profiles, axis=0)
         return q_profiles, q_total
 
+
+
 class vickrey1982:
 
-    def calcRecombinationRate(self, altRange, data_dict):
+    def calcRecombinationRate(self, altRange):
 
         alpha = (2.5E-6)*np.exp(-altRange/(51.2*stl.m_to_km)) # in cm^3s^-1
         # alpha_m3 = alpha/(stl.cm_to_m**3) # convert to m^3s6-1
         return alpha, []
+
+
+
 
 
 class schunkNagy2009:
