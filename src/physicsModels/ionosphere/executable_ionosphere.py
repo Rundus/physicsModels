@@ -7,7 +7,6 @@
 # --- IMPORTS ---
 #################
 import time
-from src.physicsModels.ionosphere.simToggles_Ionosphere import *
 import spaceToolsLib as stl
 import warnings
 warnings.filterwarnings("ignore")
@@ -18,10 +17,10 @@ start_time = time.time()
 # --- TOGGLES ---
 #################
 regenSpatial = False
-regenBgeo = False
+regenBgeo = True
 regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
-ionRecomb_ne_Calc = True
+ionRecomb_ne_Calc = False
 calc_IonoConductivity = False
 
 ################################

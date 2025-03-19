@@ -38,7 +38,7 @@ def generate_GeomagneticField():
         longs = data_dict_spatial['grid_long'][0][idx]
 
         # Get the Chaos model
-        B = stl.CHAOS(lats, longs, np.array(alts) / stl.m_to_km, [SpatialToggles.targetTime for i in range(len(alts))])
+        B = stl.CHAOS(lats, longs, np.array(alts) / stl.m_to_km, [SpatialToggles.target_time for i in range(len(alts))])
         Bgeo = (1E-9) * np.array([np.linalg.norm(Bvec) for Bvec in B])
         Bgrad = [(Bgeo[i + 1] - Bgeo[i]) / (altRange[i + 1] - altRange[i]) for i in range(len(Bgeo) - 1)]
         Bgrad = np.array(Bgrad + [Bgrad[-1]]) # add the high altitude value Bgrad again to model the starting point (MAYBE it SHOULD BE 0?)

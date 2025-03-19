@@ -51,7 +51,7 @@ def generatePlasmaEnvironment():
     #################################################
     # --- DOWNSAMPLE THE IRI DATA TO L-SHELL GRID ---
     #################################################
-    for idx1, Lval in enumerate(LShellRange):
+    for idx1, Lval in tqdm(enumerate(LShellRange)):
 
         # for each L-Shell, choose the MIDDLE latitude/longitude value. Use that to get the closest IRI slice and interpolate the IRI over altitude there
         middle_idx = int(len(data_dict_Bgeo['grid_lat'][0][0])/2)
