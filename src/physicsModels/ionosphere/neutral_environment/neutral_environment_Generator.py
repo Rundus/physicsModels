@@ -2,18 +2,17 @@
 # get the NRLMSIS data and export the neutral temperature vs altitude at ACES-II times.
 # Also, interpolate each variable in order to sample the data at my model cadence
 
-
-# --- imports ---
-import spaceToolsLib as stl
-from numpy import datetime64,squeeze
-import pymsis
-import numpy as np
-from copy import deepcopy
-from src.physicsModels.ionosphere.neutral_environment.neutral_toggles import neutralsToggles
-from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
-
-
 def generateNeutralEnvironment(**kwargs):
+
+    # --- imports ---
+    import spaceToolsLib as stl
+    from numpy import datetime64, squeeze
+    import pymsis
+    import numpy as np
+    from copy import deepcopy
+    from src.physicsModels.ionosphere.neutral_environment.neutral_toggles import neutralsToggles
+    from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
+    from tqdm import tqdm
 
     #######################
     # --- LOAD THE DATA ---
@@ -54,7 +53,7 @@ def generateNeutralEnvironment(**kwargs):
     dt_targetTime = SpatialToggles.target_time
     date = datetime64(f"{dt_targetTime.year}-{dt_targetTime.month}-{dt_targetTime.day}T{dt_targetTime.hour}:{dt_targetTime.minute}")
 
-    for idx1, Lval in enumerate(LShellRange):
+    for idx1, Lval in tqdm(enumerate(LShellRange)):
         for idx2, altVal in enumerate(altRange):
 
             lon = data_dict_spatial['grid_long'][0][idx1][idx2]

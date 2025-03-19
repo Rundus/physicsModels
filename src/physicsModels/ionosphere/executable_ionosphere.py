@@ -17,11 +17,11 @@ start_time = time.time()
 # --- TOGGLES ---
 #################
 regenSpatial = False
-regenBgeo = True
+regenBgeo = False
 regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
 ionRecomb_ne_Calc = False
-calc_IonoConductivity = False
+calc_IonoConductivity = True
 
 ################################
 # --- --- --- --- --- --- --- --
@@ -45,20 +45,20 @@ if regenBgeo:
 
 if regenPlasmaEnvironment:
     # plasma environment
-    stl.prgMsg('Regenerating Plasma Environment')
+    stl.prgMsg('Regenerating Plasma Environment\n')
     from src.physicsModels.ionosphere.plasma_environment.plasma_environment_Generator import generatePlasmaEnvironment
     generatePlasmaEnvironment()
     stl.Done(start_time)
 
 if regenNeutralEnvironment:
     # neutral atmosphere
-    stl.prgMsg('Regenerating Neutral Environment')
+    stl.prgMsg('Regenerating Neutral Environment \n')
     from src.physicsModels.ionosphere.neutral_environment.neutral_environment_Generator import generateNeutralEnvironment
     generateNeutralEnvironment()
     stl.Done(start_time)
 
 if ionRecomb_ne_Calc:
-    stl.prgMsg('Generating electron density from Ionization/Recombination')
+    stl.prgMsg('Generating electron density from Ionization/Recombination \n')
     from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_Generator import generateIonizationRecomb
     generateIonizationRecomb()
     stl.Done(start_time)
@@ -67,5 +67,5 @@ if calc_IonoConductivity:
     # conductivity
     stl.prgMsg('Calculating Ionospheric Conductivity')
     from src.physicsModels.ionosphere.conductivity.conductivity_Generator import generateIonosphericConductivity
-    generateIonosphericConductivity(GenToggles, conductivityToggles)
+    generateIonosphericConductivity()
     stl.Done(start_time)

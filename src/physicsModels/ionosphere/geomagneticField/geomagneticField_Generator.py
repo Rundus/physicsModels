@@ -1,11 +1,8 @@
-# --- imports ---
-
-import spaceToolsLib as stl
-import numpy as np
-from tqdm import tqdm
-
-
 def generate_GeomagneticField():
+    # --- imports ---
+    import spaceToolsLib as stl
+    import numpy as np
+    from tqdm import tqdm
 
     # import the toggles
     from src.physicsModels.ionosphere.geomagneticField.geomagneticField_toggles import BgeoToggles

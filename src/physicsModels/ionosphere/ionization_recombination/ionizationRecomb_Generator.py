@@ -2,20 +2,18 @@
 # Description: For REAL data Use a ionization_recombination Methods to create electron density
 # altitude profiles via Fang Parameterization.
 
-# --- imports ---
-from src.physicsModels.invertedV_fitting.simToggles_invertedVFitting import *
-from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_classes import *
-from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_toggles import ionizationRecombToggles
-from src.physicsModels.ionosphere.neutral_environment.neutral_toggles import neutralsToggles
-from src.physicsModels.ionosphere.plasma_environment.plasma_toggles import plasmaToggles
-import numpy as np
-from copy import deepcopy
-from spaceToolsLib.tools.CDF_output import outputCDFdata
-from tqdm import tqdm
-
-
-
 def generateIonizationRecomb():
+
+    # --- imports ---
+    from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_classes import *
+    from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_toggles import ionizationRecombToggles
+    from src.physicsModels.ionosphere.neutral_environment.neutral_toggles import neutralsToggles
+    from src.physicsModels.ionosphere.plasma_environment.plasma_toggles import plasmaToggles
+    from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
+    import numpy as np
+    from copy import deepcopy
+    from spaceToolsLib.tools.CDF_output import outputCDFdata
+    from tqdm import tqdm
 
     ##########################
     # --- --- --- --- --- ---
@@ -26,8 +24,17 @@ def generateIonizationRecomb():
     # get the ionospheric plasma data dict
     data_dict_plasma = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\plasma_environment.cdf')
 
-    # # get the ionospheric backscatter data dict (Real Data)
-    # data_dict_backScatter = stl.loadDictFromFile(rf'{backScatterToggles.outputFolder}\backScatter.cdf')
+    # get the ACES-II EEPAA Flux data
+    data_dict_flux = stl.loadDictFromFile(rf'{ionizationRecombToggles.flux_path}\ACESII_36359_l3_eepaa_flux.cdf')
+
+    # get the ACES-II L-Shell data
+    data_dict_LShell = deepcopy(SpatialToggles.data_dict_HF_LShell)
+
+    # get the neutral data dict
+    data_dict_neutral = stl.loadDictFromFile(rf'{neutralsToggles.outputFolder}\neutral_environment.cdf')
+
+    # get the spatial data dict
+    data_dict_spatial = stl.loadDictFromFile(rf'{SpatialToggles.outputFolder}\spatial_environment.cdf')
 
     ############################
     # --- PREPARE THE OUTPUT ---
@@ -37,11 +44,23 @@ def generateIonizationRecomb():
 
     data_dict_output = {
                         'ne_model': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm^-3', 'LABLAXIS': 'Electron Density'}],
-                        'q_ion': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1':'simAlt', 'UNITS': 'm^-3s^-1', 'LABLAXIS': 'qtot'}],
+                        'q_total': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1':'simAlt', 'UNITS': 'm^-3s^-1', 'LABLAXIS': 'qtot'}],
                          'alpha_recomb': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1':'simAlt', 'UNITS': 'm^3s^-1',  'LABLAXIS': 'Recombination Rate'}],
                         'simLShell': deepcopy(data_dict_plasma['simLShell']),
                         'simAlt': deepcopy(data_dict_plasma['simAlt'])
                         }
+
+
+    ############################
+    # --- RECOMBINATION RATE ---
+    ############################
+    # model = schunkNagy2009()
+    # alpha_total, alpha_profiles = model.calcRecombinationRate(altRange=altRange, data_dict=data_dict_plasma)
+    # data_dict_output['alpha_recomb'][0] = alpha_total/(np.power(stl.cm_to_m,3)) # convert form cm^3/s to m^3/s
+
+    model = vickrey1982()
+    alpha_total, alpha_profiles = model.calcRecombinationRate(altRange=deepcopy(data_dict_spatial['grid_alt'][0]))
+    data_dict_output['alpha_recomb'][0] = alpha_total / (np.power(stl.cm_to_m, 3))  # convert form cm^3/s to m^3/s
 
 
     ################################
@@ -49,54 +68,28 @@ def generateIonizationRecomb():
     # --- LOOP THROUGH BEAM DATA ---
     # --- --- --- --- --- --- --- --
     ################################
+    for idx1, LShell in tqdm(enumerate(data_dict_output['simLShell'][0])):
 
-    for idx1, LShell in enumerate(data_dict_output['simLShell'][0]):
+        # get the flux data for the specific L-Shell
+        dat_idx = np.abs(data_dict_LShell['L-Shell'][0] - LShell).argmin()
+        varPhi_E_parallel_keV = deepcopy(data_dict_flux['varPhi_E_Parallel'][0][dat_idx])/1000
+        Energy_keV = deepcopy(data_dict_flux['Energy'][0])/1000
 
+        # CHOOSE THE MODEL
+        model = fang2010(altRange=altRange,
+                         Tn= deepcopy(data_dict_neutral['Tn'][0][idx1]),
+                         m_eff_n= deepcopy(data_dict_neutral['m_eff_n'][0][idx1]),
+                         rho_n=deepcopy(data_dict_neutral['rho_n'][0][idx1]),
+                         inputEnergies=Energy_keV,
+                         varPhi_E=varPhi_E_parallel_keV)
 
-        # get the specific data
-        altitude = altRange
+        q_profiles, q_total = model.ionizationRate()  # in cm^-3 s^-1
+        data_dict_output['q_total'][0][idx1] = q_total*np.power(stl.cm_to_m,3) # convert to m^-3 s^-1
 
-        ############################
-        # --- RECOMBINATION RATE ---
-        ############################
-        # get the recombination rate. It does NOT change over the epoch
-        model = vickrey1982()
-        alpha_total, alpha_profiles = model.calcRecombinationRate(altRange=altitude)
-        data_dict_output['alpha_recomb'][0][idx1] = alpha_total
-
-        # num_flux_beam = deepcopy(data_dict_backScatter['num_flux_beam'][0][tmeIdx])
-        # num_flux_sec = deepcopy(data_dict_backScatter['num_flux_sec'][0][tmeIdx])
-        # num_flux_dgdPrim = deepcopy(data_dict_backScatter['num_flux_dgdPrim'][0][tmeIdx])
-
-        ##########################
-        # --- IONIZATION RATE  ---
-        ##########################
-        # if the input data is good, only then fit it
-        # print([ not np.any(num_flux_beam), not np.any(num_flux_sec), not np.any(num_flux_dgdPrim) ])
-        # if [np.any(num_flux_beam), np.any(num_flux_sec), np.any(num_flux_dgdPrim) ] == [True, True, True]:
-        #
-        #
-        #     # get the number flux data for the backscatter and number flux to units keV/cm^-2s^-1
-        #     beam_energyGrid = deepcopy(data_dict_backScatter['beam_energy_Grid'][0][tmeIdx])
-        #     response_energyGrid = deepcopy(data_dict_backScatter['energy_Grid'][0])
-        #
-        #     engy_flux_beam = np.multiply(num_flux_beam, beam_energyGrid/1000)
-        #     engy_flux_sec = np.multiply(num_flux_sec, response_energyGrid/1000)
-        #     engy_flux_dgdPrim = np.multiply(num_flux_dgdPrim, response_energyGrid/1000)
-        #
-        #     # --- Get the energy/energyFluxes of the incident beam + backscatter electrons ---
-        #     monoEnergyProfile = np.append(response_energyGrid/1000, beam_energyGrid/1000)  # IN UNITS OF KEV
-        #     energyFluxProfile = np.append(engy_flux_dgdPrim+engy_flux_sec, engy_flux_beam)
-        #
-        #     # CHOOSE THE MODEL
-        #     model = fang2010(alt_range, data_dict_neutral, data_dict_plasma, monoEnergyProfile, energyFluxProfile)
-        #     q_profiles, q_total = model.ionizationRate()  # in cm^-3 s^-1
-        #     data_dict_output['q_total'][0][tmeIdx] = q_total
-        #
-        #     ##################################
-        #     # --- ELECTRON DENSITY (MODEL) ---
-        #     ##################################
-        #     data_dict_output['ne_IonRecomb'][0][tmeIdx] = (stl.cm_to_m**3)*np.sqrt(deepcopy(data_dict_output['q_total'][0][tmeIdx]) / deepcopy(data_dict_output['recombRate'][0][tmeIdx]))  # in m^-3
+        ##################################
+        # --- ELECTRON DENSITY (MODEL) ---
+        ##################################
+        data_dict_output['ne_model'][0][idx1] = np.sqrt(deepcopy(data_dict_output['q_total'][0][idx1]) / deepcopy(data_dict_output['alpha_recomb'][0][idx1]))  # in m^-3
 
 
     #####################

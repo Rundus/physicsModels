@@ -1,13 +1,13 @@
-# --- imports ---
-import spaceToolsLib as stl
-from src.physicsModels.ionosphere.plasma_environment.plasma_environment_classes import *
-import numpy as np
-from copy import deepcopy
-
-
 # TODO: Correct Ne when using the ACESII_ni spectrum using the EISCAT ne/ni ratio
 
 def generatePlasmaEnvironment():
+
+    # --- imports ---
+    import spaceToolsLib as stl
+    from src.physicsModels.ionosphere.plasma_environment.plasma_environment_classes import *
+    import numpy as np
+    from copy import deepcopy
+    from tqdm import tqdm
 
     # import the toggles
     from src.physicsModels.ionosphere.plasma_environment.plasma_toggles import plasmaToggles
