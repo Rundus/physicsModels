@@ -70,7 +70,7 @@ class Leda2019:
         output = np.zeros(shape=(len(Tr_grid), len(Tr_grid[0]), 3))
 
         # create the collision freq matrix
-        a00 = np.full(shape=(len(Tr_grid),len(Tr_grid[0])),fill_value=4.355)
+        a00 = np.full(shape=(len(Tr_grid), len(Tr_grid[0])),fill_value=4.355)
         a01 = np.full(shape=(len(Tr_grid), len(Tr_grid[0])), fill_value=4.28)
         a02 = np.full(shape=(len(Tr_grid), len(Tr_grid[0])), fill_value=2.445)
         a10 = np.full(shape=(len(Tr_grid), len(Tr_grid[0])), fill_value=4.146)

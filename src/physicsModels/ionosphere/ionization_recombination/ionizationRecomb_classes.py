@@ -75,31 +75,30 @@ class vickrey1982:
 
 
 class schunkNagy2009:
-    def calcRecombinationRate(self, altRange, data_dict):
+    def calcRecombinationRate(self, altRange, data_dict_plasma):
         def functionalForm(Te,A,B,exponent):
             return A*np.power(B/Te,exponent)
 
-        alpha_dissociated = {'NO+':functionalForm(data_dict['Te'][0], 4E-7,300,0.5),
-                             'O2+':functionalForm(data_dict['Te'][0], 2.4E-7,300,0.7),
-                             'N2+':functionalForm(data_dict['Te'][0], 2.2E-7,300,0.39)}
+        alpha_dissociated = {'NO+':functionalForm(data_dict_plasma['Te'][0], 4E-7,300,0.5),
+                             'O2+':functionalForm(data_dict_plasma['Te'][0], 2.4E-7,300,0.7),
+                             'N2+':functionalForm(data_dict_plasma['Te'][0], 2.2E-7,300,0.39)}
 
-        alpha_radiative = {  'H+':functionalForm(data_dict['Te'][0], 4.8E-12,250,0.7),
-                             'He+': functionalForm(data_dict['Te'][0], 4.8E-12, 250, 0.7),
-                             'N+': functionalForm(data_dict['Te'][0], 3.6E-12, 250, 0.7),
-                             'O+':functionalForm(data_dict['Te'][0], 3.7E-12, 250, 0.7)}
+        alpha_radiative = {  'H+':functionalForm(data_dict_plasma['Te'][0], 4.8E-12,250,0.7),
+                             'He+': functionalForm(data_dict_plasma['Te'][0], 4.8E-12, 250, 0.7),
+                             'N+': functionalForm(data_dict_plasma['Te'][0], 3.6E-12, 250, 0.7),
+                             'O+':functionalForm(data_dict_plasma['Te'][0], 3.7E-12, 250, 0.7)}
 
-        ni_total = np.sum([data_dict[f"n_{ionNam}"][0] for ionNam in plasmaToggles.wIons],axis=0)
         partials = []
 
         for ionNam in plasmaToggles.wIons:
             try:
-                partials.append(alpha_dissociated[f'{ionNam}'] * data_dict[f'n_{ionNam}'][0])
+                partials.append(alpha_dissociated[f'{ionNam}'] * data_dict_plasma[f'C_{ionNam}'][0])
             except:
-                partials.append(alpha_radiative[f'{ionNam}'] * data_dict[f'n_{ionNam}'][0])
+                partials.append(alpha_radiative[f'{ionNam}'] * data_dict_plasma[f'n_{ionNam}'][0])
 
         # output with units cm^3s^-1
-        alpha_total = np.sum(np.array(partials),axis=0)/(ni_total)
-        alpha_profiles = np.array(partials)/ni_total
+        alpha_total = np.sum(partials,axis=0)
+        alpha_profiles = np.array(partials)
 
         return alpha_total, alpha_profiles
 

@@ -1,10 +1,10 @@
 # TODO: Correct Ne when using the ACESII_ni spectrum using the EISCAT ne/ni ratio
+from src.physicsModels.ionosphere.plasma_environment.plasma_environment_classes import *
 
 def generatePlasmaEnvironment():
 
     # --- imports ---
     import spaceToolsLib as stl
-    from src.physicsModels.ionosphere.plasma_environment.plasma_environment_classes import *
     import numpy as np
     from copy import deepcopy
     from tqdm import tqdm
@@ -45,6 +45,17 @@ def generatePlasmaEnvironment():
         'O2+': [np.zeros(shape=(len(LShellRange), len(altRange))), deepcopy(data_dict_IRI['O2+'][1])],
         'NO+': [np.zeros(shape=(len(LShellRange), len(altRange))), deepcopy(data_dict_IRI['NO+'][1])],
         'N+': [np.zeros(shape=(len(LShellRange), len(altRange))), deepcopy(data_dict_IRI['N+'][1])],
+
+        'C_O+': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'nj/ni_tot', 'LABLAXIS': 'C_O+'}],
+        'C_H+': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'nj/ni_tot', 'LABLAXIS': 'C_H+'}],
+        'C_He+': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'nj/ni_tot', 'LABLAXIS': 'C_He+'}],
+        'C_O2+': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'nj/ni_tot', 'LABLAXIS': 'C_O2+'}],
+        'C_NO+': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'nj/ni_tot', 'LABLAXIS': 'C_NO+'}],
+        'C_N+': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'nj/ni_tot', 'LABLAXIS': 'C_N+'}],
+
+        'ne_ni_ratio': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'ne/ni'}],
+        'ni': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm!A-3!N', 'LABLAXIS': 'ni'}],
+        'm_eff_i': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'kg', 'LABLAXIS': 'm_eff_i'}]
     }
 
 
@@ -61,6 +72,7 @@ def generatePlasmaEnvironment():
         alt_low_idx = np.abs(data_dict_IRI['ht'][0] - altRange[0] / stl.m_to_km).argmin()
         alt_high_idx = np.abs(data_dict_IRI['ht'][0] - altRange[-1] / stl.m_to_km).argmin()
 
+        # Downsample all the IRI data
         for varname in data_dict_IRI.keys():
             if varname not in ['time', 'ht', 'lat', 'lon']:
 
@@ -75,51 +87,72 @@ def generatePlasmaEnvironment():
                 data_dict_output[varname][1].pop('DEPEND_2', None)
                 data_dict_output[varname][1].pop('DEPEND_3', None)
 
-    #################################
-    # --- ELECTRON PLASMA DENSITY ---
-    #################################
-    if plasmaToggles.useACESII_ne_Profile:
-        data_dict_ACESII_ne_spectrum = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\ACESII_ni_spectrum.cdf')
-        ne_density = 1E6*deepcopy(data_dict_ACESII_ne_spectrum['ni_spectrum'][0])
-    else:
-        ne_density = 1E6 * deepcopy(data_dict_output['Ne'][0])  # convert data into m^-3
 
-    data_dict_output['ne'] = data_dict_output.pop('Ne')
-    data_dict_output['ne'] = [ne_density, {'DEPEND_0': 'simAlt', 'UNITS': 'm!A-3!N', 'LABLAXIS': 'ne'}]
-
-
-    ##################
-    # --- ION MASS ---
-    ##################
-
-    # get the effective mass based on the IRI
-    n_ions = np.array([data_dict_output[f"{key}"][0] for key in plasmaToggles.wIons])  # get the ion densities and convert them to m^-3
-    m_eff_i = (np.sum((n_ions.T * Imasses).T, axis=0) / (np.sum(n_ions, axis=0)))
-
-    if plasmaToggles.useACESII_ni_Profile:
-        data_dict_ACESII_ni_spectrum = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\ACESII_ni_spectrum.cdf')
-        ni_density = 1E6 * deepcopy(data_dict_ACESII_ni_spectrum['ni_spectrum'][0])
-    else:
-        ni_density = 1E6 * np.sum(n_ions, axis=0)
-
-    data_dict_output = {**data_dict_output,
-                 **{'ni': [ni_density, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'm!A-3!N', 'LABLAXIS': 'ni'}]},
-                 **{'m_eff_i': [m_eff_i, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'kg', 'LABLAXIS': 'm_eff_i'}]},
-                 }
-
-    # rename the ions
+    # --- rename the ions ---
     for idx, key in enumerate(Ikeys):
         data_dict_output[f'n_{key}'] = data_dict_output.pop(key)
         data_dict_output[f'n_{key}'][1]['UNITS'] = 'm!A-3!N'
         data_dict_output[f'n_{key}'][1]['LABLAXIS'] = f'n_{key}'
 
-    #
+    #########################
+    # --- IRI ne/ni ratio ---
+    #########################
+    ni_IRI = 1E6 * np.sum(np.array([deepcopy(data_dict_output[f"n_{key}"][0]) for key in plasmaToggles.wIons]), axis=0) # convert data into m^-3
+    ne_IRI = 1E6 * deepcopy(data_dict_output['Ne'][0])  # convert data into m^-3
+    data_dict_output['ne_ni_ratio'][0] = np.divide(ne_IRI, ni_IRI)
+
+    ############################
+    # --- ION CONCENTRATIONS ---
+    ############################
+    for idx, key in enumerate(Ikeys):
+        data_dict_output[f'C_{key}'][0] = deepcopy(np.divide(1E6*data_dict_output[f'n_{key}'][0], ni_IRI))
+        data_dict_output[f'C_{key}'][1]['UNITS'] = '%'
+        data_dict_output[f'C_{key}'][1]['LABLAXIS'] = f'C_{key}'
+
+    ##################################
+    # --- INDIVIDUAL ION DENSITIES ---
+    ##################################
+    if plasmaToggles.useACESII_density_Profile:
+        data_dict_ACESII_ni_spectrum = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\ACESII_ni_spectrum\ACESII_ni_spectrum.cdf')
+        for idx, key in enumerate(Ikeys):
+            data_dict_output[f'n_{key}'][0] = 1E6*np.multiply(data_dict_ACESII_ni_spectrum[f'ni_spectrum'][0], data_dict_output[f'C_{key}'][0])
+    else:
+        for idx, key in enumerate(Ikeys):
+            data_dict_output[f'n_{key}'][0] = 1E6*deepcopy(data_dict_output[f'n_{key}'][0])
+
+
+    ###########################
+    # --- TOTAL ION DENSITY ---
+    ###########################
+    if plasmaToggles.useACESII_density_Profile:
+        data_dict_output['ni'][0] = 1E6 * deepcopy(data_dict_ACESII_ni_spectrum['ni_spectrum'][0])
+    else:
+        data_dict_output['ni'][0] = 1E6 * np.array([deepcopy(data_dict_output[f"n_{key}"][0]) for key in plasmaToggles.wIons])
+
+    ##################
+    # --- ION MASS ---
+    ##################
+    # get the effective mass based on the IRI
+    data_dict_output['m_eff_i'][0] = np.sum(np.array([deepcopy(data_dict_output[f"C_{key}"][0])*Imasses[idx] for idx,key in enumerate(plasmaToggles.wIons)]), axis=0)
+
+    #################################
+    # --- ELECTRON PLASMA DENSITY ---
+    #################################
+    if plasmaToggles.useACESII_density_Profile:
+        data_dict_ACESII_ni_spectrum = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\ACESII_ni_spectrum\ACESII_ni_spectrum.cdf')
+        ne_density = 1E6*deepcopy(data_dict_ACESII_ni_spectrum['ni_spectrum'][0])*deepcopy(data_dict_output['ne_ni_ratio'][0])
+    else:
+        ne_density = 1E6 * deepcopy(data_dict_output['Ne'][0])  # convert data into m^-3
+
+    data_dict_output['ne'] = data_dict_output.pop('Ne')
+    data_dict_output['ne'] = [ne_density, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'm!A-3!N', 'LABLAXIS': 'ne'}]
+
+
     #####################
     # --- PLASMA BETA ---
     #####################
     plasmaBeta = (2 * stl.u0 *stl.kB)*(data_dict_output['ne'][0] * data_dict_output['Te'][0] ) / np.power(data_dict_Bgeo['Bgeo'][0],2)
     data_dict_output = {**data_dict_output, **{'beta_e': [plasmaBeta, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'beta_e'}]}}
-
 
     ##########################
     # --- PLASMA FREQUENCY ---
@@ -145,9 +178,9 @@ def generatePlasmaEnvironment():
 
 
 
-    # ###########################
-    # # --- ION LARMOR RADIUS ---
-    # ###########################
+    ###########################
+    # --- ION LARMOR RADIUS ---
+    ###########################
     Ti = data_dict_output['Ti'][0]
     n_ions = np.array([data_dict_output[f"n_{key}"][0] for idx, key in enumerate(Ikeys)])
     vth_ions = np.array([np.sqrt(2) * np.sqrt(8 * stl.kB * Ti / mass) for mass in Imasses])  # the np.sqrt(2) comes from the vector sum of two dimensions
@@ -158,13 +191,14 @@ def generatePlasmaEnvironment():
                  **{f'ionLarmorRadius_{key}': [ionLarmorRadius_ions[idx], {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': f'ionLarmorRadius_{key}'}] for idx, key in enumerate(Ikeys)}
                  }
 
+
     #####################
     # --- OUTPUT DATA ---
     #####################
 
     # --- Construct the Data Dict ---
     exampleVar = {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': -9223372036854775808,
-                  'FORMAT': 'I5', 'UNITS': 'm', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'data',
+                  'FORMAT': 'I5', 'UNITS': None, 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'data',
                   'SCALETYP': 'linear', 'LABLAXIS': 'simAlt'}
 
 

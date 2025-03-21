@@ -12,7 +12,7 @@ class plasmaToggles:
     # --- --- --- ---
     ### ELECTRONS ###
     # --- --- --- ---
-    useACESII_ne_Profile = False
+    useACESII_density_Profile = True
 
     # --- --- --
     ### IONS ###
@@ -20,6 +20,5 @@ class plasmaToggles:
     wIons = ['NO+', 'O+', 'O2+']  # which neutrals to consider in the simulation, use the key format in spaceToolsLib
     # wIons = ['NO+','H+','N+','He+', 'O+', 'O2+']  # all ions
 
-    useACESII_ni_Profile = False
 
 

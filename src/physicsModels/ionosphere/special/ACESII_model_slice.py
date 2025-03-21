@@ -1,14 +1,10 @@
-# --- ionizationRecomb_Generator.py ---
-# Description: For REAL data Use a ionization_recombination Methods to create electron density
-# altitude profiles via Fang Parameterization.
+# --- ACESII_model_slice.py ---
+# Description: compare the model results to the REAL ACES-II data
 from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_classes import *
 def generateIonizationRecomb():
 
     # --- imports ---
-    from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_toggles import ionizationRecombToggles
-    from src.physicsModels.ionosphere.neutral_environment.neutral_toggles import neutralsToggles
-    from src.physicsModels.ionosphere.plasma_environment.plasma_toggles import plasmaToggles
-    from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
+    from src.physicsModels.ionosphere.conductivity.conductivity_toggles import conductivityToggles
     import numpy as np
     from copy import deepcopy
     from spaceToolsLib.tools.CDF_output import outputCDFdata
@@ -20,20 +16,11 @@ def generateIonizationRecomb():
     # --- --- --- --- --- ---
     ##########################
 
-    # get the ionospheric plasma data dict
-    data_dict_plasma = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\plasma_environment.cdf')
-
-    # get the ACES-II EEPAA Flux data
-    data_dict_flux = stl.loadDictFromFile(rf'{ionizationRecombToggles.flux_path}\ACESII_36359_l3_eepaa_flux.cdf')
-
-    # get the ACES-II L-Shell data
-    data_dict_LShell = deepcopy(SpatialToggles.data_dict_HF_LShell)
-
-    # get the neutral data dict
-    data_dict_neutral = stl.loadDictFromFile(rf'{neutralsToggles.outputFolder}\neutral_environment.cdf')
-
     # get the spatial data dict
-    data_dict_spatial = stl.loadDictFromFile(rf'{SpatialToggles.outputFolder}\spatial_environment.cdf')
+    data_dict_conductivity = stl.loadDictFromFile(rf'{conductivityToggles.outputFolder}\conductivity.cdf')
+
+    # get the ACES-II attitude data
+    data_dict_attitude_high = stl.
 
     ############################
     # --- PREPARE THE OUTPUT ---

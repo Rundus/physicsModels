@@ -1,4 +1,14 @@
 [1] Cross-check the conductivity model with Leda2019 model
         -use the IRI model data from Leda2019 date/times to reproduce their results
         -There's something strange with the magnitude of the collision frequencies
-[2]
+[2] Check the LP ni_spectrum for accuracy when collecting quiet/active regions
+
+[3] adjust ni_spectrum for the ratio of electrons/ions from the ISR data
+
+[4] Determine why the hall/Pedersen conductivities do NOT appear to decay in altitude (not really)
+
+[5] Determine a more realistic recombination rate for the ionization/recombination section
+
+[6] Omni-directional flux or parallel flux for the ionization?
+        -Currently, none of the perpendicular flux is used to calculate ionization
+        -Read Kaeppler's thesis on his choice?

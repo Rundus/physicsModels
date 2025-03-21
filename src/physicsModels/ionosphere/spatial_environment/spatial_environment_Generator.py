@@ -1,13 +1,12 @@
-# --- imports ---
-import numpy
-from datetime import datetime
-from spacepy import coordinates as coord
-from spacepy.time import Ticktock
-import spaceToolsLib as stl
-import numpy as np
-
-
 def generate_spatialEnvironment():
+    # --- imports ---
+    from spacepy import coordinates as coord
+    from spacepy.time import Ticktock
+    import spaceToolsLib as stl
+    import numpy as np
+    from tqdm import tqdm
+
+
     # import the toggles
     from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
     altRange = SpatialToggles.simAlt
@@ -27,7 +26,7 @@ def generate_spatialEnvironment():
     grid_alt = np.array([altRange for i in range(len(LShellRange))])
     grid_LShell = np.array([[LShellRange[i] for k in range(len(altRange))] for i in range(len(LShellRange))])
 
-    for idx, Lval in enumerate(LShellRange):
+    for idx, Lval in tqdm(enumerate(LShellRange)):
 
         # get the geomagnetic coordinate of the P.O.I. based on L-Shell
         geomagAlts = [((alt + stl.Re * stl.m_to_km) / (stl.Re * stl.m_to_km)) for alt in altRange]

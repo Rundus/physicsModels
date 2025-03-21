@@ -16,11 +16,11 @@ start_time = time.time()
 #################
 # --- TOGGLES ---
 #################
-regenSpatial = False
+regenSpatial = True
 regenBgeo = False
 regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
-ionRecomb_ne_Calc = False
+ionRecomb_ne_Calc = True
 calc_IonoConductivity = True
 
 ################################
@@ -31,7 +31,7 @@ calc_IonoConductivity = True
 
 if regenSpatial:
     # spatial environment
-    stl.prgMsg('Regenerating Spatial Environment')
+    stl.prgMsg('Regenerating Spatial Environment\n')
     from src.physicsModels.ionosphere.spatial_environment.spatial_environment_Generator import generate_spatialEnvironment
     generate_spatialEnvironment()
     stl.Done(start_time)
