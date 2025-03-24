@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'ionosphereModelling'
+project = 'ionosphere_modelling'
 copyright = '2019, Connor Feltman'
 author = 'Connor Feltman'
 
