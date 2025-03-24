@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'physicsModels'
+project = 'ionosphereModelling'
 copyright = '2019, Connor Feltman'
 author = 'Connor Feltman'
 
@@ -53,7 +53,7 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['AlfvenWave_Resonance.rst',
                     'invertedV_fitting.rst',
-                    'ionosphere.rst',
+                    'ionosphere_models.rst',
                     'magnetosphere_Ionosphere.rst']
 
 

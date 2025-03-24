@@ -1,0 +1,71 @@
+# --- executable.py ---
+# --- Author: C. Feltman ---
+# DESCRIPTION: regenerate the IONOSPHERE plasma environment toggles
+
+
+#################
+# --- IMPORTS ---
+#################
+import time
+import spaceToolsLib as stl
+import warnings
+warnings.filterwarnings("ignore")
+start_time = time.time()
+
+
+#################
+# --- TOGGLES ---
+#################
+regenSpatial = False
+regenBgeo = False
+regenPlasmaEnvironment = True
+regenNeutralEnvironment = True
+ionRecomb_ne_Calc = True
+calc_IonoConductivity = True
+
+################################
+# --- --- --- --- --- --- --- --
+# --- ENVIRONMENT GENERATORS ---
+# --- --- --- --- --- --- --- --
+################################
+
+if regenSpatial:
+    # spatial environment
+    stl.prgMsg('Regenerating Spatial Environment\n')
+    from src.physicsModels.ionosphere.spatial_environment.spatial_environment_Generator import generate_spatialEnvironment
+    generate_spatialEnvironment()
+    stl.Done(start_time)
+
+if regenBgeo:
+    # geomagnetic field
+    stl.prgMsg('Regenerating Bgeo\n')
+    from src.physicsModels.ionosphere.geomagneticField.geomagneticField_Generator import generate_GeomagneticField
+    generate_GeomagneticField()
+    stl.Done(start_time)
+
+if regenPlasmaEnvironment:
+    # plasma environment
+    stl.prgMsg('Regenerating Plasma Environment\n')
+    from src.physicsModels.ionosphere.plasma_environment.plasma_environment_Generator import generatePlasmaEnvironment
+    generatePlasmaEnvironment()
+    stl.Done(start_time)
+
+if regenNeutralEnvironment:
+    # neutral atmosphere
+    stl.prgMsg('Regenerating Neutral Environment \n')
+    from src.physicsModels.ionosphere.neutral_environment.neutral_environment_Generator import generateNeutralEnvironment
+    generateNeutralEnvironment()
+    stl.Done(start_time)
+
+if ionRecomb_ne_Calc:
+    stl.prgMsg('Generating electron density from Ionization/Recombination \n')
+    from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_Generator import generateIonizationRecomb
+    generateIonizationRecomb()
+    stl.Done(start_time)
+
+if calc_IonoConductivity:
+    # conductivity
+    stl.prgMsg('Calculating Ionospheric Conductivity')
+    from src.physicsModels.ionosphere.conductivity.conductivity_Generator import generateIonosphericConductivity
+    generateIonosphericConductivity()
+    stl.Done(start_time)
