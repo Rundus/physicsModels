@@ -1,14 +1,15 @@
 # --- conductivity_Generator.py ---
 # Description: Model the ionospheric conductivity
-from src.physicsModels.ionosphere.conductivity.conductivity_classes import *
+from src.ionosphere_modelling.conductivity.conductivity_classes import *
 def generateIonosphericConductivity():
 
     # --- imports ---
-    from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_toggles import ionizationRecombToggles
-    from src.physicsModels.ionosphere.neutral_environment.neutral_toggles import neutralsToggles
-    from src.physicsModels.ionosphere.plasma_environment.plasma_toggles import plasmaToggles
-    from src.physicsModels.ionosphere.geomagneticField.geomagneticField_toggles import BgeoToggles
-    from src.physicsModels.ionosphere.conductivity.conductivity_toggles import conductivityToggles
+    from src.ionosphere_modelling.ionization_recombination.ionizationRecomb_toggles import ionizationRecombToggles
+    from src.ionosphere_modelling.neutral_environment.neutral_toggles import neutralsToggles
+    from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
+    from src.ionosphere_modelling.geomagneticField.geomagneticField_toggles import BgeoToggles
+    from src.ionosphere_modelling.conductivity.conductivity_toggles import conductivityToggles
+    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
     import numpy as np
     import spaceToolsLib as stl
     from copy import deepcopy
@@ -24,6 +25,12 @@ def generateIonosphericConductivity():
 
     # get the ionospheric neutral data dict
     data_dict_neutral = stl.loadDictFromFile(rf'{neutralsToggles.outputFolder}\neutral_environment.cdf')
+
+    # get the ACES-II EEPAA Flux data
+    data_dict_flux = stl.loadDictFromFile(rf'{ionizationRecombToggles.flux_path}\ACESII_36359_l3_eepaa_flux.cdf')
+
+    # get the ACES-II L-Shell data
+    data_dict_LShell = deepcopy(SpatialToggles.data_dict_HF_LShell)
 
     # get the ionospheric plasma data dict
     data_dict_plasma = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\plasma_environment.cdf')
@@ -136,10 +143,66 @@ def generateIonosphericConductivity():
     Sigma_Parallel_HI = np.array([simpson(y=data_dict_output['sigma_parallel'][0][L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
 
     data_dict_output = {**data_dict_output,
-                 **{'Sigma_Hall': [Sigma_Hall_HI, {'DEPEND_0': 'simLShell',  'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
-                 **{'Sigma_Pedersen': [Sigma_Pedersen_HI, {'DEPEND_0': 'simLShell',  'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
-                 **{'Sigma_parallel': [Sigma_Parallel_HI, {'DEPEND_0': 'simLShell',  'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
-                 }
+                        **{'Sigma_Hall': [Sigma_Hall_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S',
+                                                          'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_Pedersen': [Sigma_Pedersen_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S',
+                                                                  'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_parallel': [Sigma_Parallel_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S',
+                                                                  'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        }
+
+    ##############################
+    # --- OTHER CONDUCTIVITIES ---
+    ##############################
+
+    # --- Robinson Height-Integrated Conductivities ---
+    Sigma_Hall_Robinson = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_Pedersen_Robinson = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+
+    # --- KAEPPLER Height-Integrated Conductivities ---
+    Sigma_Hall_K10 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_Pedersen_K10 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_Hall_K50 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_Pedersen_K50 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_Hall_K90 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_Pedersen_K90 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+
+
+
+    # Reduce the EEPAA data to the relevant subset
+    for idx1, LShell in enumerate(data_dict_output['simLShell'][0]):
+        # get the flux data for the specific L-Shell
+        dat_idx = np.abs(data_dict_LShell['L-Shell'][0] - LShell).argmin()
+        energy_flux_ergs = (1.602177E-12) * deepcopy(data_dict_flux['Phi_E_Parallel'][0][dat_idx])  # convert energy flux to ergs/cm^2 s^1
+        energy_flux_watts = (1000*stl.q0*stl.cm_to_m*stl.cm_to_m)*deepcopy(data_dict_flux['Phi_E_Parallel'][0][dat_idx])  # convert energy flux to mW/m^2
+        avgEnergy_keV = deepcopy(data_dict_flux['Energy_avg'][0][dat_idx]) / 1000  # convert to keV
+
+        # robinson
+        Sigma_Pedersen_Robinson[idx1] = ((40 * avgEnergy_keV) / (16 + np.power(avgEnergy_keV, 2))) * np.sqrt(energy_flux_ergs)
+        Sigma_Hall_Robinson[idx1] = (0.45) * np.power(avgEnergy_keV, 0.85) * Sigma_Pedersen_Robinson[idx1]
+
+        # kaeppler
+        Sigma_Pedersen_K50[idx1] = 4.93 * np.power(energy_flux_watts, 0.48)
+        Sigma_Hall_K50[idx1] = 8.11 * np.power(energy_flux_watts, 0.55)
+
+        Sigma_Pedersen_K90[idx1] = 5.9*np.power(energy_flux_watts,0.48)
+        Sigma_Hall_K90[idx1] = 10.77 * np.power(energy_flux_watts, 0.53)
+
+        Sigma_Pedersen_K10[idx1] = 3.5 * np.power(energy_flux_watts, 0.49)
+        Sigma_Hall_K10[idx1] = 5.19 * np.power(energy_flux_watts, 0.56)
+
+    data_dict_output = {**data_dict_output,
+                        **{'Sigma_Hall_Robinson': [Sigma_Hall_Robinson, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_Pedersen_Robinson': [Sigma_Pedersen_Robinson, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_Hall_K10': [Sigma_Hall_K10, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_Pedersen_K10': [Sigma_Pedersen_K10, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_Hall_K50': [Sigma_Hall_K50, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_Pedersen_K50': [Sigma_Pedersen_K50, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_Hall_K90': [Sigma_Hall_K90, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_Pedersen_K50': [Sigma_Pedersen_K90, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        }
+
+
 
     #####################
     # --- OUTPUT DATA ---

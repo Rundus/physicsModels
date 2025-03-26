@@ -18,9 +18,10 @@ start_time = time.time()
 #################
 regenSpatial = False
 regenBgeo = False
-regenPlasmaEnvironment = True
-regenNeutralEnvironment = True
-ionRecomb_ne_Calc = True
+regenNeSpectrum = False
+regenPlasmaEnvironment = False
+regenNeutralEnvironment = False
+ionRecomb_ne_Calc = False
 calc_IonoConductivity = True
 
 ################################
@@ -42,6 +43,14 @@ if regenBgeo:
     from src.ionosphere_modelling.geomagneticField.geomagneticField_Generator import generate_GeomagneticField
     generate_GeomagneticField()
     stl.Done(start_time)
+
+if regenNeSpectrum:
+    # ne spectrum
+    stl.prgMsg('Regenerating ne spectrum\n')
+    # from src.ionosphere_modelling.plasma_environment
+    generate_GeomagneticField()
+    stl.Done(start_time)
+
 
 if regenPlasmaEnvironment:
     # plasma environment
