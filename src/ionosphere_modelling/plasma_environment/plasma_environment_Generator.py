@@ -1,5 +1,5 @@
 # TODO: Correct Ne when using the ACESII_ni spectrum using the EISCAT ne/ni ratio
-from src.physicsModels.ionosphere.plasma_environment.plasma_environment_classes import *
+from src.ionosphere_modelling.plasma_environment.plasma_environment_classes import *
 
 def generatePlasmaEnvironment():
 
@@ -10,9 +10,9 @@ def generatePlasmaEnvironment():
     from tqdm import tqdm
 
     # import the toggles
-    from src.physicsModels.ionosphere.plasma_environment.plasma_toggles import plasmaToggles
-    from src.physicsModels.ionosphere.geomagneticField.geomagneticField_toggles import BgeoToggles
-    from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
+    from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
+    from src.ionosphere_modelling.geomagneticField.geomagneticField_toggles import BgeoToggles
+    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
 
     #######################
     # --- LOAD THE DATA ---

@@ -33,9 +33,7 @@ import spaceToolsLib as stl
 stl.setupPYCDF()
 from spacepy import pycdf
 from copy import deepcopy
-from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
-
-
+from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
 
 def collect_langmuir_density_altitude_statistics(wflyer):
 
@@ -74,8 +72,6 @@ def collect_langmuir_density_altitude_statistics(wflyer):
     # bin the LP data into the eEPAA epoch
     digitized = np.digitize(x=LP_Epoch_tt2000, bins=EEPAA_Epoch_tt2000)
     data_dict_LP['ni'][0] = np.array([data_dict_LP['ni'][0][digitized == i].mean() for i in range(len(EEPAA_Epoch_tt2000))])
-    print(np.shape(data_dict_LP['ni'][0]))
-    print(np.shape(data_dict_eepaa['Epoch'][0]))
 
     # downsampled_indicies = np.array([np.abs(LP_Epoch_tt2000 - val).argmin() for val in EEPAA_Epoch_tt2000])
     # data_dict_LP['ni'][0] = data_dict_LP['ni'][0][downsampled_indicies]

@@ -24,7 +24,7 @@ from scipy.optimize import curve_fit
 from scipy.interpolate import CubicSpline
 import spaceToolsLib as stl
 from copy import deepcopy
-from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
+from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
 
 
 #################
@@ -37,9 +37,11 @@ bool_show_num_points_plot = False
 bool_output_data = True
 
 
-def linear(x,a,b):
-    return a*x+b
+# def poly(x, a, b, c, d):
+#     return a*np.power(x, 3)+b*np.power(x, 2)+c*x+d
 
+def poly(x, a, b):
+    return a*x+b
 
 def langmuir_ni_spectrogram():
 
@@ -86,15 +88,15 @@ def langmuir_ni_spectrogram():
     if bool_show_num_points_plot:
         fig, ax = plt.subplots()
         cmap = ax.pcolormesh(LShell_bins, simAlt/stl.m_to_km, fit_num_points.T, norm='log')
-        ax.set_ylabel('Alt [km]')
-        ax.set_xlabel('L Shell')
-        ax.set_ylim(0, 420)
+        ax.set_ylabel('Alt [km]', fontsize=20)
+        ax.set_xlabel('L Shell', fontsize=20)
+        ax.set_ylim(70, 300)
         ax.set_xlim(6.7, 10.5)
         cbar = plt.colorbar(cmap)
         cbar.set_label('Num of Points')
-        ax.grid(which='both')
-        ax.set_yticks(simAlt/stl.m_to_km)
-        ax.set_xticks(LShell_bins)
+        ax.grid()
+        # ax.set_yticks(simAlt/stl.m_to_km)
+        # ax.set_xticks(LShell_bins)
         plt.show()
 
     ############################
@@ -119,10 +121,10 @@ def langmuir_ni_spectrogram():
             LShell_vals = [val for sublist in LShell_vals for val in sublist]
 
             # fit the data at this specific altitude
-            params, cov = curve_fit(linear, LShell_vals, density_vals)
+            params, cov = curve_fit(poly, LShell_vals, density_vals)
 
             # evaluate the fit at a specific region
-            density_fitGrid_T[alt_idx] = linear(simLShell, *params)
+            density_fitGrid_T[alt_idx] = poly(simLShell, *params)
 
     density_fitGrid_T[np.where(density_fitGrid_T == 0.0)[0]] = np.nan
     density_fitGrid = density_fitGrid_T.T
@@ -133,7 +135,7 @@ def langmuir_ni_spectrogram():
     ###################################
     # For each L-Shell, cubic interpolate over altitude onto the simulation altitude range
     # This handles anywhere where there's data dropout. Effective if 1-2 datapoints missing
-    stl.prgMsg('Interpolating over altitude')
+    # stl.prgMsg('Interpolating over altitude')
 
     for idx1, LShell in enumerate(simLShell):
         density = density_fitGrid[idx1]
@@ -142,16 +144,14 @@ def langmuir_ni_spectrogram():
         xData = simAlt[good_indicies]
         cs = CubicSpline(xData, yData)
         data_dict_output['ni_spectrum'][0][idx1] = cs(simAlt)
-    #
-    #     fig, ax = plt.subplots()
-    #     ax.scatter(xData/1000, yData, s=100)
-    #     ax.scatter(simAlt/1000, cs(simAlt), color='red', s=30)
-    #     ax.plot(simAlt / 1000, cs(simAlt))
-    #     ax.set_yscale('log')
-    #     plt.show()
 
+        # fig, ax = plt.subplots()
+        # ax.scatter(xData/1000, yData, s=100)
+        # ax.scatter(simAlt/1000, cs(simAlt), color='red', s=30)
+        # ax.plot(simAlt / 1000, cs(simAlt))
+        # ax.set_yscale('log')
+        # plt.show()
     stl.Done(start_time)
-
 
     if bool_output_data:
 

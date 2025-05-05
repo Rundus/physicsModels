@@ -16,12 +16,12 @@ start_time = time.time()
 #################
 # --- TOGGLES ---
 #################
-regenSpatial = False
-regenBgeo = False
-regenNeSpectrum = False
-regenPlasmaEnvironment = False
-regenNeutralEnvironment = False
-ionRecomb_ne_Calc = False
+regenSpatial = True
+regenBgeo = True
+regenNeSpectrum = True
+regenPlasmaEnvironment = True
+regenNeutralEnvironment = True
+ionRecomb_ne_Calc = True
 calc_IonoConductivity = True
 
 ################################
@@ -36,7 +36,6 @@ if regenSpatial:
     from src.ionosphere_modelling.spatial_environment.spatial_environment_Generator import generate_spatialEnvironment
     generate_spatialEnvironment()
     stl.Done(start_time)
-
 if regenBgeo:
     # geomagnetic field
     stl.prgMsg('Regenerating Bgeo\n')
@@ -47,8 +46,8 @@ if regenBgeo:
 if regenNeSpectrum:
     # ne spectrum
     stl.prgMsg('Regenerating ne spectrum\n')
-    # from src.ionosphere_modelling.plasma_environment
-    generate_GeomagneticField()
+    from src.ionosphere_modelling.plasma_environment.ACESII_Langmuir_ni_spectrogram.Langmuir_ni_spectrogram import langmuir_ni_spectrogram
+    langmuir_ni_spectrogram()
     stl.Done(start_time)
 
 

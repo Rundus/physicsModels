@@ -8,7 +8,7 @@ def generate_spatialEnvironment():
 
 
     # import the toggles
-    from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
+    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
     altRange = SpatialToggles.simAlt
     LShellRange = SpatialToggles.simLShell
     LongGeomRange = SpatialToggles.simGeomLong
@@ -21,8 +21,8 @@ def generate_spatialEnvironment():
     ########################################
     # description: For a range of LShells and altitudes get the Latitude of each point and define a longitude.
     # output everything as a 2D grid of spatial
-    grid_lat = np.zeros(shape=(len(LShellRange),len(altRange)))
-    grid_long = np.zeros(shape=(len(LShellRange),len(altRange)))
+    grid_lat = np.zeros(shape=(len(LShellRange), len(altRange)))
+    grid_long = np.zeros(shape=(len(LShellRange), len(altRange)))
     grid_alt = np.array([altRange for i in range(len(LShellRange))])
     grid_LShell = np.array([[LShellRange[i] for k in range(len(altRange))] for i in range(len(LShellRange))])
 

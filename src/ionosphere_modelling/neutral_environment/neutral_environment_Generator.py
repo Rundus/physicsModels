@@ -10,8 +10,8 @@ def generateNeutralEnvironment(**kwargs):
     import pymsis
     import numpy as np
     from copy import deepcopy
-    from src.physicsModels.ionosphere.neutral_environment.neutral_toggles import neutralsToggles
-    from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
+    from src.ionosphere_modelling.neutral_environment.neutral_toggles import neutralsToggles
+    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
     from tqdm import tqdm
 
     #######################

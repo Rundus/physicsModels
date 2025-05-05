@@ -1,14 +1,14 @@
 # --- ionizationRecomb_Generator.py ---
 # Description: For REAL data Use a ionization_recombination Methods to create electron density
 # altitude profiles via Fang Parameterization.
-from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_classes import *
+from src.ionosphere_modelling.ionization_recombination.ionizationRecomb_classes import *
 def generateIonizationRecomb():
 
     # --- imports ---
-    from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_toggles import ionizationRecombToggles
-    from src.physicsModels.ionosphere.neutral_environment.neutral_toggles import neutralsToggles
-    from src.physicsModels.ionosphere.plasma_environment.plasma_toggles import plasmaToggles
-    from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
+    from src.ionosphere_modelling.ionization_recombination.ionizationRecomb_toggles import ionizationRecombToggles
+    from src.ionosphere_modelling.neutral_environment.neutral_toggles import neutralsToggles
+    from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
+    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
     import numpy as np
     from copy import deepcopy
     from spaceToolsLib.tools.CDF_output import outputCDFdata

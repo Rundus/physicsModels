@@ -5,8 +5,8 @@ def generate_GeomagneticField():
     from tqdm import tqdm
 
     # import the toggles
-    from src.physicsModels.ionosphere.geomagneticField.geomagneticField_toggles import BgeoToggles
-    from src.physicsModels.ionosphere.spatial_environment.spatial_toggles import SpatialToggles
+    from src.ionosphere_modelling.geomagneticField.geomagneticField_toggles import BgeoToggles
+    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
 
     # prepare the output
     data_dict_output = {}

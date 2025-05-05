@@ -3,11 +3,10 @@ import numpy as np
 from numpy import power,log,pi
 from spaceToolsLib.variables import kB,gravG,Me,Re
 import spaceToolsLib as stl
-from src.physicsModels.ionosphere.plasma_environment.plasma_toggles import plasmaToggles
+from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
 
 
 class fang2010:
-
     def __init__(self, altRange, Tn, m_eff_n, rho_n, inputEnergies, varPhi_E):
         self.paramCoefficents = np.array([
             #      j =0           j=1          j=2          j=3
@@ -93,8 +92,9 @@ class schunkNagy2009:
         for ionNam in plasmaToggles.wIons:
             try:
                 partials.append(alpha_dissociated[f'{ionNam}'] * data_dict_plasma[f'C_{ionNam}'][0])
-            except:
-                partials.append(alpha_radiative[f'{ionNam}'] * data_dict_plasma[f'n_{ionNam}'][0])
+            except: # the O+ case
+                partials.append(np.zeros(shape=(np.shape(alpha_radiative[f'{ionNam}']))))
+                # partials.append(alpha_radiative[f'{ionNam}'] * data_dict_plasma[f'C_{ionNam}'][0])
 
         # output with units cm^3s^-1
         alpha_total = np.sum(partials, axis=0)
