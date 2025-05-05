@@ -16,12 +16,12 @@ start_time = time.time()
 #################
 # --- TOGGLES ---
 #################
-regenSpatial = True
-regenBgeo = True
-regenNeSpectrum = True
+regenSpatial = False
+regenBgeo = False
+regenNeSpectrum = False
 regenPlasmaEnvironment = True
-regenNeutralEnvironment = True
-ionRecomb_ne_Calc = True
+regenNeutralEnvironment = False
+ionRecomb_ne_Calc = False
 calc_IonoConductivity = True
 
 ################################

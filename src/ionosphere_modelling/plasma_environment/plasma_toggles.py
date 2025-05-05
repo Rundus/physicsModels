@@ -12,7 +12,15 @@ class plasmaToggles:
     # --- --- --- ---
     ### ELECTRONS ###
     # --- --- --- ---
-    useACESII_density_Profile = True
+    wBackground_density = 1
+
+    match wBackground_density:
+        case 0:
+            useACESII_density_Profile = True
+            useEISCAT_density_Profile = False
+        case 1:
+            useACESII_density_Profile = False
+            useEISCAT_density_Profile = True
 
     # --- --- --
     ### IONS ###

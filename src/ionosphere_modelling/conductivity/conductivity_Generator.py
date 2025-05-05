@@ -57,7 +57,7 @@ def generateIonosphericConductivity():
     # --- CONSTRUCT n_e PROFILE ---
     ###############################
 
-    # construct the density profile n(z, ILat) - Inverted-V density + Ionospheric base density
+    # construct the background density profile n(z, ILat) - Inverted-V density + Ionospheric base density
     data_dict_output['ne_total'][0] = data_dict_ionRecomb['ne_model'][0] + data_dict_plasma['ne'][0]
 
 
@@ -107,9 +107,9 @@ def generateIonosphericConductivity():
         data_dict_output = {**data_dict_output, **{f'kappa_i_{key}': [kappa_i_specific, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': f'kappa_i_{key}'}]}}
 
 
-    # ######################
-    # # --- Conductivity ---
-    # ######################
+    ######################
+    # --- Conductivity ---
+    ######################
     B_geo = data_dict_Bgeo['Bgeo'][0]
 
     # calculated electron sigmas
@@ -124,8 +124,8 @@ def generateIonosphericConductivity():
 
     for idx, key in enumerate(plasmaToggles.wIons):
         kappa_val = deepcopy(data_dict_output[f'kappa_i_{key}'][0])
-        specific_ion_concentration = np.divide(data_dict_plasma[f'n_{key}'][0], data_dict_plasma['ni'][0])
-        n_i = data_dict_output['ne_total'][0]*specific_ion_concentration
+        # specific_ion_concentration = np.divide(data_dict_plasma[f'n_{key}'][0], data_dict_plasma['ni'][0])
+        n_i = data_dict_output['ne_total'][0]*data_dict_plasma[f'C_{key}'][0]
         sigma_parallel_ions[idx] = q0 * np.multiply(np.divide(n_i, B_geo), kappa_val)
         sigma_P_ions[idx] = q0 * np.multiply(np.divide(n_i, B_geo), kappa_val / (1 + np.power(kappa_val, 2)))
         sigma_H_ions[idx] = q0 * np.multiply(np.divide(n_i, B_geo), np.power(kappa_val, 2) / (1 + np.power(kappa_val, 2)))
@@ -143,12 +143,9 @@ def generateIonosphericConductivity():
     Sigma_Parallel_HI = np.array([simpson(y=data_dict_output['sigma_parallel'][0][L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
 
     data_dict_output = {**data_dict_output,
-                        **{'Sigma_Hall': [Sigma_Hall_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S',
-                                                          'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
-                        **{'Sigma_Pedersen': [Sigma_Pedersen_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S',
-                                                                  'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
-                        **{'Sigma_parallel': [Sigma_Parallel_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S',
-                                                                  'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_Hall': [Sigma_Hall_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_Pedersen': [Sigma_Pedersen_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_parallel': [Sigma_Parallel_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
                         }
 
     ##############################
@@ -167,13 +164,11 @@ def generateIonosphericConductivity():
     Sigma_Hall_K90 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
     Sigma_Pedersen_K90 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
 
-
-
     # Reduce the EEPAA data to the relevant subset
     for idx1, LShell in enumerate(data_dict_output['simLShell'][0]):
         # get the flux data for the specific L-Shell
         dat_idx = np.abs(data_dict_LShell['L-Shell'][0] - LShell).argmin()
-        energy_flux_ergs = (1.602177E-12) * deepcopy(data_dict_flux['Phi_E_Parallel'][0][dat_idx])  # convert energy flux to ergs/cm^2 s^1
+        energy_flux_ergs = (1/stl.erg_to_eV) * deepcopy(data_dict_flux['Phi_E_Parallel'][0][dat_idx])  # convert energy flux to ergs/cm^2 s^1
         energy_flux_watts = (1000*stl.q0*stl.cm_to_m*stl.cm_to_m)*deepcopy(data_dict_flux['Phi_E_Parallel'][0][dat_idx])  # convert energy flux to mW/m^2
         avgEnergy_keV = deepcopy(data_dict_flux['Energy_avg'][0][dat_idx]) / 1000  # convert to keV
 
@@ -201,8 +196,6 @@ def generateIonosphericConductivity():
                         **{'Sigma_Hall_K90': [Sigma_Hall_K90, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
                         **{'Sigma_Pedersen_K50': [Sigma_Pedersen_K90, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
                         }
-
-
 
     #####################
     # --- OUTPUT DATA ---

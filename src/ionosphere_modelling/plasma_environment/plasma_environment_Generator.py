@@ -116,6 +116,10 @@ def generatePlasmaEnvironment():
         data_dict_ACESII_ni_spectrum = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\ACESII_ni_spectrum\ACESII_ni_spectrum.cdf')
         for idx, key in enumerate(Ikeys):
             data_dict_output[f'n_{key}'][0] = 1E6*np.multiply(data_dict_ACESII_ni_spectrum[f'ni_spectrum'][0], data_dict_output[f'C_{key}'][0])
+    elif plasmaToggles.useEISCAT_density_Profile:
+        data_dict_EISCAT_ne_spectrum = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\EISCAT_ne_spectrum\EISCAT_ne_spectrum.cdf')
+        for idx, key in enumerate(Ikeys):
+            data_dict_output[f'n_{key}'][0] = (1/deepcopy(data_dict_output['ne_ni_ratio'][0]))*1E6*np.multiply(data_dict_EISCAT_ne_spectrum[f'ne_spectrum'][0], data_dict_output[f'C_{key}'][0])
     else:
         for idx, key in enumerate(Ikeys):
             data_dict_output[f'n_{key}'][0] = 1E6*deepcopy(data_dict_output[f'n_{key}'][0])
@@ -126,6 +130,8 @@ def generatePlasmaEnvironment():
     ###########################
     if plasmaToggles.useACESII_density_Profile:
         data_dict_output['ni'][0] = 1E6 * deepcopy(data_dict_ACESII_ni_spectrum['ni_spectrum'][0])
+    elif plasmaToggles.useEISCAT_density_Profile:
+        data_dict_output['ni'][0] = 1E6 * deepcopy(data_dict_EISCAT_ne_spectrum['ne_spectrum'][0]) * (1/deepcopy(data_dict_output['ne_ni_ratio'][0]))
     else:
         data_dict_output['ni'][0] = 1E6 * np.array([deepcopy(data_dict_output[f"n_{key}"][0]) for key in plasmaToggles.wIons])
 
@@ -139,8 +145,9 @@ def generatePlasmaEnvironment():
     # --- ELECTRON PLASMA DENSITY ---
     #################################
     if plasmaToggles.useACESII_density_Profile:
-        data_dict_ACESII_ni_spectrum = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\ACESII_ni_spectrum\ACESII_ni_spectrum.cdf')
         ne_density = 1E6*deepcopy(data_dict_ACESII_ni_spectrum['ni_spectrum'][0])*deepcopy(data_dict_output['ne_ni_ratio'][0])
+    elif plasmaToggles.useEISCAT_density_Profile:
+        ne_density = 1E6 * deepcopy(data_dict_EISCAT_ne_spectrum['ne_spectrum'][0])
     else:
         ne_density = 1E6 * deepcopy(data_dict_output['Ne'][0])  # convert data into m^-3
 
