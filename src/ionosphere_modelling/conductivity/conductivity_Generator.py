@@ -49,6 +49,12 @@ def generateIonosphericConductivity():
         'ne_total': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm^-3', 'LABLAXIS': 'Electron Density'}],
         'nu_e': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': 'nu_e'}],
         'sigma_Pedersen': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Pedersen Conductivity'}],
+
+        'sigma_Pedersen_e': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Pedersen Conductivity'}],
+        'sigma_Pedersen_i': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Pedersen Conductivity'}],
+        'sigma_Hall_e': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Hall Conductivity'}],
+        'sigma_Hall_i': [np.zeros(shape=(len(LShellRange), len(altRange))),{'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Hall Conductivity'}],
+
         'sigma_Hall': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Hall Conductivity'}],
         'sigma_parallel': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Parallel Conductivity'}],
     }
@@ -125,15 +131,30 @@ def generateIonosphericConductivity():
     for idx, key in enumerate(plasmaToggles.wIons):
         kappa_val = deepcopy(data_dict_output[f'kappa_i_{key}'][0])
         # specific_ion_concentration = np.divide(data_dict_plasma[f'n_{key}'][0], data_dict_plasma['ni'][0])
-        n_i = data_dict_output['ne_total'][0]*data_dict_plasma[f'C_{key}'][0]
+        n_i = data_dict_output['ne_total'][0]*deepcopy(data_dict_plasma[f'C_{key}'][0])
         sigma_parallel_ions[idx] = q0 * np.multiply(np.divide(n_i, B_geo), kappa_val)
         sigma_P_ions[idx] = q0 * np.multiply(np.divide(n_i, B_geo), kappa_val / (1 + np.power(kappa_val, 2)))
         sigma_H_ions[idx] = q0 * np.multiply(np.divide(n_i, B_geo), np.power(kappa_val, 2) / (1 + np.power(kappa_val, 2)))
 
-    data_dict_output['sigma_Pedersen'][0] = sigma_P_e + np.sum(sigma_P_ions, axis=0)
-    data_dict_output['sigma_Hall'][0] = sigma_H_e - np.sum(sigma_H_ions, axis=0)
-    data_dict_output['sigma_parallel'][0] = sigma_parallel_e + np.sum(sigma_parallel_ions, axis=0)
 
+    # clean the data
+    sigma_Pedersen =sigma_P_e + np.sum(sigma_P_ions, axis=0)
+    sigma_Pedersen[sigma_Pedersen<0] = 0
+    sigma_Hall = sigma_H_e - np.sum(sigma_H_ions, axis=0)
+    sigma_Hall[sigma_Hall<0] = 0
+    sigma_Parallel = sigma_parallel_e + np.sum(sigma_parallel_ions, axis=0)
+    sigma_Parallel[sigma_Parallel<0] = 0
+
+    # Store the data
+    data_dict_output['sigma_Pedersen'][0] = sigma_Pedersen
+    data_dict_output['sigma_Hall'][0] = sigma_Hall
+    data_dict_output['sigma_parallel'][0] = sigma_Parallel
+
+    data_dict_output['sigma_Pedersen_e'][0] = sigma_P_e
+    data_dict_output['sigma_Hall_e'][0] = sigma_H_e
+
+    data_dict_output['sigma_Pedersen_i'][0] = np.sum(sigma_P_ions, axis=0)
+    data_dict_output['sigma_Hall_i'][0] = np.sum(sigma_H_ions, axis=0)
 
     ##########################################
     # --- Height-Integrated Conductivities ---

@@ -21,6 +21,16 @@ from src.ionosphere_modelling.spatial_environment.spatial_toggles import Spatial
 #################
 plot_average_ne_curve = True
 
+# time_targets = [
+#     dt.datetime(2022,11,20,17,4,10),
+#     dt.datetime(2022,11,20,17,16,10)
+# ]
+
+time_targets = [
+    dt.datetime(2022,11,20,16,20,00),
+    dt.datetime(2022,11,20,16,50,00)
+]
+
 
 def EISCAT_ne_spectrum():
 
@@ -46,7 +56,7 @@ def EISCAT_ne_spectrum():
     ##################################################
     # --- REDUCE EISCAT TO SPECIFIC ALT/TIME RANGE ---
     ##################################################
-    tme_idx_low, tme_idx_high = np.abs(data_dict_EISCAT['Epoch'][0] - dt.datetime(2022,11,20,17,4,10)).argmin(),np.abs(data_dict_EISCAT['Epoch'][0] - dt.datetime(2022,11,20,17,16,10)).argmin()
+    tme_idx_low, tme_idx_high = np.abs(data_dict_EISCAT['Epoch'][0] - time_targets[0]).argmin(),np.abs(data_dict_EISCAT['Epoch'][0] - time_targets[1]).argmin()
     alt_idx_low, alt_idx_high = np.abs(data_dict_EISCAT['range'][0] - 70).argmin(),np.abs(data_dict_EISCAT['range'][0] - 300).argmin()
     EISCAT_density = data_dict_EISCAT['ne'][0][tme_idx_low:tme_idx_high+1][alt_idx_low:alt_idx_high+1]
     ISR_ne_mean = np.nanmean(EISCAT_density, axis=0)
@@ -80,6 +90,7 @@ def EISCAT_ne_spectrum():
     ########################################
     cs = CubicSpline(good_alts,filtered_binned_ne_avg)
     ne_background = 1E-6*np.array(cs(simAlt)) # convert to cm^-3
+    ne_background[ne_background<0] = 0
 
 
     ############################

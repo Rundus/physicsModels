@@ -19,10 +19,11 @@ start_time = time.time()
 regenSpatial = False
 regenBgeo = False
 regenNeSpectrum = False
-regenPlasmaEnvironment = True
+regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
 ionRecomb_ne_Calc = False
-calc_IonoConductivity = True
+calc_IonoConductivity = False
+regen_electricField = True
 
 ################################
 # --- --- --- --- --- --- --- --
@@ -76,4 +77,11 @@ if calc_IonoConductivity:
     stl.prgMsg('Calculating Ionospheric Conductivity')
     from src.ionosphere_modelling.conductivity.conductivity_Generator import generateIonosphericConductivity
     generateIonosphericConductivity()
+    stl.Done(start_time)
+
+if regen_electricField:
+    # electric field
+    stl.prgMsg('Calculating Electric Field Evironment')
+    from src.ionosphere_modelling.electricField.electricField_Generator import generate_electricField
+    generate_electricField()
     stl.Done(start_time)
