@@ -18,12 +18,13 @@ start_time = time.time()
 #################
 regenSpatial = False
 regenBgeo = False
-regenNeSpectrum = False
+# regenNeSpectrum = False
 regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
-ionRecomb_ne_Calc = False
+ionRecomb_ne_Calc = True
 calc_IonoConductivity = False
-regen_electricField = True
+regen_electricField = False
+calc_IonoCurrents = True
 
 ################################
 # --- --- --- --- --- --- --- --
@@ -44,12 +45,12 @@ if regenBgeo:
     generate_GeomagneticField()
     stl.Done(start_time)
 
-if regenNeSpectrum:
-    # ne spectrum
-    stl.prgMsg('Regenerating ne spectrum\n')
-    from src.ionosphere_modelling.plasma_environment.ACESII_Langmuir_ni_spectrogram.Langmuir_ni_spectrogram import langmuir_ni_spectrogram
-    langmuir_ni_spectrogram()
-    stl.Done(start_time)
+# if regenNeSpectrum:
+#     # ne spectrum
+#     stl.prgMsg('Regenerating ne spectrum\n')
+#     from src.ionosphere_modelling.plasma_environment.ACESII_Langmuir_ni_spectrogram.Langmuir_ni_spectrogram import langmuir_ni_spectrogram
+#     langmuir_ni_spectrogram()
+#     stl.Done(start_time)
 
 
 if regenPlasmaEnvironment:
@@ -84,4 +85,11 @@ if regen_electricField:
     stl.prgMsg('Calculating Electric Field Evironment')
     from src.ionosphere_modelling.electricField.electricField_Generator import generate_electricField
     generate_electricField()
+    stl.Done(start_time)
+
+if calc_IonoCurrents:
+    # conductivity
+    stl.prgMsg('Calculating Ionospheric Currents')
+    from src.ionosphere_modelling.currents.currents_Generator import generate_Currents
+    generate_Currents()
     stl.Done(start_time)

@@ -3,16 +3,20 @@
 from src.ionosphere_modelling.conductivity.conductivity_classes import *
 def generateIonosphericConductivity():
 
-    # --- imports ---
+    # --- common imports ---
+    import spaceToolsLib as stl
+    import numpy as np
+    from tqdm import tqdm
+    from glob import glob
+    from src.ionosphere_modelling.sim_toggles import SimToggles
+    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
+    from copy import deepcopy
+
+    # --- file-specific imports ---
     from src.ionosphere_modelling.ionization_recombination.ionizationRecomb_toggles import ionizationRecombToggles
     from src.ionosphere_modelling.neutral_environment.neutral_toggles import neutralsToggles
     from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
-    from src.ionosphere_modelling.geomagneticField.geomagneticField_toggles import BgeoToggles
     from src.ionosphere_modelling.conductivity.conductivity_toggles import conductivityToggles
-    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
-    import numpy as np
-    import spaceToolsLib as stl
-    from copy import deepcopy
     from scipy.integrate import simpson
 
     ##########################
@@ -21,10 +25,10 @@ def generateIonosphericConductivity():
     # --- --- --- --- --- ---
     ##########################
     # get the geomagnetic field data dict
-    data_dict_Bgeo = stl.loadDictFromFile(rf'{BgeoToggles.outputFolder}\geomagneticField.cdf')
+    data_dict_Bgeo = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\geomagneticField\*.cdf*')[0])
 
     # get the ionospheric neutral data dict
-    data_dict_neutral = stl.loadDictFromFile(rf'{neutralsToggles.outputFolder}\neutral_environment.cdf')
+    data_dict_neutral = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\neutral_environment\*.cdf*')[0])
 
     # get the ACES-II EEPAA Flux data
     data_dict_flux = stl.loadDictFromFile(rf'{ionizationRecombToggles.flux_path}\ACESII_36359_l3_eepaa_flux.cdf')
@@ -33,10 +37,11 @@ def generateIonosphericConductivity():
     data_dict_LShell = deepcopy(SpatialToggles.data_dict_HF_LShell)
 
     # get the ionospheric plasma data dict
-    data_dict_plasma = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\plasma_environment.cdf')
+    data_dict_plasma = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\plasma_environment\*.cdf*')[0])
+
 
     # get the ionization-recombination data dict
-    data_dict_ionRecomb = stl.loadDictFromFile(rf'{ionizationRecombToggles.outputFolder}\ionization_rcomb.cdf')
+    data_dict_ionRecomb = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\ionization_rcomb\*.cdf*')[0])
 
     ############################
     # --- PREPARE THE OUTPUT ---

@@ -1,24 +1,24 @@
 # TODO: Correct Ne when using the ACESII_ni spectrum using the EISCAT ne/ni ratio
-from src.ionosphere_modelling.plasma_environment.plasma_environment_classes import *
+
 
 def generatePlasmaEnvironment():
-
-    # --- imports ---
+    # --- common imports ---
     import spaceToolsLib as stl
     import numpy as np
-    from copy import deepcopy
     from tqdm import tqdm
-
-    # import the toggles
-    from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
-    from src.ionosphere_modelling.geomagneticField.geomagneticField_toggles import BgeoToggles
+    from glob import glob
+    from src.ionosphere_modelling.sim_toggles import SimToggles
     from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
+    from copy import deepcopy
+
+    # --- file-specific imports ---
+    from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
 
     #######################
     # --- LOAD THE DATA ---
     #######################
     # get the geomagnetic field data dict
-    data_dict_Bgeo = stl.loadDictFromFile(rf'{BgeoToggles.outputFolder}\geomagneticField.cdf')
+    data_dict_Bgeo = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\geomagneticField\*.cdf*')[0])
     data_dict_IRI = deepcopy(stl.loadDictFromFile(plasmaToggles.IRI_filePath)) # collect the IRI data
 
     ############################

@@ -1,12 +1,16 @@
 def generate_GeomagneticField():
-    # --- imports ---
+    # --- common imports ---
     import spaceToolsLib as stl
     import numpy as np
     from tqdm import tqdm
-
-    # import the toggles
-    from src.ionosphere_modelling.geomagneticField.geomagneticField_toggles import BgeoToggles
+    from glob import glob
+    from src.ionosphere_modelling.sim_toggles import SimToggles
     from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
+    from copy import deepcopy
+
+    # --- file-specific imports ---
+    from src.ionosphere_modelling.geomagneticField.geomagneticField_toggles import BgeoToggles
+
 
     # prepare the output
     data_dict_output = {}
@@ -14,7 +18,7 @@ def generate_GeomagneticField():
     #######################
     # --- LOAD THE DATA ---
     #######################
-    data_dict_spatial = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\spatial_environment\spatial_environment.cdf')
+    data_dict_spatial = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
 
     ########################################
     # --- GENERATE THE B-FIELD & TOGGLES ---

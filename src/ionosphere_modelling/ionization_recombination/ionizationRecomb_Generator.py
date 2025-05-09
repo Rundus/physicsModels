@@ -4,15 +4,21 @@
 from src.ionosphere_modelling.ionization_recombination.ionizationRecomb_classes import *
 def generateIonizationRecomb():
 
-    # --- imports ---
+    # --- common imports ---
+    import spaceToolsLib as stl
+    import numpy as np
+    from tqdm import tqdm
+    from glob import glob
+    from src.ionosphere_modelling.sim_toggles import SimToggles
+    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
+    from copy import deepcopy
+
+    # file-specific imports
     from src.ionosphere_modelling.ionization_recombination.ionizationRecomb_toggles import ionizationRecombToggles
     from src.ionosphere_modelling.neutral_environment.neutral_toggles import neutralsToggles
     from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
-    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
-    import numpy as np
-    from copy import deepcopy
-    from spaceToolsLib.tools.CDF_output import outputCDFdata
-    from tqdm import tqdm
+
+
 
     ##########################
     # --- --- --- --- --- ---
@@ -21,7 +27,7 @@ def generateIonizationRecomb():
     ##########################
 
     # get the ionospheric plasma data dict
-    data_dict_plasma = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\plasma_environment.cdf')
+    data_dict_plasma = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\plasma_environment\*.cdf*')[0])
 
     # get the ACES-II EEPAA Flux data
     data_dict_flux = stl.loadDictFromFile(rf'{ionizationRecombToggles.flux_path}\ACESII_36359_l3_eepaa_flux.cdf')
@@ -30,7 +36,7 @@ def generateIonizationRecomb():
     data_dict_LShell = deepcopy(SpatialToggles.data_dict_HF_LShell)
 
     # get the neutral data dict
-    data_dict_neutral = stl.loadDictFromFile(rf'{neutralsToggles.outputFolder}\neutral_environment.cdf')
+    data_dict_neutral = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\neutral_environment\*.cdf*')[0])
 
     ############################
     # --- PREPARE THE OUTPUT ---
@@ -109,4 +115,4 @@ def generateIonizationRecomb():
         data_dict_output[key][1] = newAttrs
 
     outputPath = rf'{ionizationRecombToggles.outputFolder}\ionization_rcomb.cdf'
-    outputCDFdata(outputPath, data_dict_output)
+    stl.outputCDFdata(outputPath, data_dict_output)

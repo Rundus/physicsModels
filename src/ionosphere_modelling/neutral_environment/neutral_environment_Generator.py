@@ -4,21 +4,26 @@
 
 def generateNeutralEnvironment(**kwargs):
 
-    # --- imports ---
+    # --- common imports ---
     import spaceToolsLib as stl
+    import numpy as np
+    from tqdm import tqdm
+    from glob import glob
+    from src.ionosphere_modelling.sim_toggles import SimToggles
+    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
+    from copy import deepcopy
+
+    # --- file-specific imports ---
+    from src.ionosphere_modelling.neutral_environment.neutral_toggles import neutralsToggles
     from numpy import datetime64, squeeze
     import pymsis
-    import numpy as np
-    from copy import deepcopy
-    from src.ionosphere_modelling.neutral_environment.neutral_toggles import neutralsToggles
-    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
-    from tqdm import tqdm
+
 
     #######################
     # --- LOAD THE DATA ---
     #######################
     # get the geomagnetic field data dict
-    data_dict_spatial = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\spatial_environment\spatial_environment.cdf')
+    data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
 
     ############################
     # --- PREPARE THE OUTPUT ---

@@ -10,6 +10,7 @@ class SpatialToggles:
     # --- Altitude Grid ---
     sim_alt_low = 70 * stl.m_to_km  # low altitude (in meters)
     sim_alt_high = 300 * stl.m_to_km  # high altitude (in meters)
+    # alt_rez = 1 * stl.m_to_km  # number of points in the altitude grid
     alt_rez = 1 * stl.m_to_km  # number of points in the altitude grid
     simAlt = np.linspace(sim_alt_low, sim_alt_high, int((sim_alt_high - sim_alt_low) / alt_rez + 1))  # in METERS
 
@@ -32,3 +33,23 @@ class SpatialToggles:
     # simGeomLong = np.linspace(sim_geomLong_low, sim_geomLong_high, int((sim_geomLong_high - sim_geomLong_low) / LShell_rez + 1))  # in Degrees
     simGeomLong = deepcopy(data_dict_HF_eepaa['Long_geom'][0][np.where(data_dict_HF_eepaa['Alt'][0] >= altThresh)[0]])
     outputFolder = 'C:\Data\physicsModels\ionosphere\spatial_environment'
+
+
+# data_dict_HF_eepaa = stl.loadDictFromFile('C:\Data\ACESII\L2\high\ACESII_36359_l2_eepaa_fullCal.cdf')
+# data_dict_HF_LShell = stl.loadDictFromFile('C:\Data\ACESII\science\L_shell\high\ACESII_36359_Lshell.cdf')
+# indices = np.where(data_dict_HF_eepaa['Alt'][0] >= 300000)[0]
+#
+# from spacepy import pycdf
+# Epoch_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val)/1E9 for val in data_dict_HF_eepaa['Epoch'][0]])
+# # arr = Epoch_tt2000
+# arr = SpatialToggles.simLShell
+# diff = np.array([arr[i+1] - arr[i] for i in range(len(arr)-2) ])
+# print(SpatialToggles.simLShell)
+# print(diff)
+#
+# import matplotlib.pyplot as plt
+# fig, ax = plt.subplots()
+# ax.scatter( [i for i in range(len(diff))], diff)
+# # ax.set_ylim(0.04,0.06)
+# # ax.scatter([i for i in range(len(SpatialToggles.simLShell))],SpatialToggles.simLShell)
+# plt.show()

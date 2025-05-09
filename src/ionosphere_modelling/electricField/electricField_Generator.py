@@ -1,12 +1,15 @@
 def generate_electricField():
-    # --- imports ---
+    # --- common imports ---
     import spaceToolsLib as stl
     import numpy as np
     from tqdm import tqdm
-
-    # import the toggles
-    from src.ionosphere_modelling.electricField.electricField_toggles import EFieldToggles
+    from glob import glob
+    from src.ionosphere_modelling.sim_toggles import SimToggles
     from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
+    from copy import deepcopy
+
+    # --- file-specific imports ---
+    from src.ionosphere_modelling.electricField.electricField_toggles import EFieldToggles
 
     # prepare the output
     data_dict_output = {}
@@ -14,7 +17,7 @@ def generate_electricField():
     #######################
     # --- LOAD THE DATA ---
     #######################
-    data_dict_spatial = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\spatial_environment\spatial_environment.cdf')
+    data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
     data_dict_EFI = stl.loadDictFromFile(r'C:\Data\ACESII\science\auroral_coordinates\low\ACESII_36364_E_Field_Auroral_Coordinates.cdf')
 
     ########################################
