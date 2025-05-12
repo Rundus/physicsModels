@@ -41,7 +41,7 @@ def generateIonosphericConductivity():
 
 
     # get the ionization-recombination data dict
-    data_dict_ionRecomb = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\ionization_rcomb\*.cdf*')[0])
+    data_dict_ionRecomb = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\ionizationRecomb\*.cdf*')[0])
 
     ############################
     # --- PREPARE THE OUTPUT ---
@@ -161,6 +161,8 @@ def generateIonosphericConductivity():
     data_dict_output['sigma_Pedersen_i'][0] = np.sum(sigma_P_ions, axis=0)
     data_dict_output['sigma_Hall_i'][0] = np.sum(sigma_H_ions, axis=0)
 
+
+
     ##########################################
     # --- Height-Integrated Conductivities ---
     ##########################################
@@ -222,6 +224,30 @@ def generateIonosphericConductivity():
                         **{'Sigma_Hall_K90': [Sigma_Hall_K90, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
                         **{'Sigma_Pedersen_K50': [Sigma_Pedersen_K90, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
                         }
+
+
+    ################################
+    # --- Conductivity Gradients ---
+    ################################
+    delta_sigma_P_normal = np.zeros(shape=(len(SpatialToggles.simLShell),len(SpatialToggles.simAlt)))
+    delta_sigma_H_normal = np.zeros(shape=(len(SpatialToggles.simLShell), len(SpatialToggles.simAlt)))
+    for idx, Lval in enumerate(LShellRange): # DeltaX grid:
+        for idx_z, alt in enumerate(altRange):
+
+            if idx == len(LShellRange)-1:
+                delta_sigma_P_normal[idx][idx_z] = data_dict_output['sigma_Pedersen'][0][idx][idx_z] - data_dict_output['sigma_Pedersen'][0][idx-1][idx_z]
+                delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_Hall'][0][idx][idx_z] - data_dict_output['sigma_Hall'][0][idx-1][idx_z]
+            else:
+                delta_sigma_P_normal[idx][idx_z] = data_dict_output['sigma_Pedersen'][0][idx+1][idx_z] - data_dict_output['sigma_Pedersen'][0][idx][idx_z]
+                delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_Hall'][0][idx+1][idx_z] - data_dict_output['sigma_Hall'][0][idx][idx_z]
+
+    data_dict_output = {**data_dict_output,
+                        **{'delta_sigma_P_normal': [delta_sigma_P_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Pedersen Conductivity Normal Gradient'}]},
+                        **{'delta_sigma_H_normal': [delta_sigma_H_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Hall Conductivity Normal Gradient'}]}
+                        }
+
+
+
 
     #####################
     # --- OUTPUT DATA ---

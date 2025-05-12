@@ -29,17 +29,38 @@ def generate_electricField():
     # prepare the data
     LShellRange = data_dict_spatial['simLShell'][0]
     altRange = data_dict_spatial['simAlt'][0]
-    grid_EField = np.zeros(shape=(len(LShellRange), len(altRange)))
+    grid_EField_normal = np.zeros(shape=(len(LShellRange), len(altRange))) # grid of E_N projected
+    grid_EField_tangent = np.zeros(shape=(len(LShellRange), len(altRange)))  # grid of E_N projected
+    grid_deltaE_N = np.zeros(shape=(len(LShellRange), len(altRange))) # gradient in the E_N component in the normal direction
+    grid_deltaE_Alt = np.zeros(shape=(len(LShellRange), len(altRange))) # gradient in the E_N componet in the vertical direction
 
     for idx, Lval in tqdm(enumerate(LShellRange)):
-
         Lshell_idx = np.abs(data_dict_EFI['L-Shell'][0] - Lval).argmin()
-        grid_EField[idx] = np.array([(1E-3)*data_dict_EFI['E_normal'][0][Lshell_idx] for i in range(len(altRange))])
+        grid_EField_normal[idx] = np.array([(1E-3)*data_dict_EFI['E_normal'][0][Lshell_idx] for i in range(len(altRange))])
+        grid_EField_tangent[idx] = np.array([(1E-3) * data_dict_EFI['E_tangent'][0][Lshell_idx] for i in range(len(altRange))])
 
+
+    for idx, Lval in tqdm(enumerate(LShellRange)):
+        for idx_z in range(len(SpatialToggles.simAlt)):
+
+            # Calculate deltaE along altitude axis (*Should be all zeros at the moment)
+            if idx_z == len(SpatialToggles.simAlt)-1:
+                grid_deltaE_Alt[idx][idx_z] = grid_EField_normal[idx][idx_z] - grid_EField_normal[idx][idx_z-1]
+            else:
+                grid_deltaE_Alt[idx][idx_z] = grid_EField_normal[idx][idx_z+1] - grid_EField_normal[idx][idx_z]
+
+            # Calculate deltaE along L-Shell axis
+            if idx == len(SpatialToggles.simLShell)-1:
+                grid_deltaE_N[idx][idx_z] = grid_EField_normal[idx][idx_z] - grid_EField_normal[idx-1][idx_z]
+            else:
+                grid_deltaE_N[idx][idx_z] = grid_EField_normal[idx+1][idx_z] - grid_EField_normal[idx][idx_z]
 
     # --- Construct the Data Dict ---
     data_dict_output = { **data_dict_spatial,
-                         **{'E_arc_normal': [grid_EField, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V/m', 'LABLAXIS': 'Arc-Normal Electric Field', 'VAR_TYPE': 'data'}],
+                         **{'E_arc_normal': [grid_EField_normal, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V/m', 'LABLAXIS': 'Arc-Normal Electric Field', 'VAR_TYPE': 'data'}],
+                            'E_arc_tangent': [grid_EField_tangent, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'Arc-Tangent Electric Field', 'VAR_TYPE': 'data'}],
+                            'deltaE_arc_normal': [grid_deltaE_N, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'deltaE Arc-Normal Electric Field', 'VAR_TYPE': 'data'}],
+                            'deltaE_vertical': [grid_deltaE_Alt, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'deltaE Vertical Electric Field', 'VAR_TYPE': 'data'}],
                         }}
 
     outputPath = rf'{EFieldToggles.outputFolder}\electricField.cdf'
