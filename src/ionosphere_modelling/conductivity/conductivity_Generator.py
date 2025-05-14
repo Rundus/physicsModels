@@ -53,15 +53,16 @@ def generateIonosphericConductivity():
         'simAlt': deepcopy(data_dict_plasma['simAlt']),
         'ne_total': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm^-3', 'LABLAXIS': 'Electron Density'}],
         'nu_e': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': 'nu_e'}],
-        'sigma_Pedersen': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Pedersen Conductivity'}],
+        'sigma_P': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Pedersen Conductivity'}],
 
-        'sigma_Pedersen_e': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Pedersen Conductivity'}],
-        'sigma_Pedersen_i': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Pedersen Conductivity'}],
-        'sigma_Hall_e': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Hall Conductivity'}],
-        'sigma_Hall_i': [np.zeros(shape=(len(LShellRange), len(altRange))),{'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Hall Conductivity'}],
+        'sigma_P_e': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Pedersen Conductivity'}],
+        'sigma_P_i': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Pedersen Conductivity'}],
+        'sigma_H_e': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Hall Conductivity'}],
+        'sigma_H_i': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Hall Conductivity'}],
 
-        'sigma_Hall': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Hall Conductivity'}],
-        'sigma_parallel': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Parallel Conductivity'}],
+        'sigma_H': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Hall Conductivity'}],
+        'sigma_D': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Parallel Conductivity'}],
+        'sigma_DP_ratio': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'sigma_D/sigma_P'}],
     }
 
     ###############################
@@ -70,6 +71,7 @@ def generateIonosphericConductivity():
 
     # construct the background density profile n(z, ILat) - Inverted-V density + Ionospheric base density
     data_dict_output['ne_total'][0] = data_dict_ionRecomb['ne_model'][0] + data_dict_plasma['ne'][0]
+    # data_dict_output['ne_total'][0] = data_dict_ionRecomb['ne_model'][0]
 
 
     #################################
@@ -124,12 +126,12 @@ def generateIonosphericConductivity():
     B_geo = data_dict_Bgeo['Bgeo'][0]
 
     # calculated electron sigmas
-    sigma_parallel_e = q0 * np.multiply(np.divide(data_dict_output['ne_total'][0], B_geo), kappa_e)
+    sigma_D_e = q0 * np.multiply(np.divide(data_dict_output['ne_total'][0], B_geo), kappa_e)
     sigma_P_e = q0 * np.multiply(np.divide(data_dict_output['ne_total'][0], B_geo), kappa_e/(1 + np.power(kappa_e, 2)))
     sigma_H_e = q0 * np.multiply(np.divide(data_dict_output['ne_total'][0], B_geo), np.power(kappa_e, 2)/(1 + np.power(kappa_e, 2)))
 
     # calculated ion sigmas
-    sigma_parallel_ions = np.zeros(shape=(len(plasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
+    sigma_D_ions = np.zeros(shape=(len(plasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
     sigma_P_ions = np.zeros(shape=(len(plasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
     sigma_H_ions = np.zeros(shape=(len(plasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
 
@@ -137,43 +139,44 @@ def generateIonosphericConductivity():
         kappa_val = deepcopy(data_dict_output[f'kappa_i_{key}'][0])
         # specific_ion_concentration = np.divide(data_dict_plasma[f'n_{key}'][0], data_dict_plasma['ni'][0])
         n_i = data_dict_output['ne_total'][0]*deepcopy(data_dict_plasma[f'C_{key}'][0])
-        sigma_parallel_ions[idx] = q0 * np.multiply(np.divide(n_i, B_geo), kappa_val)
+        sigma_D_ions[idx] = q0 * np.multiply(np.divide(n_i, B_geo), kappa_val)
         sigma_P_ions[idx] = q0 * np.multiply(np.divide(n_i, B_geo), kappa_val / (1 + np.power(kappa_val, 2)))
         sigma_H_ions[idx] = q0 * np.multiply(np.divide(n_i, B_geo), np.power(kappa_val, 2) / (1 + np.power(kappa_val, 2)))
 
 
     # clean the data
-    sigma_Pedersen =sigma_P_e + np.sum(sigma_P_ions, axis=0)
-    sigma_Pedersen[sigma_Pedersen<0] = 0
-    sigma_Hall = sigma_H_e - np.sum(sigma_H_ions, axis=0)
-    sigma_Hall[sigma_Hall<0] = 0
-    sigma_Parallel = sigma_parallel_e + np.sum(sigma_parallel_ions, axis=0)
-    sigma_Parallel[sigma_Parallel<0] = 0
+    sigma_P = sigma_P_e + np.sum(sigma_P_ions, axis=0)
+    sigma_P[sigma_P<0] = 0
+    # sigma_Pedersen[np.where(np.isnan(sigma_Pedersen))[0]] = 0
+    sigma_H = sigma_H_e - np.sum(sigma_H_ions, axis=0)
+    sigma_H[sigma_H<0] = 0
+    # sigma_Hall[np.where(np.isnan(sigma_Hall))[0]] = 0
+    sigma_D = sigma_D_e + np.sum(sigma_D_ions, axis=0)
+    # sigma_Parallel[sigma_Parallel<0] = 0
 
     # Store the data
-    data_dict_output['sigma_Pedersen'][0] = sigma_Pedersen
-    data_dict_output['sigma_Hall'][0] = sigma_Hall
-    data_dict_output['sigma_parallel'][0] = sigma_Parallel
+    data_dict_output['sigma_P'][0] = sigma_P
+    data_dict_output['sigma_H'][0] = sigma_H
+    data_dict_output['sigma_D'][0] = sigma_D
+    data_dict_output['sigma_DP_ratio'][0] = sigma_D/sigma_P
 
-    data_dict_output['sigma_Pedersen_e'][0] = sigma_P_e
-    data_dict_output['sigma_Hall_e'][0] = sigma_H_e
+    data_dict_output['sigma_P_e'][0] = sigma_P_e
+    data_dict_output['sigma_H_e'][0] = sigma_H_e
 
-    data_dict_output['sigma_Pedersen_i'][0] = np.sum(sigma_P_ions, axis=0)
-    data_dict_output['sigma_Hall_i'][0] = np.sum(sigma_H_ions, axis=0)
-
-
+    data_dict_output['sigma_P_i'][0] = np.sum(sigma_P_ions, axis=0)
+    data_dict_output['sigma_H_i'][0] = np.sum(sigma_H_ions, axis=0)
 
     ##########################################
     # --- Height-Integrated Conductivities ---
     ##########################################
-    Sigma_Hall_HI = np.array([simpson(y=data_dict_output['sigma_Hall'][0][L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
-    Sigma_Pedersen_HI = np.array([simpson(y=data_dict_output['sigma_Pedersen'][0][L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
-    Sigma_Parallel_HI = np.array([simpson(y=data_dict_output['sigma_parallel'][0][L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
+    Sigma_H_HI = np.array([simpson(y=data_dict_output['sigma_H'][0][L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
+    Sigma_P_HI = np.array([simpson(y=data_dict_output['sigma_P'][0][L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
+    Sigma_Parallel_HI = np.array([simpson(y=data_dict_output['sigma_D'][0][L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
 
     data_dict_output = {**data_dict_output,
-                        **{'Sigma_Hall': [Sigma_Hall_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
-                        **{'Sigma_Pedersen': [Sigma_Pedersen_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
-                        **{'Sigma_parallel': [Sigma_Parallel_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_H': [Sigma_H_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_P': [Sigma_P_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_D': [Sigma_Parallel_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
                         }
 
     ##############################
@@ -181,16 +184,16 @@ def generateIonosphericConductivity():
     ##############################
 
     # --- Robinson Height-Integrated Conductivities ---
-    Sigma_Hall_Robinson = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
-    Sigma_Pedersen_Robinson = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_H_Robinson = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_P_Robinson = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
 
     # --- KAEPPLER Height-Integrated Conductivities ---
-    Sigma_Hall_K10 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
-    Sigma_Pedersen_K10 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
-    Sigma_Hall_K50 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
-    Sigma_Pedersen_K50 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
-    Sigma_Hall_K90 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
-    Sigma_Pedersen_K90 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_H_K10 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_P_K10 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_H_K50 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_P_K50 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_H_K90 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
+    Sigma_P_K90 = np.zeros(shape=(len(data_dict_output['simLShell'][0])))
 
     # Reduce the EEPAA data to the relevant subset
     for idx1, LShell in enumerate(data_dict_output['simLShell'][0]):
@@ -201,28 +204,28 @@ def generateIonosphericConductivity():
         avgEnergy_keV = deepcopy(data_dict_flux['Energy_avg'][0][dat_idx]) / 1000  # convert to keV
 
         # robinson
-        Sigma_Pedersen_Robinson[idx1] = ((40 * avgEnergy_keV) / (16 + np.power(avgEnergy_keV, 2))) * np.sqrt(energy_flux_ergs)
-        Sigma_Hall_Robinson[idx1] = (0.45) * np.power(avgEnergy_keV, 0.85) * Sigma_Pedersen_Robinson[idx1]
+        Sigma_P_Robinson[idx1] = ((40 * avgEnergy_keV) / (16 + np.power(avgEnergy_keV, 2))) * np.sqrt(energy_flux_ergs)
+        Sigma_H_Robinson[idx1] = (0.45) * np.power(avgEnergy_keV, 0.85) * Sigma_P_Robinson[idx1]
 
         # kaeppler
-        Sigma_Pedersen_K50[idx1] = 4.93 * np.power(energy_flux_watts, 0.48)
-        Sigma_Hall_K50[idx1] = 8.11 * np.power(energy_flux_watts, 0.55)
+        Sigma_P_K50[idx1] = 4.93 * np.power(energy_flux_watts, 0.48)
+        Sigma_H_K50[idx1] = 8.11 * np.power(energy_flux_watts, 0.55)
 
-        Sigma_Pedersen_K90[idx1] = 5.9*np.power(energy_flux_watts,0.48)
-        Sigma_Hall_K90[idx1] = 10.77 * np.power(energy_flux_watts, 0.53)
+        Sigma_P_K90[idx1] = 5.9*np.power(energy_flux_watts,0.48)
+        Sigma_H_K90[idx1] = 10.77 * np.power(energy_flux_watts, 0.53)
 
-        Sigma_Pedersen_K10[idx1] = 3.5 * np.power(energy_flux_watts, 0.49)
-        Sigma_Hall_K10[idx1] = 5.19 * np.power(energy_flux_watts, 0.56)
+        Sigma_P_K10[idx1] = 3.5 * np.power(energy_flux_watts, 0.49)
+        Sigma_H_K10[idx1] = 5.19 * np.power(energy_flux_watts, 0.56)
 
     data_dict_output = {**data_dict_output,
-                        **{'Sigma_Hall_Robinson': [Sigma_Hall_Robinson, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
-                        **{'Sigma_Pedersen_Robinson': [Sigma_Pedersen_Robinson, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
-                        **{'Sigma_Hall_K10': [Sigma_Hall_K10, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
-                        **{'Sigma_Pedersen_K10': [Sigma_Pedersen_K10, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
-                        **{'Sigma_Hall_K50': [Sigma_Hall_K50, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
-                        **{'Sigma_Pedersen_K50': [Sigma_Pedersen_K50, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
-                        **{'Sigma_Hall_K90': [Sigma_Hall_K90, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
-                        **{'Sigma_Pedersen_K50': [Sigma_Pedersen_K90, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_H_Robinson': [Sigma_H_Robinson, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_P_Robinson': [Sigma_P_Robinson, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_H_K10': [Sigma_H_K10, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_P_K10': [Sigma_P_K10, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_H_K50': [Sigma_H_K50, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_P_K50': [Sigma_P_K50, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_H_K90': [Sigma_H_K90, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_P_K50': [Sigma_P_K90, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
                         }
 
 
@@ -235,19 +238,16 @@ def generateIonosphericConductivity():
         for idx_z, alt in enumerate(altRange):
 
             if idx == len(LShellRange)-1:
-                delta_sigma_P_normal[idx][idx_z] = data_dict_output['sigma_Pedersen'][0][idx][idx_z] - data_dict_output['sigma_Pedersen'][0][idx-1][idx_z]
-                delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_Hall'][0][idx][idx_z] - data_dict_output['sigma_Hall'][0][idx-1][idx_z]
+                delta_sigma_P_normal[idx][idx_z] = data_dict_output['sigma_P'][0][idx][idx_z] - data_dict_output['sigma_P'][0][idx-1][idx_z]
+                delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_H'][0][idx][idx_z] - data_dict_output['sigma_H'][0][idx-1][idx_z]
             else:
-                delta_sigma_P_normal[idx][idx_z] = data_dict_output['sigma_Pedersen'][0][idx+1][idx_z] - data_dict_output['sigma_Pedersen'][0][idx][idx_z]
-                delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_Hall'][0][idx+1][idx_z] - data_dict_output['sigma_Hall'][0][idx][idx_z]
+                delta_sigma_P_normal[idx][idx_z] = data_dict_output['sigma_P'][0][idx+1][idx_z] - data_dict_output['sigma_P'][0][idx][idx_z]
+                delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_H'][0][idx+1][idx_z] - data_dict_output['sigma_H'][0][idx][idx_z]
 
     data_dict_output = {**data_dict_output,
                         **{'delta_sigma_P_normal': [delta_sigma_P_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Pedersen Conductivity Normal Gradient'}]},
                         **{'delta_sigma_H_normal': [delta_sigma_H_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Hall Conductivity Normal Gradient'}]}
                         }
-
-
-
 
     #####################
     # --- OUTPUT DATA ---

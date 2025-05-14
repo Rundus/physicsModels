@@ -8,10 +8,10 @@ class SpatialToggles:
     target_time = dt.datetime(2022, 11, 20, 17, 20)
 
     # --- Altitude Grid ---
-    sim_alt_low = 70 * stl.m_to_km  # low altitude (in meters)
+    sim_alt_low = 80 * stl.m_to_km  # low altitude (in meters)
     sim_alt_high = 300 * stl.m_to_km  # high altitude (in meters)
     # alt_rez = 1 * stl.m_to_km  # number of points in the altitude grid
-    alt_rez = 1 * stl.m_to_km  # number of points in the altitude grid
+    alt_rez = 2 * stl.m_to_km  # number of points in the altitude grid
     simAlt = np.linspace(sim_alt_low, sim_alt_high, int((sim_alt_high - sim_alt_low) / alt_rez + 1))  # in METERS
 
     # --- LShell Grid ---

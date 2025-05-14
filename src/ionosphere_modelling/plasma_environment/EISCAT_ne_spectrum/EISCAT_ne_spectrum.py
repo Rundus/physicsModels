@@ -88,9 +88,9 @@ def EISCAT_ne_spectrum():
     ########################################
     # --- INTERPOLATE SAVGOL ONTO SIMALT ---
     ########################################
-    cs = CubicSpline(good_alts,filtered_binned_ne_avg)
+    cs = CubicSpline(good_alts, filtered_binned_ne_avg)
     ne_background = 1E-6*np.array(cs(simAlt)) # convert to cm^-3
-    ne_background[ne_background<0] = 0
+    ne_background[ne_background < 0] = 0
 
 
     ############################
@@ -118,8 +118,8 @@ def EISCAT_ne_spectrum():
         ax.scatter(simAlt, 1E-6*binned_ne_avg,s=15,color='tab:blue')
         ax.plot(simAlt, ne_background,color='tab:red')
         ax.set_yscale('log')
-        ax.set_ylim(1E2,1E6)
-        ax.set_xlim(50,320)
+        ax.set_ylim(1E2, 1E6)
+        ax.set_xlim(50, 320)
         ax.set_xlabel('Alt [km]')
         ax.set_ylabel('ne [cm$^{-3}$]')
         plt.savefig('C:\Data\physicsModels\ionosphere\plasma_environment\EISCAT_ne_spectrum\EISCAT_ne_spectrum.png')
