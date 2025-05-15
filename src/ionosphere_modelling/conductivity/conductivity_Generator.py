@@ -245,8 +245,8 @@ def generateIonosphericConductivity():
                 delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_H'][0][idx+1][idx_z] - data_dict_output['sigma_H'][0][idx][idx_z]
 
     data_dict_output = {**data_dict_output,
-                        **{'delta_sigma_P_normal': [delta_sigma_P_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Pedersen Conductivity Normal Gradient'}]},
-                        **{'delta_sigma_H_normal': [delta_sigma_H_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Hall Conductivity Normal Gradient'}]}
+                        **{'dsigma_P_normal': [delta_sigma_P_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Pedersen Conductivity Normal Gradient'}]},
+                        **{'dsigma_H_vertical': [delta_sigma_H_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Hall Conductivity Normal Gradient'}]}
                         }
 
     #####################

@@ -23,8 +23,8 @@ regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
 ionRecomb_ne_Calc = False
 calc_IonoConductivity = False
-regen_electricField = False
-calc_IonoCurrents = True
+regen_electricField = True
+calc_IonoCurrents = False
 
 ################################
 # --- --- --- --- --- --- --- --

@@ -10,6 +10,7 @@ def generate_electricField():
 
     # --- file-specific imports ---
     from src.ionosphere_modelling.electricField.electricField_toggles import EFieldToggles
+    from spacepy import pycdf
 
     # prepare the output
     data_dict_output = {}
@@ -19,6 +20,35 @@ def generate_electricField():
     #######################
     data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
     data_dict_EFI = stl.loadDictFromFile(r'C:\Data\ACESII\science\auroral_coordinates\low\ACESII_36364_E_Field_Auroral_Coordinates.cdf')
+
+
+    ########################################
+    # --- Filter/Smooth the E-Field Data ---
+    ########################################
+    deltaT = (pycdf.lib.datetime_to_tt2000(data_dict_EFI['Epoch'][0][5001]) - pycdf.lib.datetime_to_tt2000(data_dict_EFI['Epoch'][0][5000])) / 1E9
+
+    # Filter params
+    order = 4
+    fs = 1 / deltaT
+    freq_cut = 0.05
+    filt_type = 'lowpass'
+    data_dict_EFI['E_tangent'][0] = deepcopy(stl.butter_filter(
+        data=data_dict_EFI['E_tangent'][0],
+        lowcutoff=freq_cut,
+        highcutoff=freq_cut,
+        filtertype=filt_type,
+        fs=fs,
+        order=order
+    ))
+
+    data_dict_EFI['E_normal'][0] = deepcopy(stl.butter_filter(
+        data=data_dict_EFI['E_normal'][0],
+        lowcutoff=freq_cut,
+        highcutoff=freq_cut,
+        filtertype=filt_type,
+        fs=fs,
+        order=order
+    ))
 
     ########################################
     # --- GENERATE THE B-FIELD & TOGGLES ---
@@ -40,6 +70,18 @@ def generate_electricField():
         grid_EField_tangent[idx] = np.array([(1E-3) * data_dict_EFI['E_tangent'][0][Lshell_idx] for i in range(len(altRange))])
 
 
+    # # --- Gradient in Electric Field (vertical), should be about zero ---
+    # for idx, val in enumerate(LShellRange):
+    #     dz= data_dict_spatial['grid_deltaAlt'][0][idx]
+    #     grid_deltaE_Alt[idx] = np.gradient(grid_EField_normal[idx],dz)
+    #
+    # # --- Gradient in Electric Field (horizontal) ---
+    # for idx, val in enumerate(altRange):
+    #     dx = data_dict_spatial['grid_deltaX'][0][:,idx]
+    #     grid_deltaE_N[:,idx] = np.gradient(grid_EField_normal[:,idx], dx)
+
+    #
+    # --- Gradient in Electric Field (Lshell) ---
     for idx, Lval in tqdm(enumerate(LShellRange)):
         for idx_z in range(len(SpatialToggles.simAlt)):
 
@@ -55,12 +97,13 @@ def generate_electricField():
             else:
                 grid_deltaE_N[idx][idx_z] = grid_EField_normal[idx+1][idx_z] - grid_EField_normal[idx][idx_z]
 
+
     # --- Construct the Data Dict ---
     data_dict_output = { **data_dict_spatial,
-                         **{'E_arc_normal': [grid_EField_normal, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V/m', 'LABLAXIS': 'Arc-Normal Electric Field', 'VAR_TYPE': 'data'}],
-                            'E_arc_tangent': [grid_EField_tangent, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'Arc-Tangent Electric Field', 'VAR_TYPE': 'data'}],
-                            'deltaE_arc_normal': [grid_deltaE_N, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'deltaE Arc-Normal Electric Field', 'VAR_TYPE': 'data'}],
-                            'deltaE_vertical': [grid_deltaE_Alt, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'deltaE Vertical Electric Field', 'VAR_TYPE': 'data'}],
+                         **{'E_N': [grid_EField_normal, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V/m', 'LABLAXIS': 'Arc-Normal Electric Field', 'VAR_TYPE': 'data'}],
+                            'E_T': [grid_EField_tangent, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'Arc-Tangent Electric Field', 'VAR_TYPE': 'data'}],
+                            'dE_N_normal': [grid_deltaE_N, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'deltaE Arc-Normal Electric Field', 'VAR_TYPE': 'data'}],
+                            'dE_N_vertical': [grid_deltaE_Alt, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'deltaE Vertical Electric Field', 'VAR_TYPE': 'data'}],
                         }}
 
     outputPath = rf'{EFieldToggles.outputFolder}\electricField.cdf'
