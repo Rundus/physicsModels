@@ -24,6 +24,10 @@ def generateIonosphericConductivity():
     # --- LOADING THE DATA ---
     # --- --- --- --- --- ---
     ##########################
+
+    # get the spatial environment data
+    data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
+
     # get the geomagnetic field data dict
     data_dict_Bgeo = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\geomagneticField\*.cdf*')[0])
 
@@ -39,7 +43,6 @@ def generateIonosphericConductivity():
     # get the ionospheric plasma data dict
     data_dict_plasma = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\plasma_environment\*.cdf*')[0])
 
-
     # get the ionization-recombination data dict
     data_dict_ionRecomb = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\ionizationRecomb\*.cdf*')[0])
 
@@ -53,6 +56,7 @@ def generateIonosphericConductivity():
         'simAlt': deepcopy(data_dict_plasma['simAlt']),
         'ne_total': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm^-3', 'LABLAXIS': 'Electron Density'}],
         'nu_e': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': 'nu_e'}],
+        'nu_i': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': 'nu_e'}],
         'sigma_P': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Pedersen Conductivity'}],
 
         'sigma_P_e': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Pedersen Conductivity'}],
@@ -62,7 +66,6 @@ def generateIonosphericConductivity():
 
         'sigma_H': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Hall Conductivity'}],
         'sigma_D': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'S/m', 'LABLAXIS': 'Specific Parallel Conductivity'}],
-        'sigma_DP_ratio': [np.zeros(shape=(len(LShellRange), len(altRange))), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'sigma_D/sigma_P'}],
     }
 
     ###############################
@@ -101,8 +104,12 @@ def generateIonosphericConductivity():
     nu_in_profiles = [model.ionNeutral_CollisionsFreq(data_dict_neutral=data_dict_neutral,
                                              data_dict_plasma=data_dict_plasma,
                                              ionKey=key) for key in plasmaToggles.wIons]  # NOp, Op, O2p
+
     # store the individual collision freqs
-    data_dict_output = {**data_dict_output, **{f'nu_i_{key}': [nu_in_profiles[idx], {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': f'ne_i_{key}'}] for idx, key in enumerate(plasmaToggles.wIons)}}
+    data_dict_output = {**data_dict_output,
+                        **{f'nu_i_{key}': [nu_in_profiles[idx], {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': f'nu_i_{key}'}] for idx, key in enumerate(plasmaToggles.wIons)},
+                        **{f'nu_i': [np.sum([nu_in_profiles[idx] for idx, key in enumerate(plasmaToggles.wIons)],axis=0) , {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': f'nu_i'}]}
+                        }
 
     ##################
     # --- Mobility ---
@@ -119,6 +126,8 @@ def generateIonosphericConductivity():
         kappa_i_specific = np.divide(Omega_i_specific, data_dict_output[f'nu_i_{key}'][0])
         data_dict_output = {**data_dict_output, **{f'kappa_i_{key}': [kappa_i_specific, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': f'kappa_i_{key}'}]}}
 
+    kappa_i = np.sum([data_dict_output[f'kappa_i_{key}'][0] for idx, key in enumerate(plasmaToggles.wIons)],axis=0)
+    data_dict_output = {**data_dict_output, **{f'kappa_i': [kappa_i, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': f'kappa_i'}]}}
 
     ######################
     # --- Conductivity ---
@@ -229,25 +238,28 @@ def generateIonosphericConductivity():
                         }
 
 
-    ################################
-    # --- Conductivity Gradients ---
-    ################################
-    delta_sigma_P_normal = np.zeros(shape=(len(SpatialToggles.simLShell),len(SpatialToggles.simAlt)))
-    delta_sigma_H_normal = np.zeros(shape=(len(SpatialToggles.simLShell), len(SpatialToggles.simAlt)))
-    for idx, Lval in enumerate(LShellRange): # DeltaX grid:
-        for idx_z, alt in enumerate(altRange):
+    ############################################
+    # --- Conductivity Gradients for the PDE ---
+    ############################################
+    # delta_Ln_sigma_P = np.zeros(shape=(len(SpatialToggles.simLShell),len(SpatialToggles.simAlt)))
+    # delta_sigma_P_normal = np.zeros(shape=(len(SpatialToggles.simLShell),len(SpatialToggles.simAlt)))
+    # delta_sigma_H_normal = np.zeros(shape=(len(SpatialToggles.simLShell), len(SpatialToggles.simAlt)))
 
-            if idx == len(LShellRange)-1:
-                delta_sigma_P_normal[idx][idx_z] = data_dict_output['sigma_P'][0][idx][idx_z] - data_dict_output['sigma_P'][0][idx-1][idx_z]
-                delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_H'][0][idx][idx_z] - data_dict_output['sigma_H'][0][idx-1][idx_z]
-            else:
-                delta_sigma_P_normal[idx][idx_z] = data_dict_output['sigma_P'][0][idx+1][idx_z] - data_dict_output['sigma_P'][0][idx][idx_z]
-                delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_H'][0][idx+1][idx_z] - data_dict_output['sigma_H'][0][idx][idx_z]
 
-    data_dict_output = {**data_dict_output,
-                        **{'dsigma_P_normal': [delta_sigma_P_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Pedersen Conductivity Normal Gradient'}]},
-                        **{'dsigma_H_vertical': [delta_sigma_H_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Hall Conductivity Normal Gradient'}]}
-                        }
+    # for idx, Lval in enumerate(LShellRange): # DeltaX grid:
+    #     for idx_z, alt in enumerate(altRange):
+    #
+    #         if idx == len(LShellRange)-1:
+    #             delta_sigma_P_normal[idx][idx_z] = data_dict_output['sigma_P'][0][idx][idx_z] - data_dict_output['sigma_P'][0][idx-1][idx_z]
+    #             delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_H'][0][idx][idx_z] - data_dict_output['sigma_H'][0][idx-1][idx_z]
+    #         else:
+    #             delta_sigma_P_normal[idx][idx_z] = data_dict_output['sigma_P'][0][idx+1][idx_z] - data_dict_output['sigma_P'][0][idx][idx_z]
+    #             delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_H'][0][idx+1][idx_z] - data_dict_output['sigma_H'][0][idx][idx_z]
+
+    # data_dict_output = {**data_dict_output,
+    #                     **{'dsigma_P_normal': [delta_sigma_P_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Pedersen Conductivity Normal Gradient'}]},
+    #                     **{'dsigma_H_vertical': [delta_sigma_H_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Hall Conductivity Normal Gradient'}]}
+    #                     }
 
     #####################
     # --- OUTPUT DATA ---

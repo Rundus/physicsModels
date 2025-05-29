@@ -23,7 +23,8 @@ regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
 ionRecomb_ne_Calc = False
 calc_IonoConductivity = False
-regen_electricField = True
+map_electrostatic_potential = True
+calc_electricField = False
 calc_IonoCurrents = False
 
 ################################
@@ -80,7 +81,14 @@ if calc_IonoConductivity:
     generateIonosphericConductivity()
     stl.Done(start_time)
 
-if regen_electricField:
+
+if map_electrostatic_potential:
+    # electrostatic potential mapping
+    stl.prgMsg('Mapping Electrostatic Potential')
+    from src.ionosphere_modelling.electrostaticPotential.electrostaticPotential_Generator import generateElectrostaticPotential
+    generateElectrostaticPotential()
+
+if calc_electricField:
     # electric field
     stl.prgMsg('Calculating Electric Field Evironment')
     from src.ionosphere_modelling.electricField.electricField_Generator import generate_electricField

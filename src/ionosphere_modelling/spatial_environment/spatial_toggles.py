@@ -23,7 +23,7 @@ class SpatialToggles:
     # LShell_rez = 0.02  # there are 8659 records between 70ILat to 73.5 ILat on the HF. Choose an appropriate resolution.
     # simLShell = np.linspace(sim_Lshell_Low, sim_Lshell_High, int((sim_Lshell_High - sim_Lshell_Low) / LShell_rez + 1))  # unitless
     data_dict_HF_eepaa = stl.loadDictFromFile('C:\Data\ACESII\L2\high\ACESII_36359_l2_eepaa_fullCal.cdf')
-    data_dict_HF_LShell = stl.loadDictFromFile('C:\Data\ACESII\science\L_shell\high\ACESII_36359_Lshell.cdf')
+    data_dict_HF_LShell = stl.loadDictFromFile('C:\Data\ACESII\coordinates\Lshell\high\ACESII_36359_Lshell.cdf')
     simLShell = deepcopy(data_dict_HF_LShell['L-Shell'][0][np.where(data_dict_HF_eepaa['Alt'][0] >= altThresh)[0]])
 
 
