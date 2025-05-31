@@ -23,24 +23,41 @@ wRocket = [4, 5]
 # --- OutputData ---
 outputData = True
 
-N_avg = 3
+
 
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
 import spaceToolsLib as stl
+from glob import glob
+import numpy as np
+from copy import deepcopy
+from src.ionosphere_modelling.data_preparation.data_preparation_toggles import DataPreparationToggles
+
+fliers = ['high','low']
+rocketID = ['36359','36364']
 
 
 #######################
 # --- MAIN FUNCTION ---
 #######################
-def L2_to_L3_downsampled_data(wRocket):
-
+def downsample_EEPAA_data(wRocket):
 
     # --- Load the Data ---
     stl.prgMsg(f'Loading data')
-    data_dict_eepaa = stl.loadDictFromFile(glob(rf'C:\Data\ACESII\L2\{ACESII.fliers[wRocket-4]}\*eepaa_fullCal.cdf*')[0])
-    data_dict_Lshell = stl.loadDictFromFile(glob(rf'C:\Data\ACESII\coordinates\Lshell\{ACESII.fliers[wRocket-4]}\*_Lshell.cdf*')[0])
+    data_dict_eepaa = stl.loadDictFromFile(glob(rf'C:\Data\ACESII\L2\{fliers[wRocket-4]}\*eepaa_fullCal.cdf*')[0], wKeys_Load=['Epoch',
+                                                                                                                               'Differential_Energy_Flux',
+                                                                                                                               'Differential_Number_Flux',
+                                                                                                                               'Energy',
+                                                                                                                               'Pitch_Angle',
+                                                                                                                               'Lat_geom',
+                                                                                                                               'Long_geom',
+                                                                                                                               'Alt_geom'])
+    data_dict_Lshell = stl.loadDictFromFile(glob(rf'C:\Data\ACESII\coordinates\Lshell\{fliers[wRocket-4]}\*_Lshell.cdf*')[0], wKeys_Load=[
+                                                                                                                                          'L-Shell',
+                                                                                                                                          'Alt',
+                                                                                                                                          'Lat',
+                                                                                                                                          'Long'])
     stl.Done(start_time)
 
     # --- prepare the output ---
@@ -49,70 +66,97 @@ def L2_to_L3_downsampled_data(wRocket):
     # --- --- --- --- --- --- ---
     # --- DOWNSAMPLE THE DATA ---
     # --- --- --- --- --- --- ---
-    stl.prgMsg('Calculating Fixed ni')
+    stl.prgMsg('Downsampling Data')
 
-    # ensure the data is divided into chunks that can be sub-divided. If not, keep drop points from the end until it can be
-    low_idx, high_idx = np.abs(data_dict_diffFlux['Epoch'][0] - targetTimes[0]).argmin(), np.abs(data_dict_diffFlux['Epoch'][0] - targetTimes[1]).argmin()
+    dlen = len(data_dict_eepaa['Epoch'][0])
+    if len(data_dict_eepaa['Epoch'][0])% DataPreparationToggles.N_avg != 0:
+        dlen -= dlen%DataPreparationToggles.N_avg
 
-    if (high_idx - low_idx) % N_avg != 0:
-        high_idx -= (high_idx - low_idx) % N_avg
+    # shorten the tail of the data by this much
+    for key in data_dict_eepaa.keys():
+        data_dict_eepaa[key][0] = data_dict_eepaa[key][0][:dlen]
+    for key in data_dict_Lshell.keys():
+        data_dict_Lshell[key][0] = data_dict_Lshell[key][0][:dlen]
 
-    # Handle the Epoch
-    chunkedEpoch = np.split(data_dict_diffFlux['Epoch'][0][low_idx:high_idx],
-                            round(len(data_dict_diffFlux['Epoch'][0][low_idx:high_idx]) / N_avg))
-    EpochFitData = np.array([chunkedEpoch[i][int((N_avg - 1) / 2)] for i in range(len(chunkedEpoch))])
-    chunkedIlat = np.split(data_dict_diffFlux['ILat'][0][low_idx:high_idx],
-                           round(len(data_dict_diffFlux['ILat'][0][low_idx:high_idx]) / N_avg))
-    ILatFitData = np.array([chunkedIlat[i][int((N_avg - 1) / 2)] for i in range(len(chunkedIlat))])
-    chunkedAlt = np.split(data_dict_diffFlux['Alt'][0][low_idx:high_idx],
-                          round(len(data_dict_diffFlux['Alt'][0][low_idx:high_idx]) / N_avg))
-    AltFitData = np.array([chunkedIlat[i][int((N_avg - 1) / 2)] for i in range(len(chunkedAlt))])
+    # --- Downsample the Epoch ---
+    Epoch_chunked = np.split(data_dict_eepaa['Epoch'][0], round(len(data_dict_eepaa['Epoch'][0]) / DataPreparationToggles.N_avg))
+    Epoch_ds = np.array([Epoch_chunked[i][int((DataPreparationToggles.N_avg - 1) / 2)] for i in range(len(Epoch_chunked))])
+    data_dict_eepaa['Epoch'][0] = Epoch_ds
 
-    # --- handle the multi-dimenional data ---
-    # create the storage variable
-    detectorPitchAngles = data_dict_diffFlux['Pitch_Angle'][0]
-    diffFlux_avg = np.zeros(shape=(len(EpochFitData), len(detectorPitchAngles), len(data_dict_diffFlux['Energy'][0])))
-    stdDevs_avg = np.zeros(shape=(len(EpochFitData), len(detectorPitchAngles), len(data_dict_diffFlux['Energy'][0])))
+    # --- downsample Lat_geom ---
+    eepaa_keys = ['Lat_geom', 'Long_geom', 'Alt_geom']
+    for key in eepaa_keys:
+        chunked = np.split(data_dict_eepaa[key][0], round(len(data_dict_eepaa[key][0]) / DataPreparationToggles.N_avg))
+        ds = np.array([chunked[i][int((DataPreparationToggles.N_avg - 1) / 2)] for i in range(len(chunked))])
+        data_dict_eepaa[key][0] = deepcopy(ds)
 
-    for loopIdx, pitchValue in enumerate(detectorPitchAngles):
+    # --- Downsample the Lat, Long, Alt ---
+    Lshell_keys = ['Lat', 'Long', 'Alt', 'L-Shell']
+    for key in Lshell_keys:
+        chunked = np.split(data_dict_Lshell[key][0], round(len(data_dict_Lshell[key][0]) / DataPreparationToggles.N_avg))
+        ds = np.array([chunked[i][int((DataPreparationToggles.N_avg - 1) / 2)] for i in range(len(chunked))])
+        data_dict_Lshell[key][0] = deepcopy(ds)
 
-        chunkedyData = np.split(data[low_idx:high_idx, loopIdx, :],
-                                round(len(data[low_idx:high_idx, loopIdx, :]) / N_avg))
-        chunkedStdDevs = np.split(data_stdDev[low_idx:high_idx, loopIdx, :],
-                                  round(len(data_stdDev[low_idx:high_idx, loopIdx, :]) / N_avg))
+    # Lat_chunked = np.split(data_dict_Lshell['Lat'][0], round(len(data_dict_Lshell['Lat'][0]) / DataPreparationToggles.N_avg))
+    # Lat_ds = np.array([Lat_chunked[i][int((DataPreparationToggles.N_avg - 1) / 2)] for i in range(len(Lat_chunked))])
+    #
+    # Long_chunked = np.split(data_dict_Lshell['Long'][0], round(len(data_dict_Lshell['Long'][0]) / DataPreparationToggles.N_avg))
+    # Long_ds = np.array([Long_chunked[i][int((DataPreparationToggles.N_avg - 1) / 2)] for i in range(len(Long_chunked))])
+    #
+    # Alt_chunked = np.split(data_dict_Lshell['Alt'][0], round(len(data_dict_Lshell['Alt'][0]) / DataPreparationToggles.N_avg))
+    # Alt_ds = np.array([Alt_chunked[i][int((DataPreparationToggles.N_avg - 1) / 2)] for i in range(len(Alt_chunked))])
+    #
+    # LShell_chunck = np.split(data_dict_Lshell['L-Shell'][0], round(len(data_dict_Lshell['L-Shell'][0]) / DataPreparationToggles.N_avg))
+    # LShell_ds = np.array([LShell_chunck[i][int((DataPreparationToggles.N_avg - 1) / 2)] for i in range(len(LShell_chunck))])
+
+
+    # --- Downsample the multi-dimensional data ---
+    Pitch_Angle = data_dict_eepaa['Pitch_Angle'][0]
+    Energy = data_dict_eepaa['Energy'][0]
+    diffNFlux = deepcopy(data_dict_eepaa['Differential_Number_Flux'][0])
+    diffEFlux = deepcopy(data_dict_eepaa['Differential_Energy_Flux'][0])
+    diffEFlux_avg = np.zeros(shape=(len(Epoch_ds), len(Pitch_Angle), len(Energy)))
+    diffNFlux_avg = np.zeros(shape=(len(Epoch_ds), len(Pitch_Angle), len(Energy)))
+
+    for loopIdx, pitchValue in enumerate(Pitch_Angle):
+
+        diffEFlux_chunked = np.split(diffEFlux[:, loopIdx, :], round(len(diffEFlux[:, loopIdx, :]) / DataPreparationToggles.N_avg))
+        diffNFlux_chunked = np.split(diffNFlux[:, loopIdx, :], round(len(diffNFlux[:, loopIdx, :]) / DataPreparationToggles.N_avg))
 
         # --- Average the chunked data ---
-        fitData = np.zeros(shape=(len(chunkedyData), len(data_dict_diffFlux['Energy'][0])))
-        fitData_stdDev = np.zeros(shape=(len(chunkedStdDevs), len(data_dict_diffFlux['Energy'][0])))
+        diffEFlux_temp = np.zeros(shape=(len(diffEFlux_chunked), len(Energy)))
+        diffNFlux_temp = np.zeros(shape=(len(diffNFlux_chunked), len(Energy)))
 
-        for i in range(len(chunkedEpoch)):
-            # average the diffFlux data by only choosing data which is valid
-            chunkedyData[i][chunkedyData[i] < 0] = np.NaN
-            fitData[i] = np.nanmean(chunkedyData[i], axis=0)
+        for i in range(len(Epoch_chunked)):
 
-            # average the diffFlux data by only choosing data which is valid
-            chunkedStdDevs[i][chunkedStdDevs[i] < 0] = np.NaN
-            fitData_stdDev[i] = np.nanmean(chunkedStdDevs[i], axis=0)
+            # average the diffNFlux data by only choosing data which is valid
+            diffEFlux_chunked[i][diffEFlux_chunked[i] < 0] = np.NaN
+            diffEFlux_temp[i] = np.nanmean(diffEFlux_chunked[i], axis=0)
 
-        diffFlux_avg[:, loopIdx, :] = fitData
-        stdDevs_avg[:, loopIdx, :] = fitData_stdDev
+            # average the diffNFlux data by only choosing data which is valid
+            diffNFlux_chunked[i][diffNFlux_chunked[i] < 0] = np.NaN
+            diffNFlux_temp[i] = np.nanmean(diffNFlux_chunked[i], axis=0)
 
+        diffEFlux_avg[:, loopIdx, :] = diffEFlux_temp
+        diffNFlux_avg[:, loopIdx, :] = diffNFlux_temp
 
+    # Store the outputs
+    data_dict_eepaa['Differential_Number_Flux'][0] = diffNFlux_avg
+    data_dict_eepaa['Differential_Energy_Flux'][0] = diffEFlux_avg
+    data_dict_output = {**data_dict_output, **data_dict_eepaa}
+    data_dict_output = {**data_dict_output,**data_dict_Lshell}
 
-
-
-    varAttrs = {'LABLAXIS': 'plasma density', 'DEPEND_0': 'Epoch',
-                                                                   'DEPEND_1': None,
-                                                                   'DEPEND_2': None,
-                                                                   'FILLVAL': ACESII.epoch_fillVal,
-                                                                   'FORMAT': 'E12.2',
-                                                                   'UNITS': '!Ncm!A-3!N',
-                                                                   'VALIDMIN': 0,
-                                                                   'VALIDMAX': 0,
-                                                                   'VAR_TYPE': 'data', 'SCALETYP': 'linear'}
-
-
-
+    # data_dict_output = {
+    #                     'Differential_Number_Flux':[diffNFlux_avg, deepcopy(data_dict_eepaa['Differential_Number_Flux'][1])],
+    #                     'Differential_Energy_Flux': [diffEFlux_avg, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
+    #                     'Energy': [Energy, deepcopy(data_dict_eepaa['Energy'][1])],
+    #                     'Pitch_Angle': [Pitch_Angle, deepcopy(data_dict_eepaa['Pitch_Angle'][1])],
+    #                     'Alt': deepcopy(data_dict_Lshell['Alt']),
+    #                     'Lat': deepcopy(data_dict_Lshell['Lat']),
+    #                     'Long': deepcopy(data_dict_Lshell['Long']),
+    #                     'Epoch': [Epoch_ds, deepcopy(data_dict_eepaa['Epoch'][1])],
+    #                     'L-Shell': deepcopy(data_dict_Lshell['L-Shell'])
+    #                     }
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
@@ -120,10 +164,11 @@ def L2_to_L3_downsampled_data(wRocket):
     if outputData:
 
         stl.prgMsg('Creating output file')
-        fileoutName_fixed = f'ACESII_{rocketID}_langmuir_fixed.cdf'
-        outputPath = f'{rocket_folder_path}{fToggles.outputPath_modifier}\{ACESII.fliers[wflyer]}\\{fileoutName_fixed}'
-        stl.outputCDFdata(outputPath, data_dict_fixed, instrNam= 'Langmuir Probe',globalAttrsMod=globalAttrsMod)
+        fileoutName = f'ACESII_{rocketID[wRocket-4]}_eepaa_downsampled_{DataPreparationToggles.N_avg}.cdf'
+        outputPath = f'C:\Data\physicsModels\ionosphere\data_inputs\eepaa\\{fliers[wRocket-4]}\\' + fileoutName
+        stl.outputCDFdata(outputPath, data_dict_output)
         stl.Done(start_time)
+        print('\n')
 
 
 
@@ -134,5 +179,5 @@ def L2_to_L3_downsampled_data(wRocket):
 # --- --- --- ---
 
 for idx in wRocket:
-    L2_to_L3_downsampled_data(idx)
+    downsample_EEPAA_data(idx)
 

@@ -16,14 +16,19 @@ start_time = time.time()
 #################
 # --- TOGGLES ---
 #################
-regenSpatial = False
+
+dict_executable = {
+    'regenSpatial': True,
+    'regenNeSpectrum' : False,
+}
+ = True
 regenBgeo = False
-# regenNeSpectrum = False
+#
 regenPlasmaEnvironment = False
 regenNeutralEnvironment = False
 ionRecomb_ne_Calc = False
 calc_IonoConductivity = False
-map_electrostatic_potential = True
+map_electrostatic_potential = False
 calc_electricField = False
 calc_IonoCurrents = False
 

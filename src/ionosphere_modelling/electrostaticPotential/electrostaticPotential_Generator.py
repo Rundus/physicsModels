@@ -32,7 +32,7 @@ def generateElectrostaticPotential():
     LShellRange = data_dict_spatial['simLShell'][0]
     altRange = data_dict_spatial['simAlt'][0]
 
-    grid_potential = [ [[] for j in range(len(altRange))] for i in range(len(LShellRange))]
+    grid_potential = [[[] for j in range(len(altRange))] for i in range(len(LShellRange))]
 
     counter = 0
     for Lval, altVal in zip(data_dict_integrated_potential['L-Shell'][0],stl.m_to_km*data_dict_integrated_potential['Alt'][0]):
@@ -46,7 +46,6 @@ def generateElectrostaticPotential():
         counter+=1
 
     # average all the bins with data and set empty bins to zero
-
     for idx1 in range(len(LShellRange)):
         for idx2 in range(len(altRange)):
             val = grid_potential[idx1][idx2]
@@ -57,7 +56,6 @@ def generateElectrostaticPotential():
 
     grid_potential = np.array(grid_potential)
 
-
     if ElectroStaticToggles.perform_mapping:
 
         ###################################
@@ -67,8 +65,7 @@ def generateElectrostaticPotential():
         # --- Calculate the conductivity ratio term p(x,z) = sigma_P / sigma_D ---
         p = deepcopy(data_dict_conductivity['sigma_P'][0])/deepcopy(data_dict_conductivity['sigma_D'][0])
         data_dict_output = {**data_dict_output,
-                            **{'p_coeff': [np.array(p), {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': None,
-                                                         'LABLAXIS': 'p_coefficent', 'VAR_TYPE': 'support_data'}]}
+                            **{'p_coeff': [np.array(p), {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': None, 'LABLAXIS': 'p_coefficent', 'VAR_TYPE': 'support_data'}]}
                             }
 
         # --- Calculate the term g(x,z)= d ln(sigma_D)/dz ---
