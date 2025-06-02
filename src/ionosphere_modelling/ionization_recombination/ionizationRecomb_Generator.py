@@ -30,10 +30,10 @@ def generateIonizationRecomb():
     data_dict_plasma = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\plasma_environment\*.cdf*')[0])
 
     # get the ACES-II EEPAA Flux data
-    data_dict_flux = stl.loadDictFromFile(rf'{ionizationRecombToggles.flux_path}\ACESII_36359_l3_eepaa_flux.cdf')
+    data_dict_flux = stl.loadDictFromFile(glob(rf'{ionizationRecombToggles.flux_path}\\*eepaa_flux_downsampled*')[0])
 
     # get the ACES-II L-Shell data
-    data_dict_LShell = deepcopy(SpatialToggles.data_dict_HF_LShell)
+    data_dict_LShell = stl.loadDictFromFile(glob('C:\Data\physicsModels\ionosphere\data_inputs\eepaa\high\*eepaa_downsampled*')[0])
 
     # get the neutral data dict
     data_dict_neutral = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\neutral_environment\*.cdf*')[0])

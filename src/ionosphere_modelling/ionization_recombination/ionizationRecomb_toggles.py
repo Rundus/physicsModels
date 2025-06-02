@@ -4,7 +4,7 @@
 class ionizationRecombToggles:
     outputFolder = 'C:\Data\physicsModels\ionosphere\ionizationRecomb'
 
-    flux_path = 'C:\Data\ACESII\L3\Energy_Flux\high'
+    flux_path = 'C:\Data\physicsModels\ionosphere\data_inputs\energy_flux\high'
 
     # --- BEAM n_E: which dataset to use for the n_e profile ---
     # Description: use Evans1974 beam model for n(z) OR a real-data derived model n(z)

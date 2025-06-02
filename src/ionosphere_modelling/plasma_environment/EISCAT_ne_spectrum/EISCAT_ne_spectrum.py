@@ -52,7 +52,6 @@ def EISCAT_ne_spectrum():
         'simAlt': deepcopy(data_dict_spatial['simAlt']),
     }
 
-
     ##################################################
     # --- REDUCE EISCAT TO SPECIFIC ALT/TIME RANGE ---
     ##################################################
@@ -123,6 +122,5 @@ def EISCAT_ne_spectrum():
         ax.set_xlabel('Alt [km]')
         ax.set_ylabel('ne [cm$^{-3}$]')
         plt.savefig('C:\Data\physicsModels\ionosphere\plasma_environment\EISCAT_ne_spectrum\EISCAT_ne_spectrum.png')
-
 
 EISCAT_ne_spectrum()

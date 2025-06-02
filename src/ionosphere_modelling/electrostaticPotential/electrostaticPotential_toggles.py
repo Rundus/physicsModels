@@ -3,4 +3,5 @@
 #######################################
 class ElectroStaticToggles:
     outputFolder = 'C:\Data\physicsModels\ionosphere\electrostaticPotential'
-    perform_mapping = True
+    perform_mapping = False
+    N_avg = 10 # number of points to average together for the electric potential mapping

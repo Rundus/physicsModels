@@ -35,10 +35,10 @@ def generateIonosphericConductivity():
     data_dict_neutral = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\neutral_environment\*.cdf*')[0])
 
     # get the ACES-II EEPAA Flux data
-    data_dict_flux = stl.loadDictFromFile(rf'{ionizationRecombToggles.flux_path}\ACESII_36359_l3_eepaa_flux.cdf')
+    data_dict_flux = stl.loadDictFromFile(glob(rf'{ionizationRecombToggles.flux_path}\*eepaa_flux*')[0])
 
     # get the ACES-II L-Shell data
-    data_dict_LShell = deepcopy(SpatialToggles.data_dict_HF_LShell)
+    data_dict_LShell = stl.loadDictFromFile(glob('C:\Data\physicsModels\ionosphere\data_inputs\eepaa\high\*eepaa_downsampled*')[0])
 
     # get the ionospheric plasma data dict
     data_dict_plasma = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\plasma_environment\*.cdf*')[0])
@@ -167,7 +167,6 @@ def generateIonosphericConductivity():
     data_dict_output['sigma_P'][0] = sigma_P
     data_dict_output['sigma_H'][0] = sigma_H
     data_dict_output['sigma_D'][0] = sigma_D
-    data_dict_output['sigma_DP_ratio'][0] = sigma_D/sigma_P
 
     data_dict_output['sigma_P_e'][0] = sigma_P_e
     data_dict_output['sigma_H_e'][0] = sigma_H_e
