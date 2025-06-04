@@ -1,4 +1,4 @@
 
 
 class DataPreparationToggles:
-    N_avg = 3
+    N_avg = 1

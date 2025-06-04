@@ -224,17 +224,20 @@ def generateElectrostaticPotential():
         dim = N * M
         A_matrix = lil_matrix((dim, dim))
 
+
+        # [e] apply the zero boundary condition values to the solution
+        grid_potential[0] = np.zeros(shape=len(data_dict_output['simAlt'][0]))  # set the left side to zero
+        grid_potential[-1] = np.zeros(shape=len(data_dict_output['simAlt'][0]))  # set the right side to zero
+        # grid_potential[:, -1] = np.array([-5000 for i in range(M)])
+
         # [1] Get the col/row indices of the initial condition matrix
-        IC_indicies = np.where(grid_potential > 0)
+        IC_indicies = np.where(np.abs(grid_potential) > 0)
         IC_idxs = np.array([IC_indicies[0][i]*N + IC_indicies[1][i] for i in range(len(IC_indicies[0]))])
 
         # [] Form the solution vector
         b_matrix = np.zeros(shape=(dim))
 
-        # [e] apply the zero boundary condition values to the solution
-        grid_potential_ds = deepcopy(grid_potential)
-        grid_potential_ds[0] = np.zeros(shape=len(data_dict_output['simAlt'][0]))  # set the left side to zero
-        grid_potential_ds[-1] = np.zeros(shape=len(data_dict_output['simAlt'][0]))  # set the right side to zero
+
 
         # [b] Fill in the sparse matrix to form the coefficent matrix
         counter = 0
@@ -252,6 +255,10 @@ def generateElectrostaticPotential():
                     A_matrix[counter, pos] = 1
                     c1 += 1
 
+                    # UPDATE THE SOLUTION B VECTOR
+                    b_matrix[pos] = deepcopy(grid_potential[i][j])
+
+
                 # IF on a boundary point, set that SPECIFIC potential value to zero in the sparse matrix
                 elif checkBoundary(i=i,j=j,N=N,M=M)==1:
                     A_matrix[counter, pos] = 1
@@ -263,15 +270,10 @@ def generateElectrostaticPotential():
                     coeff = [A_coef[i][j], B_coef[i][j], C_coef[i][j],   D_coef[i][j],  E_coef[i][j]]
                     c3 += 1
                     for pidx, pair in enumerate(pairs):
-                        pos_idx = pair[1] + N * pair[0]  # Transform the solution matrix indices to A_matrix indices: pos = column_idx + dim*row_idx
+                        pos_idx = N * pair[0] + pair[1]  # Transform the solution matrix indices to A_matrix indices: pos = column_idx + dim*row_idx
                         A_matrix[counter, pos_idx] = coeff[pidx]
 
-                # UPDATE THE SOLUTION B VECTOR
-                b_matrix[pos] = grid_potential_ds[j][i]
-
                 counter += 1
-
-
         print('\n')
         print(f'Initial Conditions {c1}')
         print(f'Boundaries {c2}')
@@ -280,17 +282,14 @@ def generateElectrostaticPotential():
         # [d] convert lil_matrix to a csr_matrix
         A_matrix = csr_matrix(A_matrix)
 
-        # [f] Flatten the b matrix solution as ROW major
-        b = grid_potential_ds.flatten()
-
         # [g] Solve the Ax=B problem and reshape into potential grid
-        solved_potential_ds = spsolve(A=A_matrix, b=b_matrix).reshape((N, M))
+        solved_potential = spsolve(A=A_matrix, b=b_matrix).reshape((M, N))
 
         # --- store the outputs  ---
         data_dict_output = {**data_dict_output,
-                            **{'solved_potential': [solved_potential_ds.T, {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
-                               'b_matrix': [b_matrix.reshape((N,M)).T, {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
-                                'coeff_matrix': [A_matrix.toarray().reshape((dim, dim)).T, {'DEPEND_0': None, 'DEPEND_1': None, 'UNITS': 'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}]
+                            **{'solved_potential': [solved_potential, {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
+                               'b_matrix': [b_matrix.reshape((M,N)), {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
+                                # 'coeff_matrix': [A_matrix.toarray().reshape((dim, dim)), {'DEPEND_0': None, 'DEPEND_1': None, 'UNITS': 'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}]
                             }
                             }
 

@@ -18,7 +18,7 @@ class SpatialToggles:
 
     # --- LShell Grid ---
     # Description: USE the HF L-shell attitude data to generate an L-Shell grid. Choose all L-SHells above a threshold altitude
-    altThresh = 300*stl.m_to_km # get the HF attitude data for altitudes above this value [in km]
+    altThresh = 250*stl.m_to_km # get the HF attitude data for altitudes above this value [in km]
     data_dict_eepaa_high_ds = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\data_inputs\eepaa\high\ACESII_36359_eepaa_downsampled_3.cdf')
     Epoch_min_idx = np.abs(data_dict_eepaa_high_ds['Epoch'][0] - target_time_simulation_minimum).argmin()
     data_dict_eepaa_high_ds['L-Shell'][0] = deepcopy(data_dict_eepaa_high_ds['L-Shell'][0][Epoch_min_idx:])

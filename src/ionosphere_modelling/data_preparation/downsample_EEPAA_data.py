@@ -109,7 +109,6 @@ def downsample_EEPAA_data(wRocket):
     # LShell_chunck = np.split(data_dict_Lshell['L-Shell'][0], round(len(data_dict_Lshell['L-Shell'][0]) / DataPreparationToggles.N_avg))
     # LShell_ds = np.array([LShell_chunck[i][int((DataPreparationToggles.N_avg - 1) / 2)] for i in range(len(LShell_chunck))])
 
-
     # --- Downsample the multi-dimensional data ---
     Pitch_Angle = data_dict_eepaa['Pitch_Angle'][0]
     Energy = data_dict_eepaa['Energy'][0]
