@@ -7,7 +7,7 @@ class SpatialToggles:
 
     # some minimum times
     target_time = dt.datetime(2022, 11, 20, 17, 20)
-    target_time_simulation_minimum = dt.datetime(2022, 11, 20, 17, 24,11) # minimum time of the simulation (determines minimum L-Shell)
+    target_time_simulation_minimum = dt.datetime(2022, 11, 20, 17, 24, 2,664000) # minimum time of the simulation (determines minimum L-Shell)
 
     # --- Altitude Grid ---
     sim_alt_low = 80 * stl.m_to_km  # low altitude (in meters)
