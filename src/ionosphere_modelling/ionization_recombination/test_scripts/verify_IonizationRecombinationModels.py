@@ -6,10 +6,11 @@
 # --- imports ---
 import time
 start_time = time.time()
-from src.physicsModels.ionosphere.simToggles_Ionosphere import *
 from spaceToolsLib.tools.CDF_load import loadDictFromFile
-from src.physicsModels.ionosphere.ionization_recombination.ionizationRecomb_classes import *
-from src.physicsModels.ionosphere.plasma_environment.plasma_environment_classes import *
+from src.ionosphere_modelling.ionization_recombination.ionizationRecomb_toggles import ionizationRecombToggles
+from src.ionosphere_modelling.ionization_recombination.ionizationRecomb_classes import *
+from src.ionosphere_modelling.plasma_environment.plasma_environment_classes import *
+from src.ionosphere_modelling.neutral_environment.neutral_toggles import neutralsToggles
 import numpy as np
 from copy import deepcopy
 from spaceToolsLib.tools.CDF_output import outputCDFdata
@@ -18,7 +19,7 @@ from spaceToolsLib.tools.CDF_output import outputCDFdata
 # --- PLOTTING ---
 ##################
 # --- Plotting Toggles ---
-figure_width = 20  # in inches
+figure_width = 25  # in inches
 figure_height = 20  # in inches
 Title_FontSize = 25
 Label_FontSize = 25
@@ -33,45 +34,48 @@ Plot_LineWidth = 6.5
 Legend_fontSize = 32
 dpi = 100
 
-xNorm = m_to_km # use m_to_km otherwise
+xNorm = stl.m_to_km # use m_to_km otherwise
 xLabel = '$R_{E}$' if xNorm == Re else 'km'
 
 # get the ionospheric neutral data dict
-data_dict_neutral = loadDictFromFile(rf'{neutralsToggles.outputFolder}\neutralEnvironment.cdf')
+data_dict_neutral = loadDictFromFile(rf'{neutralsToggles.outputFolder}\neutral_Environment.cdf')
 
 # get the ionospheric plasma data dict
-data_dict_plasma = loadDictFromFile(rf'{plasmaToggles.outputFolder}\plasmaEnvironment.cdf')
+data_dict_plasma = loadDictFromFile(rf'{plasmaToggles.outputFolder}\plasma_environment.cdf')
+
+# get the ionosphere spatial data dict
+data_dict_spatial = loadDictFromFile(rf'C:\Data\physicsModels\ionosphere\spatial_environment\spatial_environment.cdf')
 
 
 # TOGGLES
-use_real_data = True
+use_real_data = False
 if use_real_data:
     data_dict_backScatter = loadDictFromFile(rf'C:\Data\physicsModels\invertedV\backScatter\backScatter.cdf')
 
-def generateHeightIonization(GenToggles, ionizationRecombToggles, **kwargs):
+def generateHeightIonization(ionizationRecombToggles, **kwargs):
     data_dict = {}
 
     # --- Electron mobility ---
     def electron_heightIonization(altRange, data_dict, **kwargs):
+        tmeIdx = 0
+        beam_energyGrid = deepcopy(data_dict_backScatter['beam_energy_Grid'][0][tmeIdx])
+        response_energyGrid = deepcopy(data_dict_backScatter['energy_Grid'][0])
+        engy_flux_beam = np.multiply(deepcopy(data_dict_backScatter['num_flux_beam'][0][tmeIdx]), beam_energyGrid / 1000)
+        engy_flux_sec = np.multiply(deepcopy(data_dict_backScatter['num_flux_sec'][0][tmeIdx]), response_energyGrid / 1000)
+        engy_flux_dgdPrim = np.multiply(deepcopy(data_dict_backScatter['num_flux_dgdPrim'][0][tmeIdx]), response_energyGrid / 1000)
 
-        if use_real_data:
-            tmeIdx = 0
-            beam_energyGrid = deepcopy(data_dict_backScatter['beam_energy_Grid'][0][tmeIdx])
-            response_energyGrid = deepcopy(data_dict_backScatter['energy_Grid'][0])
-            engy_flux_beam = np.multiply(deepcopy(data_dict_backScatter['num_flux_beam'][0][tmeIdx]), beam_energyGrid / 1000)
-            engy_flux_sec = np.multiply(deepcopy(data_dict_backScatter['num_flux_sec'][0][tmeIdx]), response_energyGrid / 1000)
-            engy_flux_dgdPrim = np.multiply(deepcopy(data_dict_backScatter['num_flux_dgdPrim'][0][tmeIdx]), response_energyGrid / 1000)
+        # --- Get the energy/energyFluxes of the incident beam + backscatter electrons ---
+        monoEnergyProfile = np.append(response_energyGrid / 1000, beam_energyGrid / 1000)  # IN UNITS OF KEV
+        energyFluxProfile = np.append(engy_flux_dgdPrim + engy_flux_sec, engy_flux_beam)
 
-            # --- Get the energy/energyFluxes of the incident beam + backscatter electrons ---
-            monoEnergyProfile = np.append(response_energyGrid / 1000, beam_energyGrid / 1000)  # IN UNITS OF KEV
-            energyFluxProfile = np.append(engy_flux_dgdPrim + engy_flux_sec, engy_flux_beam)
-        else:
-            # IF COPYING FANG MODEL:
-            monoEnergyProfile = np.array([0.01, 0.1, 1, 10, 100, 1000])  # 10eV to 1000keV, IN UNITS OF KEV
-            energyFluxProfile = (6.242E8) * np.array([1 for i in range(len(monoEnergyProfile))])  # provide in ergs but convert from ergs/cm^-2s^-1 to keV/cm^-2s^-1
 
         # CHOOSE THE MODEL
-        model = fang2010(altRange, data_dict_neutral, data_dict_plasma, monoEnergyProfile, energyFluxProfile)
+        model = fang2010(altRange= altRange,
+                         Tn= Tn,
+                         m_eff_n= m_eff_n,
+                         rho_n= rho_n,
+                         inputEnergies=monoEnergyProfile,
+                         varPhi_E=energyFluxProfile)
         H = model.scaleHeight()
         y = model.atmColumnMass(monoEnergyProfile)
         f = model.f(y,model.calcCoefficents(monoEnergyProfile))
@@ -103,6 +107,7 @@ def generateHeightIonization(GenToggles, ionizationRecombToggles, **kwargs):
 
             ax[1, 1].plot(q_total, altRange / xNorm,  linewidth=Plot_LineWidth, linestyle='--', label=rf"Total")
             ax[1, 1].set_xlabel('Total ionization Rate [cm$^{-3}$s$^{-1}$]', fontsize=Label_FontSize)
+            ax[1,1].set_ylabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
             ax[0, 0].set_ylabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
             ax[1, 0].set_ylabel(f'Column Mass (y)', fontsize=Label_FontSize)
             ax[1, 0].set_xlabel(f'Energy Dissipation (f)', fontsize=Label_FontSize)
@@ -132,7 +137,10 @@ def generateHeightIonization(GenToggles, ionizationRecombToggles, **kwargs):
                     ax[i, j].tick_params(axis='x', which='minor', labelsize=Tick_FontSize_minor,
                                       width=Tick_Width_minor, length=Tick_Length_minor)
                     if not use_real_data:
-                        ax[i, j].legend(fontsize=Legend_fontSize, loc='upper right')
+                        if i == 1 and j ==1:
+                            ax[i, j].legend(fontsize=Legend_fontSize, loc='upper left')
+                        else:
+                            ax[i, j].legend(fontsize=Legend_fontSize, loc='upper right')
             plt.tight_layout()
             if use_real_data:
                 file_name = rf'{ionizationRecombToggles.outputFolder}\testScripts\MODEL_heightIonization_real_data.png'
@@ -246,20 +254,20 @@ def generateHeightIonization(GenToggles, ionizationRecombToggles, **kwargs):
     if kwargs.get('showPlot', False):
 
         # --- collect all the functions ---
-        profileFuncs = [electron_heightIonization,
+        profileFuncs = [
                         recombinationRate,
                         electronDensity_fromIonizationRecomb
                         ]
 
         for i in range(len(profileFuncs)):
-            data_dict = profileFuncs[i](altRange=GenToggles.simAlt, data_dict=data_dict, showPlot=True)
+            data_dict = profileFuncs[i](altRange=data_dict_spatial['simAlt'][0], data_dict=data_dict, showPlot=True)
 
     #####################
     # --- OUTPUT DATA ---
     #####################
 
     # include the simulation altt
-    data_dict = {**data_dict,**{'simAlt': [GenToggles.simAlt, {'DEPEND_0': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'simAlt'}]}}
+    data_dict = {**data_dict,**{'simAlt': [data_dict_spatial['simAlt'][0], {'DEPEND_0': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'simAlt'}]}}
 
     # --- Construct the Data Dict ---
     exampleVar = {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': -9223372036854775808,
@@ -282,5 +290,5 @@ def generateHeightIonization(GenToggles, ionizationRecombToggles, **kwargs):
 
 # --- EXECUTE ---
 stl.prgMsg('Regenerating Height Ionization and Recombination')
-generateHeightIonization(GenToggles, ionizationRecombToggles, showPlot=True)
+generateHeightIonization(ionizationRecombToggles, showPlot=True)
 stl.Done(start_time)

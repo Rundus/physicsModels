@@ -21,14 +21,14 @@ start_time = time.time()
 
 dict_executable = {
     'regen_EVERYTHING' : 0,
-    'regenSpatial': 1,
+    'regenSpatial': 0,
     'regenBgeo': 0,
     'regenNeSpectrum' : 0,
     'regenPlasmaEnvironment': 0,
     'regenNeutralEnvironment': 0,
     'ionRecomb_ne_Calc' : 0,
     'calc_IonoConductivity': 0,
-    'map_electrostatic_potential': 0,
+    'map_electrostatic_potential': 1,
     'calc_electricField': 0,
     'calc_IonoCurrents': 0
 }

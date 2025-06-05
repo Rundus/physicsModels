@@ -83,30 +83,28 @@ def downsample_IntegratedPotential_data(wRocket):
     for key in data_dict_potential.keys():
         data_dict_potential[key][0] = data_dict_potential[key][0][:dlen]
 
+    # --- Downsample the Epoch ---
+    Epoch_chunked = np.split(data_dict_potential['Epoch'][0], round(len(data_dict_potential['Epoch'][0]) / DataPreparationToggles.N_avg))
+    data_dict_potential['Epoch'][0] = np.array([Epoch_chunked[i][int((DataPreparationToggles.N_avg - 1) / 2)] for i in range(len(Epoch_chunked))])
+
+    # --- Downsample the single-dimension variables---
+    for key in data_dict_potential.keys():
+        if key not in ['Epoch']:
+            chunked = np.split(data_dict_potential[key][0], round(len(data_dict_potential[key][0]) / DataPreparationToggles.N_avg))
+            data_dict_potential[key][0] = deepcopy(np.array([ np.average(chunked[i]) for i in range(len(chunked))]))
+
+    # --- Limit the potential to ONLY the simulation region ---
+    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
+    min_idx, max_idx = np.abs(data_dict_potential['L-Shell'][0] - SpatialToggles.simLShell[0]).argmin(),np.abs(data_dict_potential['L-Shell'][0] - SpatialToggles.simLShell[-1]).argmin()
+    for key in data_dict_potential.keys():
+        data_dict_potential[key][0] = data_dict_potential[key][0][min_idx:max_idx+1]
+
     # store the output
     data_dict_output = {
         **data_dict_output,
         **data_dict_potential
     }
-
-    # --- Downsample the Epoch ---
-    # Epoch_chunked = np.split(data_dict_potential['Epoch'][0], round(len(data_dict_potential['Epoch'][0]) / DataPreparationToggles.N_avg))
-    # data_dict_potential['Epoch'][0] = np.array([Epoch_chunked[i][int((DataPreparationToggles.N_avg - 1) / 2)] for i in range(len(Epoch_chunked))])
-
-    # --- Downsample the single-dimension variables---
-    for key in data_dict_potential.keys():
-        chunked = np.split(data_dict_potential[key][0], round(len(data_dict_potential[key][0]) / DataPreparationToggles.N_avg))
-        data_dict_potential[key][0] = deepcopy(np.array([chunked[i][int((DataPreparationToggles.N_avg - 1) / 2)] for i in range(len(chunked))]))
-
-    # --- Since the integrated potential is time-limited to ONLY the integration region, limit the downsampled-data to that same region ---
-
-    # find where the high flyer is above the threshold
-    L_shell_region = data_dict_traj_high['L-Shell'][0][np.where(data_dict_traj_high['Alt'][0] >= SpatialToggles.altThresh)[0]]
-
-    low_idx, high_idx = np.abs(data_dict_output['L-Shell'][0] - L_shell_region[0]).argmin(),np.abs(data_dict_output['L-Shell'][0] - L_shell_region[-1]).argmin()
-
-    for key in data_dict_output.keys():
-        data_dict_output[key][0] = data_dict_output[key][0][low_idx+1:high_idx+1]
+    stl.Done(start_time)
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
