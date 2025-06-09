@@ -45,6 +45,7 @@ def verify_Fang2008_figures():
     altRange = np.linspace(50,500,100)*stl.m_to_km
     monoEnergyProfile = np.array([round(0.1 + 2*i*0.1,2) for i in range(5)])  # 10eV to 1000keV, IN UNITS OF KEV
     energyFluxProfile = (6.242E8) * np.array([1 for i in range(len(monoEnergyProfile))])  # provide in ergs but convert from ergs/cm^-2s^-1 to keV/cm^-2s^-1
+    energyFluxProfile = np.array([1.7E9,3E10, 6.6E10, 4E10,4E9])  # provide in ergs but convert from ergs/cm^-2s^-1 to keV/cm^-2s^-1
 
     # construct a vertical profile using NRLMSIS data
     f107 = 150  # the F10.7 (DON'T CHANGE)
@@ -102,20 +103,22 @@ def verify_Fang2008_figures():
     ax[0, 0].plot(H/(100*1000), altRange / xNorm,  linewidth=Plot_LineWidth, label='H')
     ax[0, 0].set_xlabel('Scale Height [km]', fontsize=Label_FontSize)
     ax[0, 1].set_xlabel('Column Mass (y)', fontsize=Label_FontSize)
+    ax[0, 1].set_ylabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
     ax[0, 1].set_xlim(1E-6, 1E6)
 
     for idx, profile in enumerate(q_profiles):
         ax[0, 1].plot(y[idx], altRange / xNorm, linewidth=Plot_LineWidth)
-        ax[1, 0].plot(f[idx], y[idx],  linewidth=Plot_LineWidth, label=rf"{monoEnergyProfile[idx]} keV")
+        # ax[1, 0].plot(f[idx], y[idx],  linewidth=Plot_LineWidth, label=rf"{monoEnergyProfile[idx]} keV")
+        ax[1, 0].plot(f[idx], altRange / xNorm, linewidth=Plot_LineWidth, label=rf"{monoEnergyProfile[idx]} keV")
         ax[1, 1].plot(q_profiles[idx], altRange / xNorm,  linewidth=Plot_LineWidth, label=rf"{monoEnergyProfile[idx]} keV")
 
-    ax[1, 1].plot(q_total, altRange / xNorm,  linewidth=Plot_LineWidth, linestyle='--', label=rf"Total")
+    # ax[1, 1].plot(q_total, altRange / xNorm,  linewidth=Plot_LineWidth, linestyle='--', label=rf"Total")
     ax[1, 1].set_xlabel('Total ionization Rate [cm$^{-3}$s$^{-1}$]', fontsize=Label_FontSize)
     ax[1,1].set_ylabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
     ax[0, 0].set_ylabel(f'Altitude [{xLabel}]', fontsize=Label_FontSize)
     ax[1, 0].set_ylabel(f'Column Mass (y)', fontsize=Label_FontSize)
     ax[1, 0].set_xlabel(f'Energy Dissipation (f)', fontsize=Label_FontSize)
-    ax[1, 1].set_xlim(1E-4, 1E5)
+    ax[1, 1].set_xlim(1E-1, 1E6)
     ax[1, 0].set_xlim(0, 0.8)
 
     for i in range(2):
@@ -128,8 +131,9 @@ def verify_Fang2008_figures():
                 else:
                     ax[i, j].set_xlim(0,100)
             else:
-                ax[i, j].set_ylim(0.1, 10)
-                ax[i, j].set_yscale('log')
+                ax[i, j].set_ylim(50, 500)
+                # ax[i, j].set_ylim(0.1, 10)
+                # ax[i, j].set_yscale('log')
 
             ax[i, j].grid(True)
             ax[i, j].tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width,

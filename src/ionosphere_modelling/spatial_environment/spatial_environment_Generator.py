@@ -34,7 +34,6 @@ def generate_spatialEnvironment():
     grid_alt = np.array([altRange for i in range(len(LShellRange))]) # in meters
     grid_LShell = np.array([LShellRange for k in range(len(altRange))]).T
 
-
     for idx, Lval in tqdm(enumerate(LShellRange)):
 
         # get the geomagnetic coordinate of the P.O.I. based on L-Shell
@@ -53,7 +52,6 @@ def generate_spatialEnvironment():
         # store the data
         grid_lat[idx] = cvals_GDZ.lati
         grid_long[idx] = cvals_GDZ.long
-
 
     # --- CALCULATE spatial gradient distances (deltaX, deltaZ) on our spatial grid---
     # Note: Since the simulation is 2D, there's no deltaY

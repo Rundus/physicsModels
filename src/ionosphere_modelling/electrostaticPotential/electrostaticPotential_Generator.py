@@ -224,7 +224,6 @@ def generateElectrostaticPotential():
         dim = N * M
         A_matrix = lil_matrix((dim, dim))
 
-
         # [e] apply the zero boundary condition values to the solution
         grid_potential[0] = np.zeros(shape=len(data_dict_output['simAlt'][0]))  # set the left side to zero
         grid_potential[-1] = np.zeros(shape=len(data_dict_output['simAlt'][0]))  # set the right side to zero
@@ -236,8 +235,6 @@ def generateElectrostaticPotential():
 
         # [] Form the solution vector
         b_matrix = np.zeros(shape=(dim))
-
-
 
         # [b] Fill in the sparse matrix to form the coefficent matrix
         counter = 0
