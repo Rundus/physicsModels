@@ -87,7 +87,7 @@ def generateElectrostaticPotential():
                            'sigma_D':deepcopy(data_dict_conductivity['sigma_D']),
                            'grid_deltaAlt': deepcopy(data_dict_spatial['grid_deltaAlt']),
                            'grid_deltaX':deepcopy(data_dict_spatial['grid_deltaX']),
-                           'grid_potential': [np.array(grid_potential), {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
+                           'initial_potential': [np.array(grid_potential), {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
                            'simLShell':deepcopy(data_dict_spatial['simLShell']),
                            'simAlt':deepcopy(data_dict_spatial['simAlt'])
                        }
@@ -136,13 +136,17 @@ def generateElectrostaticPotential():
     # [1] get the indicies of all the initial conditions
     M = len(data_dict_output['simLShell'][0])
     N = len(data_dict_output['simAlt'][0])
-    grid_potential_ds = deepcopy(data_dict_output['grid_potential'][0])
+    grid_potential_ds = deepcopy(data_dict_output['initial_potential'][0])
     IC_indicies = np.where(np.abs(grid_potential_ds) > 0)
     IC_idxs = np.array([IC_indicies[0][i] * N + IC_indicies[1][i] for i in range(len(IC_indicies[0]))  ]) # flatten the indicies
 
-
     # [2] loop over relaxation grid a number of times specified in the toggles
-    grid_potential_relax = deepcopy(grid_potential_ds)
+    grid_potential_relax = np.zeros(shape=np.shape(grid_potential_ds))
+    grid_flattened = np.array([np.sum(arr) for arr in data_dict_output['initial_potential'][0]])
+    grid_potential_relax[:, -1] = grid_flattened
+    grid_potential_relax[0] = np.zeros(N)
+    grid_potential_relax[-1] = np.zeros(N)
+    data_dict_output['initial_potential'][0] = deepcopy(grid_potential_relax)
 
     for loop_idx in tqdm(range(ElectroStaticToggles.n_iter)):
 
@@ -151,16 +155,14 @@ def generateElectrostaticPotential():
 
         for i in range(M):  # L-Shell variation
             for j in range(N):  # Altitude variation
-                pos = i * N + j  # Transform the solution matrix indices to A_matrix indices: pos = column_idx + dim*row_id
-
                 if checkBoundary(i=i, j=j, N=N, M=M) !=1: # if you're not on a boundary point
-                    if pos not in IC_idxs: # If you're not an IC value
-                        first_term = (1/np.power(deltaZ,2) + p[i][j]/np.power(deltaX,2))**(-1)
-                        second_term = (grid_potential_temp[i][j+1] + grid_potential_temp[i][j-1])/np.power(deltaZ,2)
-                        third_term = p[i][j]*(grid_potential_temp[i+1][j] + grid_potential_temp[i-1][j])/np.power(deltaX,2)
-                        fourth_term = g[i][j]*(grid_potential_temp[i][j+1] - grid_potential_temp[i][j-1])/(2*deltaZ)
-                        fifth_term = q[i][j]*(grid_potential_temp[i+1][j] - grid_potential_temp[i-1][j])/(2*deltaX)
-                        grid_potential_temp[i][j] = first_term*(second_term+third_term+fourth_term+fifth_term)
+                    # if pos not in IC_idxs: # If you're not an IC value
+                    first_term = (1/np.power(deltaZ,2) + p[i][j]/np.power(deltaX,2))**(-1)
+                    second_term = (grid_potential_temp[i][j+1] + grid_potential_temp[i][j-1])/np.power(deltaZ,2)
+                    third_term = p[i][j]*(grid_potential_temp[i+1][j] + grid_potential_temp[i-1][j])/np.power(deltaX,2)
+                    fourth_term = g[i][j]*(grid_potential_temp[i][j+1] - grid_potential_temp[i][j-1])/(2*deltaZ)
+                    fifth_term = q[i][j]*(grid_potential_temp[i+1][j] - grid_potential_temp[i-1][j])/(2*deltaX)
+                    grid_potential_temp[i][j] = first_term*(second_term+third_term+fourth_term+fifth_term)
 
         # store the output of the iteration
         grid_potential_relax = deepcopy(grid_potential_temp)

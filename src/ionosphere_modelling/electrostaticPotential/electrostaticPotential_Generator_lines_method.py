@@ -114,7 +114,7 @@ def generateElectrostaticPotential():
                            'sigma_D':deepcopy(data_dict_conductivity['sigma_D']),
                            'grid_deltaAlt': deepcopy(data_dict_spatial['grid_deltaAlt']),
                            'grid_deltaX':deepcopy(data_dict_spatial['grid_deltaX']),
-                           'grid_potential': [np.array(grid_potential), {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
+                           'initial_potential': [np.array(grid_potential), {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
                            'simLShell':deepcopy(data_dict_spatial['simLShell']),
                            'simAlt':deepcopy(data_dict_spatial['simAlt'])
                        }
@@ -136,7 +136,7 @@ def generateElectrostaticPotential():
             chunked = np.split(data, round(len(data) / ElectroStaticToggles.N_avg))
 
             # average data if it's a conductivity or potential
-            if key in ['sigma_P', 'sigma_D', 'grid_potential', 'grid_deltaAlt','simLShell']:
+            if key in ['sigma_P', 'sigma_D', 'initial_potential', 'grid_deltaAlt','simLShell']:
                 data = np.array([np.nanmean(chunked[i], axis=0) for i in range(len(chunked))])
             elif key in ['grid_deltaX']:
                 # increase the grid spacing if it's a distance
@@ -144,7 +144,7 @@ def generateElectrostaticPotential():
 
 
             # ONLY allow a single value for the electrostatic potential at each L-Shell
-            if key in ['grid_potential']:
+            if key in ['initial_potential']:
                 for i in range(len(data)): # loop over L-Shell
                     temp = deepcopy(data[i])
                     maxVal = np.max(np.abs(temp))
@@ -153,7 +153,7 @@ def generateElectrostaticPotential():
 
             data_dict_output[key][0] = data
 
-    grid_flattened = np.array([1.5*np.sum(arr) for arr in data_dict_output['grid_potential'][0]])
+    grid_flattened = np.array([np.sum(arr) for arr in data_dict_output['initial_potential'][0]])
 
     #########################
     # --- MAP THE E-FIELD ---
@@ -216,7 +216,7 @@ def generateElectrostaticPotential():
                             **{name: [np.array(val), {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': None, 'LABLAXIS': f'{name}_coefficent', 'VAR_TYPE': 'support_data'}]}
                             }
 
-    grid_potential_ds = deepcopy(data_dict_output['grid_potential'][0])
+    grid_potential_ds = deepcopy(data_dict_output['initial_potential'][0])
 
 
     if ElectroStaticToggles.perform_mapping:
@@ -231,8 +231,8 @@ def generateElectrostaticPotential():
         A_matrix = lil_matrix((dim, dim))
 
         # [e] apply the zero boundary condition values to the solution
-        grid_potential_ds[:, -1] = 1.5*grid_flattened  # set the Top to some initial conditions
-        grid_potential_ds[:, 0] = 0.1*grid_flattened  # set the Top to some initial conditions
+        grid_potential_ds[:, -1] = 1*grid_flattened  # set the Top to some initial conditions
+        grid_potential_ds[:, 0] = 0*grid_flattened  # set the Top to some initial conditions
         grid_potential_ds[0] = np.zeros(shape=N)  # set the left side to zero
         grid_potential_ds[-1] = np.zeros(shape=N)  # set the right side to zero
 

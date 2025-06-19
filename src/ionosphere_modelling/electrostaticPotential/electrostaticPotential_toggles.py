@@ -8,4 +8,4 @@ class ElectroStaticToggles:
 
 
     # relaxation method
-    n_iter = 5 # number of times to iterate solution grid
+    n_iter = 20 # number of times to iterate solution grid
