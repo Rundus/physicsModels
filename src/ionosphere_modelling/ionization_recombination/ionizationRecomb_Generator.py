@@ -17,6 +17,7 @@ def generateIonizationRecomb():
     from src.ionosphere_modelling.ionization_recombination.ionizationRecomb_toggles import ionizationRecombToggles
     from src.ionosphere_modelling.neutral_environment.neutral_toggles import neutralsToggles
     from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
+    from scipy.interpolate import CubicSpline
 
 
 
@@ -88,12 +89,37 @@ def generateIonizationRecomb():
                          varPhi_E=varPhi_E_parallel_keV)
 
         q_profiles, q_total = model.ionizationRate()  # in cm^-3 s^-1
+
+        # if there is NO ionization at a certain altitude, set q_total=0 there
+        q_total[np.where(np.isnan(q_total))] = 0
         data_dict_output['q_total'][0][idx1] = q_total*np.power(stl.cm_to_m, 3) # convert to m^-3 s^-1
 
         ##################################
         # --- ELECTRON DENSITY (MODEL) ---
         ##################################
         data_dict_output['ne_model'][0][idx1] = np.sqrt(deepcopy(data_dict_output['q_total'][0][idx1]) / deepcopy(data_dict_output['alpha_recomb_total'][0][idx1]))  # in m^-3
+
+
+
+    #########################################
+    # --- PLUG ANY HOLES IN NE_MODEL DATA ---
+    #########################################
+
+    ne_model_T = deepcopy(data_dict_output['ne_model'][0]).T
+
+    for row_idx in range(len(ne_model_T)):
+
+        # identify points where data drops out
+        temp_yData = deepcopy(ne_model_T[row_idx])
+        bad_idxs = np.where(np.isnan(temp_yData))
+        if len(bad_idxs[0]) >0:
+            temp_yData = np.delete(temp_yData, bad_idxs)
+            temp_xData = np.delete(deepcopy(data_dict_output['simLShell'][0]), bad_idxs)
+            cs =CubicSpline(temp_xData,temp_yData)
+
+            ne_model_T[row_idx] = cs(deepcopy(data_dict_output['simLShell'][0]))
+
+    data_dict_output['ne_model'][0] = ne_model_T.T
 
     #####################
     # --- OUTPUT DATA ---

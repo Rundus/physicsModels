@@ -50,16 +50,17 @@ def collect_langmuir_density_altitude_statistics(wflyer):
     data_dict_energy_flux = stl.loadDictFromFile(ACES_data_folder + f'\\L3\\Energy_Flux\\{wFlyer}\\ACESII_{rocket_ID}_l3_eepaa_Flux.cdf')
     data_dict_LP = stl.loadDictFromFile(ACES_data_folder + f'\\L3\\Langmuir\\{wFlyer}\\ACESII_{rocket_ID}_l3_langmuir_fixed.cdf')
     data_dict_attitude = stl.loadDictFromFile(ACES_data_folder + f'\\attitude\\{wFlyer}\\ACESII_{rocket_ID}_Attitude_Solution.cdf')
-    data_dict_LShell = stl.loadDictFromFile(ACES_data_folder + f'\\science\\L_shell\\{wFlyer}\\ACESII_{rocket_ID}_Lshell.cdf')
+    data_dict_LShell = stl.loadDictFromFile(ACES_data_folder + f'\\coordinates\\Lshell\\{wFlyer}\\ACESII_{rocket_ID}_Lshell.cdf')
     stl.Done(start_time)
 
     ######################################################
     # restrict data to ONLY where alt > simulation_low_alt
     ######################################################
-    data_dict_eepaa['Epoch'][0] = data_dict_eepaa['Epoch'][0][np.where(data_dict_eepaa['Alt'][0] > SpatialToggles.sim_alt_low)[0]]
-    data_dict_LShell['L-Shell'][0] = data_dict_LShell['L-Shell'][0][np.where(data_dict_eepaa['Alt'][0] > SpatialToggles.sim_alt_low)[0]]
-    E_flux = data_dict_energy_flux['Phi_E'][0][np.where(data_dict_eepaa['Alt'][0] > SpatialToggles.sim_alt_low)[0]]
-    data_dict_eepaa['Alt'][0] = data_dict_eepaa['Alt'][0][np.where(data_dict_eepaa['Alt'][0] > SpatialToggles.sim_alt_low)[0]]
+    alt_indicies = np.where(data_dict_eepaa['Alt'][0] > SpatialToggles.sim_alt_low)[0]
+    data_dict_eepaa['Epoch'][0] = data_dict_eepaa['Epoch'][0][alt_indicies]
+    data_dict_LShell['L-Shell'][0] = data_dict_LShell['L-Shell'][0][alt_indicies]
+    E_flux = data_dict_energy_flux['Phi_E'][0][alt_indicies]
+    data_dict_eepaa['Alt'][0] = data_dict_eepaa['Alt'][0][alt_indicies]
 
     ############################################################################################################
     # downsample the LP data to the eepaa data - use TT2000 as the search algorithim is MUCH more time-efficient
@@ -72,21 +73,24 @@ def collect_langmuir_density_altitude_statistics(wflyer):
     # bin the LP data into the eEPAA epoch
     digitized = np.digitize(x=LP_Epoch_tt2000, bins=EEPAA_Epoch_tt2000)
     data_dict_LP['ni'][0] = np.array([data_dict_LP['ni'][0][digitized == i].mean() for i in range(len(EEPAA_Epoch_tt2000))])
-
-    # downsampled_indicies = np.array([np.abs(LP_Epoch_tt2000 - val).argmin() for val in EEPAA_Epoch_tt2000])
-    # data_dict_LP['ni'][0] = data_dict_LP['ni'][0][downsampled_indicies]
-
-
     stl.Done(start_time)
 
     ############################################
     # --- SEPARATE THE QUIET/ACTIVE INDICIES ---
     ############################################
     stl.prgMsg('Collecting Quiet vs Active Region Data')
-    # use the parallel downward energy flux to determine quiet vs non-quiet regions
-    #   find all the regions where the is no eepaa data --> these are quiet regions
-    quiet_indicies = np.array([idx for idx, val in enumerate(E_flux) if val <= 3E12])
-    active_indices = np.array([idx for idx, val in enumerate(E_flux) if val > 3E12])
+    # use the altitude to determine quiet vs active regions
+
+    # UPLEG
+    if wflyer == 0:
+        target_alt = 300*stl.m_to_km
+    elif wflyer == 1:
+        target_alt = 120*stl.m_to_km
+
+    quiet_indicies = np.where( (70*stl.m_to_km <= data_dict_eepaa['Alt'][0]) & (data_dict_eepaa['Alt'][0]<=target_alt))[0]
+    active_indices = np.where(data_dict_eepaa['Alt'][0] > target_alt)[0]
+
+
 
     # get the quiet statistics
     quiet_ni = data_dict_LP['ni'][0][quiet_indicies]

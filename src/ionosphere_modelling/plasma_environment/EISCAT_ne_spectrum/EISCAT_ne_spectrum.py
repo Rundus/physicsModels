@@ -80,9 +80,7 @@ def EISCAT_ne_spectrum():
     good_avg = binned_ne_avg[np.where(np.isnan(binned_ne_avg) == False)[0]]
     good_std = binned_ne_std[np.where(np.isnan(binned_ne_std) == False)[0]]
     good_alts = simAlt[np.where(np.isnan(binned_ne_avg) == False)[0]]
-    filtered_binned_ne_avg = savgol_filter(good_avg,
-                                           window_length=12,
-                                           polyorder=3)
+    filtered_binned_ne_avg = savgol_filter(good_avg, window_length=12, polyorder=3)
 
     ########################################
     # --- INTERPOLATE SAVGOL ONTO SIMALT ---
@@ -91,6 +89,9 @@ def EISCAT_ne_spectrum():
     ne_background = 1E-6*np.array(cs(simAlt)) # convert to cm^-3
     ne_background[ne_background < 0] = 0
 
+    # find where data is below 70 km and set it equal to zero (or 1, which is basically zero but works on a log plot)
+    zero_idx = np.abs(simAlt - 70).argmin()
+    ne_background[:zero_idx] = 0
 
     ############################
     # --- FORMAT OUTPUT DATA ---
@@ -103,7 +104,6 @@ def EISCAT_ne_spectrum():
     #####################
     output_folder = 'C:\Data\physicsModels\ionosphere\plasma_environment\EISCAT_ne_spectrum'
     stl.outputCDFdata(outputPath=output_folder + '\\EISCAT_ne_spectrum.cdf', data_dict=data_dict_output)
-
 
     ###################
     # --- PLOT DATA ---

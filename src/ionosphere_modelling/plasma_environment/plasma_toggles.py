@@ -12,7 +12,7 @@ class plasmaToggles:
     # --- --- --- ---
     ### ELECTRONS ###
     # --- --- --- ---
-    wBackground_density = 1
+    wBackground_density = 0
 
     match wBackground_density:
         case 0:

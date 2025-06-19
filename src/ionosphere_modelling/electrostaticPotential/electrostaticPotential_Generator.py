@@ -21,27 +21,6 @@ def checkBoundary(i, j, N, M):
         return 0
 
 
-# def getBoundary_transformed_points(matrix):
-#     mask = np.ones(matrix.shape,dtype=bool)
-#     mask[matrix.ndim*(slice(1,-1),)] = False
-#     col_idxs, row_idxs = np.where(mask==True)
-#     return np.array([ val[0]+ np.shape(matrix)[1]*val[1] for val in zip(row_idxs,col_idxs)])
-
-
-
-
-def checkInitialConditionBoundary(coo, targets):
-    shape = (6, 7)
-    c_ravel = np.ravel_multi_index(coo.T, shape)
-    t_ravel = np.ravel_multi_index(targets.T, shape)
-    boolean_list = np.isin(c_ravel, t_ravel)
-    if True in boolean_list:
-        return True
-    else:
-        return False
-
-
-
 def generateElectrostaticPotential():
     # --- common imports ---
     import spaceToolsLib as stl
@@ -88,7 +67,7 @@ def generateElectrostaticPotential():
         LShell_idx = np.abs(LShellRange - Lval).argmin()
         Alt_idx = np.abs(altRange - altVal).argmin()
 
-        # Place this value into the respective
+        # Place this value into the respective bin
         grid_potential[LShell_idx][Alt_idx].append(data_dict_integrated_potential['Potential'][0][counter])
         counter+=1
 
@@ -101,55 +80,18 @@ def generateElectrostaticPotential():
             elif len(val) > 0:
                 grid_potential[idx1][idx2] = np.average(val)
 
-    grid_potential = np.array(grid_potential)
-
-    ###############################################################
-    # --- DOWNSAMPLE SIMULATION PARAMETERS IN L-SHELL DIMENSION ---
-    ###############################################################
-
-    # Description: The simulation dimensions are large, thus E-Field mapping is REALLY computationally expensive
-    # Here we downsample all needed simulation parameters to a new grid. We will interpolate our results onto the simulation later.
+    # output all the variables into a data dict
     data_dict_output = {**data_dict_output,
                        **{
                            'sigma_P':deepcopy(data_dict_conductivity['sigma_P']),
                            'sigma_D':deepcopy(data_dict_conductivity['sigma_D']),
                            'grid_deltaAlt': deepcopy(data_dict_spatial['grid_deltaAlt']),
                            'grid_deltaX':deepcopy(data_dict_spatial['grid_deltaX']),
-                           'grid_potential': [grid_potential, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
+                           'grid_potential': [np.array(grid_potential), {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
                            'simLShell':deepcopy(data_dict_spatial['simLShell']),
                            'simAlt':deepcopy(data_dict_spatial['simAlt'])
                        }
                         }
-
-    for key, cal in data_dict_output.items():
-
-        if key not in ['simAlt']:
-
-            data = data_dict_output[key][0]
-
-            # reduce the data by the modulus amount
-            dlen = len(data)
-            if len(data) % ElectroStaticToggles.N_avg != 0:
-                dlen -= dlen % ElectroStaticToggles.N_avg
-            data = data[:dlen]
-
-            # break up the data into chunks
-            chunked = np.split(data, round(len(data) / ElectroStaticToggles.N_avg))
-
-            # average data if it's a conductivity or potential
-            if key in ['sigma_P', 'sigma_D', 'grid_potential', 'grid_deltaAlt']:
-                data = np.array([np.nanmean(chunked[i], axis=0) for i in range(len(chunked))])
-            elif key in ['grid_deltaX']:
-                # increase the grid spacing if it's a distance
-                data = np.array([np.nansum(chunked[i], axis=0) for i in range(len(chunked))])
-            elif key in ['simLShell']:
-                data = np.array([np.nanmean(chunked[i], axis=0) for i in range(len(chunked))])
-
-            data_dict_output[key][0] = data
-
-    #########################
-    # --- MAP THE E-FIELD ---
-    #########################
 
     # Calculate all the coefficents - ASSUME A SINGLE VALUE, AVERAGE VALUE for deltaZ, deltaX
     deltaZ = round(np.nanmean(deepcopy(data_dict_output['grid_deltaAlt'][0])))
@@ -187,115 +129,54 @@ def generateElectrostaticPotential():
                         **{'q_coeff': [np.array(q), {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'1/m', 'LABLAXIS': 'q_coefficent', 'VAR_TYPE': 'support_data'}]}
                         }
 
-    ######################################
-    # --- FORM THE PDE SOLUTION MATRIX ---
-    ######################################
+    ###########################
+    # --- RELAXATION METHOD ---
+    ###########################
 
-    # Description: The SOLUTION matrix "A" is a ROW-WISE matrix. Our Ax=b system has x
-    # as the flattened ROW elements [PHI_row0col1, PHI_row0col2, ... etc ]
-
-    A_coef = np.array(1 + 0.5*g*deltaZ)
-    B_coef = np.array(-2*(1 + p*np.power(deltaZ/deltaX,2)))
-    C_coef = np.array(1 - 0.5*g*deltaZ)
-    D_coef = np.array(p*np.power(deltaZ/deltaX,2) + 0.5*q*np.power(deltaZ,2)/deltaX)
-    E_coef = np.array(p*np.power(deltaZ/deltaX,2) - 0.5*q*np.power(deltaZ,2)/deltaX)
-
-    key_nam = ['A_coef','B_coef','C_coef','D_coef','E_coef']
-    key_val = [A_coef,B_coef,C_coef,D_coef,E_coef]
-    for k in range(len(key_nam)):
-        name = key_nam[k]
-        val = key_val[k]
-        data_dict_output = {**data_dict_output,
-                            **{name: [np.array(val), {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': None, 'LABLAXIS': f'{name}_coefficent', 'VAR_TYPE': 'support_data'}]}
-                            }
-
-    # convert the coefficents and grid potential so they are ROW-wise vectors now
-    grid_potential = deepcopy(data_dict_output['grid_potential'][0])
+    # [1] get the indicies of all the initial conditions
+    M = len(data_dict_output['simLShell'][0])
+    N = len(data_dict_output['simAlt'][0])
+    grid_potential_ds = deepcopy(data_dict_output['grid_potential'][0])
+    IC_indicies = np.where(np.abs(grid_potential_ds) > 0)
+    IC_idxs = np.array([IC_indicies[0][i] * N + IC_indicies[1][i] for i in range(len(IC_indicies[0]))  ]) # flatten the indicies
 
 
-    if ElectroStaticToggles.perform_mapping:
-        # --- --- --- --- --- --- --- --- --- --- --- --
-        # --- populate the coefficients of the matrix ---
-        # --- --- --- --- --- --- --- --- --- --- --- --
-        # [2] Construct the Array
-        # [a] form the sparse A matrix
-        N = len(data_dict_output['simAlt'][0])
-        M = len(data_dict_output['simLShell'][0])
-        dim = N * M
-        A_matrix = lil_matrix((dim, dim))
+    # [2] loop over relaxation grid a number of times specified in the toggles
+    grid_potential_relax = deepcopy(grid_potential_ds)
 
-        # [e] apply the zero boundary condition values to the solution
-        grid_potential[0] = np.zeros(shape=len(data_dict_output['simAlt'][0]))  # set the left side to zero
-        grid_potential[-1] = np.zeros(shape=len(data_dict_output['simAlt'][0]))  # set the right side to zero
-        # grid_potential[:, -1] = np.array([-5000 for i in range(M)])
+    for loop_idx in tqdm(range(ElectroStaticToggles.n_iter)):
 
-        # [1] Get the col/row indices of the initial condition matrix
-        IC_indicies = np.where(np.abs(grid_potential) > 0)
-        IC_idxs = np.array([IC_indicies[0][i]*N + IC_indicies[1][i] for i in range(len(IC_indicies[0]))])
+        # copy the newest iteration
+        grid_potential_temp = deepcopy(grid_potential_relax)
 
-        # [] Form the solution vector
-        b_matrix = np.zeros(shape=(dim))
+        for i in range(M):  # L-Shell variation
+            for j in range(N):  # Altitude variation
+                pos = i * N + j  # Transform the solution matrix indices to A_matrix indices: pos = column_idx + dim*row_id
 
-        # [b] Fill in the sparse matrix to form the coefficent matrix
-        counter = 0
-        c1 = 0
-        c2 = 0
-        c3 = 0
+                if checkBoundary(i=i, j=j, N=N, M=M) !=1: # if you're not on a boundary point
+                    if pos not in IC_idxs: # If you're not an IC value
+                        first_term = (1/np.power(deltaZ,2) + p[i][j]/np.power(deltaX,2))**(-1)
+                        second_term = (grid_potential_temp[i][j+1] + grid_potential_temp[i][j-1])/np.power(deltaZ,2)
+                        third_term = p[i][j]*(grid_potential_temp[i+1][j] + grid_potential_temp[i-1][j])/np.power(deltaX,2)
+                        fourth_term = g[i][j]*(grid_potential_temp[i][j+1] - grid_potential_temp[i][j-1])/(2*deltaZ)
+                        fifth_term = q[i][j]*(grid_potential_temp[i+1][j] - grid_potential_temp[i-1][j])/(2*deltaX)
+                        grid_potential_temp[i][j] = first_term*(second_term+third_term+fourth_term+fifth_term)
 
-        for i in range(M):
-            for j in range(N):
-                pos = i*N + j # Transform the solution matrix indices to A_matrix indices: pos = column_idx + dim*row_id
+        # store the output of the iteration
+        grid_potential_relax = deepcopy(grid_potential_temp)
 
-                # UPDATE THE A MATRIX
-                # IF on an IC point, set that SPECIFIC potential value to the IC value
-                if pos in IC_idxs:
-                    A_matrix[counter, pos] = 1
-                    c1 += 1
-
-                    # UPDATE THE SOLUTION B VECTOR
-                    b_matrix[pos] = deepcopy(grid_potential[i][j])
-
-
-                # IF on a boundary point, set that SPECIFIC potential value to zero in the sparse matrix
-                elif checkBoundary(i=i,j=j,N=N,M=M)==1:
-                    A_matrix[counter, pos] = 1
-                    c2 += 1
-
-                # if you have a non-IC point, non boundary condition then fill it with the coefficients
-                else:
-                    pairs = [  [i, j+1],     [i, j],       [i, j-1],       [i+1, j],      [i-1, j]]
-                    coeff = [A_coef[i][j], B_coef[i][j], C_coef[i][j],   D_coef[i][j],  E_coef[i][j]]
-                    c3 += 1
-                    for pidx, pair in enumerate(pairs):
-                        pos_idx = N * pair[0] + pair[1]  # Transform the solution matrix indices to A_matrix indices: pos = column_idx + dim*row_idx
-                        A_matrix[counter, pos_idx] = coeff[pidx]
-
-                counter += 1
-        print('\n')
-        print(f'Initial Conditions {c1}')
-        print(f'Boundaries {c2}')
-        print(f'ODEs {c3}')
-
-        # [d] convert lil_matrix to a csr_matrix
-        A_matrix = csr_matrix(A_matrix)
-
-        # [g] Solve the Ax=B problem and reshape into potential grid
-        solved_potential = spsolve(A=A_matrix, b=b_matrix).reshape((M, N))
-
-        # --- store the outputs  ---
-        data_dict_output = {**data_dict_output,
-                            **{'solved_potential': [solved_potential, {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
-                               'b_matrix': [b_matrix.reshape((M,N)), {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
-                                # 'coeff_matrix': [A_matrix.toarray().reshape((dim, dim)), {'DEPEND_0': None, 'DEPEND_1': None, 'UNITS': 'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}]
-                            }
-                            }
-
-
+    # store the output of the method
+    data_dict_output = {**data_dict_output,
+                        **{'potential':[grid_potential_relax,{'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}]},
+                        }
 
 
     #########################
     # --- OUTPUT THE DATA ---
     #########################
 
-    outputPath = rf'{ElectroStaticToggles.outputFolder}\electrostaticPotential.cdf'
+    outputPath = rf'{ElectroStaticToggles.outputFolder}\electrostaticPotential_relaxation.cdf'
     stl.outputCDFdata(outputPath, data_dict_output)
+
+
+generateElectrostaticPotential()

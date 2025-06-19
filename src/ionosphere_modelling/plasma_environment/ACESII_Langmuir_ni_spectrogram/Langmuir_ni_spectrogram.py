@@ -74,7 +74,7 @@ def langmuir_ni_spectrogram():
     fit_array = [[[] for alt in simAlt] for LShell in LShell_bins]
 
     # populate the fitting array with both flyer's data
-    for wflyer in range(2):
+    for wflyer in range(1):
         for tmeIdx in range(len(data_dicts[wflyer]['quiet_Epoch'][0])):
             LShell_idx = np.abs(LShell_bins - data_dicts[wflyer]['quiet_LShells'][0][tmeIdx]).argmin()
             alt_idx = np.abs(simAlt - data_dicts[wflyer]['quiet_alts'][0][tmeIdx]).argmin()

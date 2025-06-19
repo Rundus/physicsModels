@@ -20,15 +20,15 @@ start_time = time.time()
 # 1 - True; Run this
 
 dict_executable = {
-    'regen_EVERYTHING' : 0,
+    'regen_EVERYTHING': 0,
     'regenSpatial': 0,
     'regenBgeo': 0,
-    'regenNeSpectrum' : 0,
-    'regenPlasmaEnvironment': 0,
-    'regenNeutralEnvironment': 0,
-    'ionRecomb_ne_Calc' : 0,
-    'calc_IonoConductivity': 0,
-    'map_electrostatic_potential': 1,
+    'regenNeSpectrum': 0,
+    'regenPlasmaEnvironment': 1,
+    'regenNeutralEnvironment': 1,
+    'ionRecomb_ne_Calc': 1,
+    'calc_IonoConductivity': 1,
+    'map_electrostatic_potential': 0,
     'calc_electricField': 0,
     'calc_IonoCurrents': 0
 }
@@ -43,6 +43,7 @@ dict_executable = {
 if dict_executable['regen_EVERYTHING']==1:
     for key in dict_executable.keys():
         dict_executable[key] = 1
+
 # re-run specifics
 if dict_executable['regenSpatial']==1:
     # spatial environment
@@ -103,7 +104,7 @@ if dict_executable['calc_IonoConductivity']==1:
 if dict_executable['map_electrostatic_potential']==1:
     # electrostatic potential mapping
     stl.prgMsg('Mapping Electrostatic Potential')
-    from src.ionosphere_modelling.electrostaticPotential.electrostaticPotential_Generator import generateElectrostaticPotential
+    from src.ionosphere_modelling.electrostaticPotential.electrostaticPotential_Generator_lines_method import generateElectrostaticPotential
     generateElectrostaticPotential()
     stl.Done(start_time)
 

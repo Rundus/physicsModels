@@ -29,6 +29,8 @@ def generate_GeomagneticField():
     # prepare the data
     LShellRange = data_dict_spatial['simLShell'][0]
     altRange = data_dict_spatial['simAlt'][0]
+    N = len(LShellRange)
+    M =len(altRange)
     grid_Bgeo = np.zeros(shape=(len(LShellRange),len(altRange)))
     grid_Bgrad = np.zeros(shape=(len(LShellRange), len(altRange)))
 
@@ -41,17 +43,19 @@ def generate_GeomagneticField():
         # Get the Chaos model
         B = stl.CHAOS(lats, longs, np.array(alts) / stl.m_to_km, [SpatialToggles.target_time for i in range(len(alts))])
         Bgeo = (1E-9) * np.array([np.linalg.norm(Bvec) for Bvec in B])
-        Bgrad = [(Bgeo[i + 1] - Bgeo[i]) / (altRange[i + 1] - altRange[i]) for i in range(len(Bgeo) - 1)]
-        Bgrad = np.array(Bgrad + [Bgrad[-1]]) # add the high altitude value Bgrad again to model the starting point (MAYBE it SHOULD BE 0?)
 
         # store the data
         grid_Bgeo[idx] = Bgeo
-        grid_Bgrad[idx] = Bgrad
+
+    # calculate the geomagnetic gradient
+    for idx in tqdm(range(N)):
+        grid_Bgrad[idx] = np.gradient(grid_Bgeo[idx], deepcopy(data_dict_spatial['grid_alt'][0][idx]))
+
 
     # --- Construct the Data Dict ---
     data_dict_output = { **data_dict_spatial,
                          **{'Bgeo': [grid_Bgeo, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'T', 'LABLAXIS': 'Bgeo', 'VAR_TYPE': 'data'}],
-                            'Bgrad': [grid_Bgrad, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'T', 'LABLAXIS': 'Bgrad', 'VAR_TYPE': 'data'}],
+                            'Bgrad': [grid_Bgrad, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'T/m', 'LABLAXIS': 'Bgrad', 'VAR_TYPE': 'data'}],
                         }}
 
     outputPath = rf'{BgeoToggles.outputFolder}\geomagneticfield.cdf'
