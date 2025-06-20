@@ -104,7 +104,7 @@ if dict_executable['calc_IonoConductivity']==1:
 if dict_executable['map_electrostatic_potential']==1:
     # electrostatic potential mapping
     stl.prgMsg('Mapping Electrostatic Potential')
-    from src.ionosphere_modelling.electrostaticPotential.electrostaticPotential_Generator_lines_method import generateElectrostaticPotential
+    from src.ionosphere_modelling.electrostaticPotential.electrostaticPotential_Generator import generateElectrostaticPotential
     generateElectrostaticPotential()
     stl.Done(start_time)
 

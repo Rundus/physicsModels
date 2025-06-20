@@ -33,6 +33,9 @@ def generate_GeomagneticField():
     M =len(altRange)
     grid_Bgeo = np.zeros(shape=(len(LShellRange),len(altRange)))
     grid_Bgrad = np.zeros(shape=(len(LShellRange), len(altRange)))
+    grid_Bgeo_ENU_E = np.zeros(shape=(len(LShellRange), len(altRange)))
+    grid_Bgeo_ENU_N = np.zeros(shape=(len(LShellRange), len(altRange)))
+    grid_Bgeo_ENU_U = np.zeros(shape=(len(LShellRange), len(altRange)))
 
     for idx, Lval in tqdm(enumerate(LShellRange)):
 
@@ -42,6 +45,9 @@ def generate_GeomagneticField():
 
         # Get the Chaos model
         B = stl.CHAOS(lats, longs, np.array(alts) / stl.m_to_km, [SpatialToggles.target_time for i in range(len(alts))])
+        grid_Bgeo_ENU_E[idx] = B[:, 0]*1E-9
+        grid_Bgeo_ENU_N[idx] = B[:, 1]*1E-9
+        grid_Bgeo_ENU_U[idx] = B[:, 2]*1E-9
         Bgeo = (1E-9) * np.array([np.linalg.norm(Bvec) for Bvec in B])
 
         # store the data
@@ -56,6 +62,9 @@ def generate_GeomagneticField():
     data_dict_output = { **data_dict_spatial,
                          **{'Bgeo': [grid_Bgeo, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'T', 'LABLAXIS': 'Bgeo', 'VAR_TYPE': 'data'}],
                             'Bgrad': [grid_Bgrad, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'T/m', 'LABLAXIS': 'Bgrad', 'VAR_TYPE': 'data'}],
+                            'B_E': [grid_Bgeo_ENU_E, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'T', 'LABLAXIS': 'B_E', 'VAR_TYPE': 'data'}],
+                            'B_N': [grid_Bgeo_ENU_N, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'T', 'LABLAXIS': 'B_N','VAR_TYPE': 'data'}],
+                            'B_U': [grid_Bgeo_ENU_U,{'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'T', 'LABLAXIS': 'B_U', 'VAR_TYPE': 'data'}],
                         }}
 
     outputPath = rf'{BgeoToggles.outputFolder}\geomagneticfield.cdf'
