@@ -26,41 +26,41 @@ def generate_electricField():
     # --- CALCULATE E-FIELD ---
     ###########################
 
+    # [1] Calculate the magnitude of the E_X, E_Z components in the SIMULATED coordinate system
     # prepare the data
     LShellRange = data_dict_spatial['simLShell'][0]
     altRange = data_dict_spatial['simAlt'][0]
-    grid_EField_normal = np.zeros(shape=(len(LShellRange), len(altRange))) # grid of E_N projected
-    grid_deltaE_N = np.zeros(shape=(len(LShellRange), len(altRange))) # gradient in the E_N component in the normal direction
-    grid_deltaE_Alt = np.zeros(shape=(len(LShellRange), len(altRange))) # gradient in the E_N componet in the vertical direction
 
-    # --- CALCULATE E-Field FROM POTENTIAL ---
-    # TODO: Deal with this filtering/noise effect later
-    # Just filter the data for now to make it look clean.
-    for idx, altval in enumerate(altRange):
-        temp = deepcopy(np.gradient(data_dict_potential['potential'][0][:,idx])/(-1*data_dict_spatial['grid_deltaX'][0][:,idx]))
-        # filtered = savgol_filter(temp,window_length=50,polyorder=2)
-        grid_EField_normal[:,idx] = temp
+    # calculate the vertical electric field
+    grid_EField_Z = np.zeros(shape=(len(LShellRange), len(altRange)))  # grid of E_N projected
 
-    # # --- Gradient in Electric Field (vertical), should be about zero ---
-    # for idx, val in enumerate(LShellRange):
-    #     dz= data_dict_spatial['grid_deltaAlt'][0][idx]
-    #     grid_deltaE_Alt[idx] = np.gradient(grid_EField_normal[idx],dz)
-    #
-    # # --- Gradient in Electric Field (horizontal) ---
-    # for idx, val in enumerate(altRange):
-    #     dx = data_dict_spatial['grid_deltaX'][0][:,idx]
-    #     grid_deltaE_N[:,idx] = np.gradient(grid_EField_normal[:,idx], dx)
+    for idx in range(len(LShellRange)):
+        # determine the iterative sum of the vertical position
+        gradients = deepcopy(data_dict_spatial['grid_deltaAlt'][0][idx])
+        initial_point = gradients[0]
+        position_points = np.array([np.sum(gradients[0:i+1])-initial_point for i in range(len(gradients))])
+        grid_EField_Z[idx] = -1*np.gradient(data_dict_potential['potential'][0][idx],position_points)
 
+    # calculate the horizontal gradient
+    grid_EField_X = np.zeros(shape=(len(LShellRange), len(altRange)))  # grid of E_N projected
+
+    for idx in range(len(altRange)):
+        # determine the iterative sum of the horizontal position
+        gradients = deepcopy(data_dict_spatial['grid_deltaX'][0][:,idx])
+        initial_point = gradients[0]
+        position_points = np.array([np.sum(gradients[0:i + 1]) - initial_point for i in range(len(gradients))])
+        grid_EField_X[:,idx] = -1*np.gradient(data_dict_potential['potential'][0][:,idx], position_points)
+
+
+    # [2] Calculate the ECEF coordinates of the simulation Grid
 
 
 
     # --- Construct the Data Dict ---
     data_dict_output = { **data_dict_spatial,
                          **{
-                             'E_N': [grid_EField_normal, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V/m', 'LABLAXIS': 'Arc-Normal Electric Field', 'VAR_TYPE': 'data'}],
-                            # 'E_T': [grid_EField_tangent, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'Arc-Tangent Electric Field', 'VAR_TYPE': 'data'}],
-                            'dE_N_normal': [grid_deltaE_N, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'deltaE Arc-Normal Electric Field', 'VAR_TYPE': 'data'}],
-                            'dE_N_vertical': [grid_deltaE_Alt, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'deltaE Vertical Electric Field', 'VAR_TYPE': 'data'}],
+                            'E_X': [grid_EField_X, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V/m', 'LABLAXIS': 'sim X-dir Electric Field', 'VAR_TYPE': 'data'}],
+                            'E_Z': [grid_EField_Z, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'sim Z-dir Electric Field', 'VAR_TYPE': 'data'}],
                         }}
 
     outputPath = rf'{EFieldToggles.outputFolder}\electric_Field.cdf'

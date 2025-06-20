@@ -345,9 +345,9 @@ def generateElectrostaticPotential():
 
         # --- store the outputs  ---
         data_dict_output = {**data_dict_output,
-                            **{'solved_potential': [solved_potential, {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
+                            **{'potential_solution_grid': [solved_potential, {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
                                'b_matrix': [b_matrix.reshape((M,N)), {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
-                                # 'coeff_matrix': [A_matrix.toarray().reshape((dim, dim)), {'DEPEND_0': None, 'DEPEND_1': None, 'UNITS': 'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}]
+                                'sigma_D_sigma_P_ratio_sqrt': [np.sqrt(deepcopy(data_dict_output['sigma_D'][0])/deepcopy(data_dict_output['sigma_P'][0])), {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS': None, 'LABLAXIS': 'SigmaD/sigmaP', 'VAR_TYPE': 'data'}]
                             }
                             }
 
@@ -363,7 +363,7 @@ def generateElectrostaticPotential():
 
         data_dict_output = {**data_dict_output,
                             **{
-                                'potential':[potential,deepcopy(data_dict_output['solved_potential'][1])],
+                                'potential':[potential,deepcopy(data_dict_output['potential_solution_grid'][1])],
                                 'simLShell_nds': deepcopy(data_dict_spatial['simLShell']),
                                 'simAlt_nds': deepcopy(data_dict_spatial['simAlt'])
                                }

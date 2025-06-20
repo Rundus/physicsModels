@@ -28,8 +28,8 @@ dict_executable = {
     'regenNeutralEnvironment': 0,
     'ionRecomb_ne_Calc': 0,
     'calc_IonoConductivity': 0,
-    'map_electrostatic_potential': 1,
-    'calc_electricField': 0,
+    'map_electrostatic_potential': 0,
+    'calc_electricField': 1,
     'calc_IonoCurrents': 0
 }
 
