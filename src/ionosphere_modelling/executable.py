@@ -29,8 +29,8 @@ dict_executable = {
     'ionRecomb_ne_Calc': 0,
     'calc_IonoConductivity': 0,
     'map_electrostatic_potential': 0,
-    'calc_electricField': 1,
-    'calc_IonoCurrents': 0
+    'calc_electricField': 0,
+    'calc_IonoCurrents': 1
 }
 
 ################################
@@ -72,7 +72,6 @@ if dict_executable['regenNeSpectrum']==1:
         langmuir_ni_spectrogram()
     stl.Done(start_time)
 
-
 if dict_executable['regenPlasmaEnvironment']==1:
     # plasma environment
     stl.prgMsg('Regenerating Plasma Environment\n')
@@ -99,7 +98,6 @@ if dict_executable['calc_IonoConductivity']==1:
     from src.ionosphere_modelling.conductivity.conductivity_Generator import generateIonosphericConductivity
     generateIonosphericConductivity()
     stl.Done(start_time)
-
 
 if dict_executable['map_electrostatic_potential']==1:
     # electrostatic potential mapping

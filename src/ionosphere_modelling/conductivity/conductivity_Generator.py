@@ -76,7 +76,6 @@ def generateIonosphericConductivity():
     data_dict_output['ne_total'][0] = data_dict_ionRecomb['ne_model'][0] + data_dict_plasma['ne'][0]
     # data_dict_output['ne_total'][0] = data_dict_ionRecomb['ne_model'][0]
 
-
     #################################
     # --- Electron Collision Freq ---
     #################################
@@ -240,25 +239,22 @@ def generateIonosphericConductivity():
     ############################################
     # --- Conductivity Gradients for the PDE ---
     ############################################
-    # delta_Ln_sigma_P = np.zeros(shape=(len(SpatialToggles.simLShell),len(SpatialToggles.simAlt)))
-    # delta_sigma_P_normal = np.zeros(shape=(len(SpatialToggles.simLShell),len(SpatialToggles.simAlt)))
-    # delta_sigma_H_normal = np.zeros(shape=(len(SpatialToggles.simLShell), len(SpatialToggles.simAlt)))
+    div_sigma_P_N = np.zeros(shape=(len(SpatialToggles.simLShell),len(SpatialToggles.simAlt)))
+    div_sigma_H_N = np.zeros(shape=(len(SpatialToggles.simLShell), len(SpatialToggles.simAlt)))
+
+    for idx in range(len(altRange)):
+        gradients = deepcopy(data_dict_spatial['grid_deltaX'][0][:, idx])
+        initial_point = gradients[0]
+        position_points = np.array([np.sum(gradients[0:i + 1]) - initial_point for i in range(len(gradients))])
+
+        div_sigma_P_N[:, idx] = np.gradient(data_dict_output['sigma_P'][0][:, idx], position_points)
+        div_sigma_H_N[:, idx] = np.gradient(data_dict_output['sigma_H'][0][:, idx], position_points)
 
 
-    # for idx, Lval in enumerate(LShellRange): # DeltaX grid:
-    #     for idx_z, alt in enumerate(altRange):
-    #
-    #         if idx == len(LShellRange)-1:
-    #             delta_sigma_P_normal[idx][idx_z] = data_dict_output['sigma_P'][0][idx][idx_z] - data_dict_output['sigma_P'][0][idx-1][idx_z]
-    #             delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_H'][0][idx][idx_z] - data_dict_output['sigma_H'][0][idx-1][idx_z]
-    #         else:
-    #             delta_sigma_P_normal[idx][idx_z] = data_dict_output['sigma_P'][0][idx+1][idx_z] - data_dict_output['sigma_P'][0][idx][idx_z]
-    #             delta_sigma_H_normal[idx][idx_z] = data_dict_output['sigma_H'][0][idx+1][idx_z] - data_dict_output['sigma_H'][0][idx][idx_z]
-
-    # data_dict_output = {**data_dict_output,
-    #                     **{'dsigma_P_normal': [delta_sigma_P_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Pedersen Conductivity Normal Gradient'}]},
-    #                     **{'dsigma_H_vertical': [delta_sigma_H_normal, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S', 'LABLAXIS': 'Hall Conductivity Normal Gradient'}]}
-    #                     }
+    data_dict_output = {**data_dict_output,
+                        **{'div_sigma_P_N': [div_sigma_P_N, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S/m^2', 'LABLAXIS': 'Div_perp sigma_P'}]},
+                        **{'div_sigma_H_N': [div_sigma_H_N, {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'S/m^2', 'LABLAXIS': 'Div_perp sigma_H'}]}
+                        }
 
     #####################
     # --- OUTPUT DATA ---
