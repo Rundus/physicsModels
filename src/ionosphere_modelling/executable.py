@@ -29,8 +29,9 @@ dict_executable = {
     'ionRecomb_ne_Calc': 0,
     'calc_IonoConductivity': 0,
     'map_electrostatic_potential': 0,
-    'calc_electricField': 1,
-    'calc_IonoCurrents': 0
+    'calc_electricField': 0,
+    'calc_IonoCurrents': 1,
+    'calc_JouleHeating':0
 }
 
 ################################
@@ -118,4 +119,11 @@ if dict_executable['calc_IonoCurrents']==1:
     stl.prgMsg('Calculating Ionospheric Currents')
     from src.ionosphere_modelling.currents.currents_Generator import generate_Currents
     generate_Currents()
+    stl.Done(start_time)
+
+if dict_executable['calc_JouleHeating']==1:
+    # Joule Heating
+    stl.prgMsg('Calculating Joule Heating')
+    from src.ionosphere_modelling.joule_heating.joule_heating_Generator import generate_JouleHeating
+    generate_JouleHeating()
     stl.Done(start_time)

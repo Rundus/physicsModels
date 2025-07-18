@@ -18,29 +18,25 @@ def generate_JouleHeating():
     # --- LOAD THE DATA ---
     #######################
     data_dict_spatial = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
-    data_dict_elec = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\electricField\*.cdf*')[0])
+    data_dict_EField = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\electricField\*.cdf*')[0])
     data_dict_conductivity = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\conductivity\*.cdf*')[0])
 
-    ########################################
-    # --- GENERATE THE B-FIELD & TOGGLES ---
-    ########################################
+    #################################
+    # --- CALCULATE JOULE HEATING ---
+    #################################
     # description: For a range of LShells and altitudes get the Latitude of each point and define a longitude.
     # output everything as a 2D grid of spatial
 
     # prepare the data
     LShellRange = data_dict_spatial['simLShell'][0]
     altRange = data_dict_spatial['simAlt'][0]
-    grid_Joule = np.zeros(shape=(len(LShellRange),len(altRange)))
-
-    for idx, Lval in tqdm(enumerate(LShellRange)):
-
-        lats = data_dict_spatial['grid_lat'][0][idx]
+    grid_Joule = data_dict_conductivity['sigma_P'][0]*np.power(data_dict_EField['E_N'][0],2)
 
 
     # --- Construct the Data Dict ---
     data_dict_output = { **data_dict_spatial,
-                         **{'Bgeo': [grid_Bgeo, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'T', 'LABLAXIS': 'Bgeo', 'VAR_TYPE': 'data'}]}
+                         **{'q_j': [grid_Joule, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'W/m!A-3', 'LABLAXIS': 'Joule Heating Rate', 'VAR_TYPE': 'data','SCALEMIN':1E-9,'SCALEMAX':1E-6}]}
                          }
 
-    outputPath = rf'{BgeoToggles.outputFolder}\geomagneticfield.cdf'
+    outputPath = rf'{JouleHeatingToggles.outputFolder}\jouleheating.cdf'
     stl.outputCDFdata(outputPath, data_dict_output)

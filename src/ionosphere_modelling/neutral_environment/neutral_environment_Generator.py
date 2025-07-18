@@ -25,6 +25,9 @@ def generateNeutralEnvironment(**kwargs):
     # get the geomagnetic field data dict
     data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
 
+    # get the neutral winds
+    data_dict_neutral_winds = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\neutral_environment\hwm14\*.cdf*')[0])
+
     ############################
     # --- PREPARE THE OUTPUT ---
     ############################
@@ -102,6 +105,28 @@ def generateNeutralEnvironment(**kwargs):
     # add the effective neutral mass
     m_eff_n = np.sum(np.array( [stl.netural_dict[key]*data_dict_output[f"{key}"][0] for key in neutralsToggles.wNeutrals]), axis=0)/data_dict_output['nn'][0]
     data_dict_output = {**data_dict_output, **{'m_eff_n': [m_eff_n, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'kg', 'LABLAXIS': 'nn', 'VAR_TYPE':'data'}]}}
+
+    ######################
+    #--- NEUTRAL WINDS ---
+    ######################
+
+
+
+    # get the relevant data
+    low_idx,high_idx = np.abs(data_dict_neutral_winds['alt'][0] - SpatialToggles.sim_alt_low/stl.m_to_km).argmin(), np.abs(data_dict_neutral_winds['alt'][0] - SpatialToggles.sim_alt_high/stl.m_to_km).argmin()
+    zonal_total = data_dict_neutral_winds['zonal_total'][0][low_idx:high_idx+1]
+    meridional_total = data_dict_neutral_winds['meridional_total'][0][low_idx:high_idx+1]
+
+    # form the new variables
+    zonal_wind = np.array([zonal_total for i in range(len(LShellRange))])
+    meridional_wind = np.array([meridional_total for i in range(len(LShellRange))])
+
+    # include in data
+    data_dict_output = {**data_dict_output, **{
+        'zonal_wind': [zonal_wind, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm/s', 'LABLAXIS': 'Zonal Wind', 'VAR_TYPE': 'data'}],
+        'meridional_wind': [meridional_wind, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm/s', 'LABLAXIS': 'Meridional Wind', 'VAR_TYPE': 'data'}]}
+    }
+
 
     #####################
     # --- OUTPUT DATA ---

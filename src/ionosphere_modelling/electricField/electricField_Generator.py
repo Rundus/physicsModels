@@ -96,8 +96,25 @@ def generate_electricField():
     # [3] Rotate the ECEF distance vectors into FAC
     ###############################################
 
+    # --- NEUTRAL WIND E-FIELD ---
+    if EFieldToggles.include_neutral_winds:
+        # load neutral wind data
+        data_dict_neutral = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\neutral_environment\*.cdf*')[0])
+
+        # form the ENU neutral wind vector
+        neutral_wind_ENU = np.zeros(shape=(len(LShellRange), len(altRange), 3))
+        neutral_wind_ENU[:, :, 0] = deepcopy(data_dict_neutral['meridional_wind'][0])
+        neutral_wind_ENU[:, :, 1] = deepcopy(data_dict_neutral['zonal_wind'][0])
+
+
     grid_ECEF_to_ENU_transform = np.zeros(shape=(len(LShellRange), len(altRange),3,3))
     grid_B_Field_ECEF = np.zeros(shape=(len(LShellRange), len(altRange), 3))
+    grid_neutral_wind_ECEF = np.zeros(shape=(len(LShellRange), len(altRange), 3))
+    grid_neutral_wind_FAC = np.zeros(shape=(len(LShellRange), len(altRange), 3))
+    grid_neutral_wind_auroral = np.zeros(shape=(len(LShellRange), len(altRange), 3))
+    grid_UxB_ECEF = np.zeros(shape=(len(LShellRange), len(altRange), 3))
+    grid_UxB_FAC = np.zeros(shape=(len(LShellRange), len(altRange), 3))
+    grid_UxB_auroral = np.zeros(shape=(len(LShellRange), len(altRange), 3))
     grid_Rsc_ECEF = np.zeros(shape=(len(LShellRange), len(altRange), 3))
     grid_pHat_ECEF = np.zeros(shape=(len(LShellRange), len(altRange), 3))
     grid_eHat_ECEF = np.zeros(shape=(len(LShellRange), len(altRange), 3))
@@ -118,6 +135,10 @@ def generate_electricField():
             # [3b] Convert the B_ENU data to ECEF
             B = np.array([deepcopy(data_dict_Bgeo['B_E'][0][i][j]), deepcopy(data_dict_Bgeo['B_N'][0][i][j]), deepcopy(data_dict_Bgeo['B_U'][0][i][j])])
             grid_B_Field_ECEF[i][j] = np.matmul(grid_ECEF_to_ENU_transform[i][j], B)
+
+            if EFieldToggles.include_neutral_winds:
+                # [3bb] convert the neutral wind data to ECEF
+                grid_neutral_wind_ECEF[i][j] = np.matmul(grid_ECEF_to_ENU_transform[i][j], neutral_wind_ENU[i][j])
 
             # [3c] Calculate Rocket Radius vector
             lat = deepcopy(data_dict_spatial['grid_lat'][0][i][j])
@@ -145,9 +166,27 @@ def generate_electricField():
             grid_rho_X_FAC[i][j] = np.matmul(np.array([rHat, eHat, pHat]), grid_rho_X_in_ECEF[i][j])
             grid_rho_Z_FAC[i][j] = np.matmul(np.array([rHat, eHat, pHat]), grid_rho_Z_in_ECEF[i][j])
 
+            if EFieldToggles.include_neutral_winds:
+                # [5gg] transform the neutral wind into FAC
+                grid_neutral_wind_FAC[i][j] = np.matmul(np.array([rHat, eHat, pHat]), grid_neutral_wind_ECEF[i][j])
+
+                # [5ggg] calculate UxB in ECEF
+                grid_UxB_ECEF[i][j] = np.cross(grid_neutral_wind_ECEF[i][j],grid_B_Field_ECEF[i][j])
+
+                # [5ggg] calculate UxB in FAC
+                grid_UxB_FAC[i][j] = np.matmul(np.array([rHat, eHat, pHat]), grid_UxB_ECEF[i][j])
+
+
             # [5h] Rotate the FAC distance vectors about the auroral angle to get the auroral coordinates
             grid_rho_X_auroral[i][j] = np.matmul(stl.Rz(deepcopy(data_dict_auroral_coord['rotation_Angle'][0])), grid_rho_X_FAC[i][j])
             grid_rho_Z_auroral[i][j] = np.matmul(stl.Rz(deepcopy(data_dict_auroral_coord['rotation_Angle'][0])), grid_rho_Z_FAC[i][j])
+
+            if EFieldToggles.include_neutral_winds:
+                # [5hh] transform the neutral wind into FAC
+                grid_neutral_wind_auroral[i][j] = np.matmul(stl.Rz(deepcopy(data_dict_auroral_coord['rotation_Angle'][0])), grid_neutral_wind_FAC[i][j])
+
+                # [5hhh]
+                grid_UxB_auroral[i][j] = np.matmul(stl.Rz(deepcopy(data_dict_auroral_coord['rotation_Angle'][0])), grid_UxB_FAC[i][j])
 
 
     ##########################################################
@@ -157,6 +196,7 @@ def generate_electricField():
     grid_E_T = np.zeros(shape=(len(LShellRange), len(altRange)))
     grid_E_N = np.zeros(shape=(len(LShellRange), len(altRange)))
     grid_E_p = np.zeros(shape=(len(LShellRange), len(altRange)))
+
 
     # Tangent
     for j in range(len(altRange)):
@@ -177,6 +217,7 @@ def generate_electricField():
         # Calculate E = -Grad(Phi)
         grid_E_p[i, :] = -1*np.gradient(data_dict_potential['potential'][0][i, :], dis)
 
+
     # --- Construct the Data Dict ---
     data_dict_output = { **data_dict_spatial,
                          **{
@@ -186,7 +227,22 @@ def generate_electricField():
                              'E_N': [grid_E_N, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'E_N', 'VAR_TYPE': 'data'}],
                              'E_T': [grid_E_T, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'E_T','VAR_TYPE': 'data'}],
                              'E_p': [grid_E_p, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'E_p', 'VAR_TYPE': 'data'}],
+                             'deltaP': [grid_rho_Z_auroral[:, :, 2], {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'm', 'LABLAXIS': 'Field Aligned Distance', 'VAR_TYPE': 'data'}],
+                             'deltaT': [grid_rho_X_auroral[:, :, 1], {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'm', 'LABLAXIS': 'Tangent Distance', 'VAR_TYPE': 'data'}],
+                             'deltaN': [grid_rho_X_auroral[:, :, 0], {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'm', 'LABLAXIS': 'Normal Vector', 'VAR_TYPE': 'data'}],
                         }}
+
+    if EFieldToggles.include_neutral_winds:
+        data_dict_output ={**data_dict_output,
+                           **{
+                               'U_N': [grid_neutral_wind_auroral[:, :, 0], {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'm/s', 'LABLAXIS': 'Arc-Normal Neutral Wind', 'VAR_TYPE': 'data'}],
+                               'U_T': [grid_neutral_wind_auroral[:, :, 1], {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'm/s', 'LABLAXIS': 'Arc-Tangent Neutral Wind', 'VAR_TYPE': 'data'}],
+                               'U_p': [grid_neutral_wind_auroral[:, :, 2], {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'm/s', 'LABLAXIS': 'Field Aligned Neutral Wind', 'VAR_TYPE': 'data'}],
+                               'UxB_N': [grid_UxB_auroral[:, :, 0], {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'Arc-Normal UxB', 'VAR_TYPE': 'data'}],
+                               'UxB_T': [grid_UxB_auroral[:, :, 1], {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'Arc-Tangent UxB', 'VAR_TYPE': 'data'}],
+                               'UxB_p': [grid_UxB_auroral[:, :, 2], {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V/m', 'LABLAXIS': 'Field Aligned UxB', 'VAR_TYPE': 'data'}],
+                              }
+                           }
 
     outputPath = rf'{EFieldToggles.outputFolder}\electric_Field.cdf'
     stl.outputCDFdata(outputPath, data_dict_output)
