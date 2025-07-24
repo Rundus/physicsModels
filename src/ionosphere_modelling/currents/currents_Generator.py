@@ -53,18 +53,21 @@ def generate_Currents():
                                                                            window_length=CurrentsToggles.window,
                                                                            polyorder=CurrentsToggles.polyorder)
             elif CurrentsToggles.use_boxcar:
-
                 data_dict_EField['E_N'][0][:, j] = np.convolve(data_dict_EField['E_N'][0][:, j], np.ones(CurrentsToggles.N_boxcar) / CurrentsToggles.N_boxcar, mode='same')
                 data_dict_EField['E_p'][0][:, j] = np.convolve(data_dict_EField['E_p'][0][:, j], np.ones(CurrentsToggles.N_boxcar) / CurrentsToggles.N_boxcar, mode='same')
                 data_dict_conductivity['sigma_P'][0][:, j] = np.convolve(data_dict_conductivity['sigma_P'][0][:, j], np.ones(CurrentsToggles.N_boxcar) / CurrentsToggles.N_boxcar, mode='same')
                 data_dict_conductivity['sigma_D'][0][:, j] = np.convolve(data_dict_conductivity['sigma_D'][0][:, j], np.ones(CurrentsToggles.N_boxcar) / CurrentsToggles.N_boxcar, mode='same')
+            elif CurrentsToggles.use_SSA_filter:
+                data_dict_SSA = stl.loadDictFromFile(r'C:\Data\physicsModels\ionosphere\currents\filtered_data_01.cdf')
+                data_dict_EField['E_N'][0] = deepcopy(data_dict_SSA['E_N_DC'][0])
+                data_dict_conductivity['sigma_P'][0] = deepcopy(data_dict_SSA['sigma_P_DC'][0])
 
         data_dict_output ={**data_dict_output,
                            **{
-                               'E_N_smoothed':deepcopy(data_dict_EField['E_N']),
-                               'E_p_smoothed': deepcopy(data_dict_EField['E_p']),
-                               'sigma_P_smoothed': deepcopy(data_dict_conductivity['sigma_P']),
-                               'sigma_D_smoothed': deepcopy(data_dict_conductivity['sigma_D']),
+                               'E_N_DC': deepcopy(data_dict_EField['E_N']),
+                               'E_p_DC': deepcopy(data_dict_EField['E_p']),
+                               'sigma_P_DC': deepcopy(data_dict_conductivity['sigma_P']),
+                               'sigma_D_DC': deepcopy(data_dict_conductivity['sigma_D']),
                            }
                            }
 
@@ -117,10 +120,11 @@ def generate_Currents():
                             'J_parallel_HI': [J_parallel_HI, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'A/m^2', 'LABLAXIS': 'Parallel Current', 'VAR_TYPE': 'data'}]
                            }}
 
+
     if CurrentsToggles.smooth_data:
         data_dict_output = {**data_dict_output,
-                            **{'E_N':deepcopy(data_dict_EField['E_N']),
-                               'sigma_P':deepcopy(data_dict_conductivity['sigma_P'])
+                            **{'E_N_DC':deepcopy(data_dict_EField['E_N']),
+                               'sigma_P_DC':deepcopy(data_dict_conductivity['sigma_P'])
                                }
 
                             }
