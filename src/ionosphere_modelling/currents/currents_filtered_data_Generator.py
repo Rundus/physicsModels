@@ -27,7 +27,6 @@ def generate_filtered_data_for_currents():
     #####################################################
     # --- PERFORM THE SSA ON E-FIELD AND CONDUCTIVITY ---
     #####################################################
-
     E_N_DC = np.zeros(shape=np.shape(data_dict_EField['E_N'][0]))
     E_N_AC = np.zeros(shape=np.shape(data_dict_EField['E_N'][0]))
     sigma_P_DC = np.zeros(shape=np.shape(data_dict_conductivity['sigma_P'][0]))
@@ -43,7 +42,6 @@ def generate_filtered_data_for_currents():
             sigma_P_AC[:, j] = deepcopy(data_dict_conductivity['sigma_P'][0][:, j])
 
         else:
-
             # --- SSA the E-Field ---
             SSA_E = stl.SSA(tseries=data_dict_EField['E_N'][0][:, j], L=CurrentsToggles.wLen, mirror_percent=CurrentsToggles.mirror_percent)
             E_N_DC[:, j] = deepcopy(SSA_E.reconstruct(indices=CurrentsToggles.DC_components))

@@ -44,7 +44,6 @@ dict_executable = {
 if dict_executable['regen_EVERYTHING']==1:
     for key in dict_executable.keys():
         dict_executable[key] = 1
-
 # re-run specifics
 if dict_executable['regenSpatial']==1:
     # spatial environment

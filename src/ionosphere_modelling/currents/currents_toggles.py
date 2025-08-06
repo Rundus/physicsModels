@@ -11,7 +11,7 @@ class CurrentsToggles:
     fH = 0.67 # High Flyer Spin Freq
     fL = 0.545 # Low Flyer Spin Freq
     T = (2 / (fH + fL)) / 0.05 # Combined Period
-    num_of_spin_periods = 6 # use this many spin periods
+    num_of_spin_periods = 10 # use this many spin periods
     wLen = int(num_of_spin_periods * T)
     mirror_percent = 0.0
     DC_components = [0]
