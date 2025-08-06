@@ -29,6 +29,34 @@ def generate_electricField():
     LShellRange = data_dict_spatial['simLShell'][0]
     altRange = data_dict_spatial['simAlt'][0]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ###########################################################
     # [1] Calculate the ECEF coordinates of the simulation Grid
     ###########################################################
@@ -105,7 +133,6 @@ def generate_electricField():
         neutral_wind_ENU = np.zeros(shape=(len(LShellRange), len(altRange), 3))
         neutral_wind_ENU[:, :, 0] = deepcopy(data_dict_neutral['meridional_wind'][0])
         neutral_wind_ENU[:, :, 1] = deepcopy(data_dict_neutral['zonal_wind'][0])
-
 
     grid_ECEF_to_ENU_transform = np.zeros(shape=(len(LShellRange), len(altRange),3,3))
     grid_B_Field_ECEF = np.zeros(shape=(len(LShellRange), len(altRange), 3))
@@ -197,16 +224,14 @@ def generate_electricField():
     grid_E_N = np.zeros(shape=(len(LShellRange), len(altRange)))
     grid_E_p = np.zeros(shape=(len(LShellRange), len(altRange)))
 
-
-    # Tangent
+    # Normal
     for j in range(len(altRange)):
 
         # Calculate the horizontal distance
         dis = np.array([np.sum(grid_rho_X_auroral[:i+1, j, 0]) for i in range(len(LShellRange))])
 
         # Calculate E = -Grad(Phi)
-        grid_E_N[:,j] = -1*np.gradient(data_dict_potential['potential'][0][:, j], dis)
-
+        grid_E_N[:, j] = -1*np.gradient(data_dict_potential['potential'][0][:, j], dis)
 
     # Vertical
     for i in tqdm(range(len(LShellRange))):
@@ -216,7 +241,6 @@ def generate_electricField():
 
         # Calculate E = -Grad(Phi)
         grid_E_p[i, :] = -1*np.gradient(data_dict_potential['potential'][0][i, :], dis)
-
 
     # --- Construct the Data Dict ---
     data_dict_output = { **data_dict_spatial,

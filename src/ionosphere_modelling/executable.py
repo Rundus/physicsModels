@@ -11,34 +11,14 @@ import spaceToolsLib as stl
 import warnings
 warnings.filterwarnings("ignore")
 start_time = time.time()
+from src.ionosphere_modelling.execution_toggles import *
 
 
-#################
-# --- TOGGLES ---
-#################
-# 0 - False; Don't run this
-# 1 - True; Run this
-
-dict_executable = {
-    'regen_EVERYTHING': 0,
-    'regenSpatial': 0,
-    'regenBgeo': 0,
-    'regenNeSpectrum': 0,
-    'regenPlasmaEnvironment': 0,
-    'regenNeutralEnvironment': 0,
-    'ionRecomb_ne_Calc': 0,
-    'calc_IonoConductivity': 0,
-    'map_electrostatic_potential': 0,
-    'calc_electricField': 0,
-    'calc_IonoCurrents': 1,
-    'calc_JouleHeating':0
-}
-
-################################
-# --- --- --- --- --- --- --- --
-# --- ENVIRONMENT GENERATORS ---
-# --- --- --- --- --- --- --- --
-################################
+###############################
+# --- --- --- --- --- --- --- -
+# --- SIMULATION GENERATORS ---
+# --- --- --- --- --- --- --- -
+###############################
 
 # re-run everything
 if dict_executable['regen_EVERYTHING']==1:
@@ -114,7 +94,13 @@ if dict_executable['calc_electricField']==1:
     stl.Done(start_time)
 
 if dict_executable['calc_IonoCurrents']==1:
-    # conductivity
+    from src.ionosphere_modelling.currents.currents_toggles import CurrentsToggles
+    if CurrentsToggles.filter_data:
+        stl.prgMsg('Filtering E-Field and Conductivity Data')
+        from src.ionosphere_modelling.currents.currents_filtered_data_Generator import generate_filtered_data_for_currents
+        generate_filtered_data_for_currents()
+        stl.Done(start_time)
+
     stl.prgMsg('Calculating Ionospheric Currents')
     from src.ionosphere_modelling.currents.currents_Generator import generate_Currents
     generate_Currents()

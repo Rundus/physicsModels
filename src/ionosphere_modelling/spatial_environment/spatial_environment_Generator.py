@@ -11,6 +11,7 @@ def generate_spatialEnvironment():
     # --- file-specific imports ---
     from spacepy import coordinates as coord
     from spacepy.time import Ticktock
+    import datetime as dt
     import math
     from geopy import distance
 
@@ -75,7 +76,6 @@ def generate_spatialEnvironment():
             euclidian_distance = math.sqrt(flat_distance ** 2 + (p2[2] - p1[2]) ** 2)
             grid_deltaZ[idx][idx_z] = euclidian_distance*stl.m_to_km
 
-
     for idx, Lval in enumerate(LShellRange): # DeltaX grid:
         for idx_z, alt in enumerate(altRange):
             if idx == len(LShellRange)-1:
@@ -94,14 +94,14 @@ def generate_spatialEnvironment():
     # --- Construct the output data dict ---
     data_dict_output = {**data_dict_output,
                         **{
-                           'simAlt' : [altRange, {'UNITS': 'm', 'LABLAXIS': 'simAlt'}],
+                            'simAlt': [altRange, {'UNITS': 'm', 'LABLAXIS': 'simAlt'}],
                             'simLShell': [LShellRange, {'UNITS': None, 'LABLAXIS': 'simLShell'}],
-                           'grid_lat': [grid_lat, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'deg', 'LABLAXIS': 'latitude'}],
+                            'grid_lat': [grid_lat, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'deg', 'LABLAXIS': 'latitude'}],
                             'grid_alt': [grid_alt, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'Altitude'}],
-                           'grid_LShell': [grid_LShell, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'LShell'}],
+                            'grid_LShell': [grid_LShell, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'LShell'}],
                             'grid_long': [grid_long, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'deg', 'LABLAXIS': 'Longitude'}],
-                            'grid_deltaAlt':[grid_deltaZ, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'Vertical Gradient'}],
-                            'grid_deltaX': [grid_deltaX, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'Horizontal Gradient'}],
+                            'grid_dz': [grid_deltaZ, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'Vertical Gradient'}],
+                            'grid_dx': [grid_deltaX, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'Horizontal Gradient'}],
                            }}
 
     outputPath = rf'{SpatialToggles.outputFolder}\spatial_environment.cdf'
