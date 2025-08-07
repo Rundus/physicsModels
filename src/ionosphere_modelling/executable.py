@@ -88,27 +88,36 @@ if dict_executable['map_electrostatic_potential']==1:
 
 if dict_executable['calc_electricField']==1:
     # electric field
-    stl.prgMsg('Calculating Electric Field Evironment')
+    stl.prgMsg('Calculating Electric Field Evironment\n')
     from src.ionosphere_modelling.electricField.electricField_Generator import generate_electricField
     generate_electricField()
     stl.Done(start_time)
 
+
+
+
 if dict_executable['calc_IonoCurrents']==1:
     from src.ionosphere_modelling.currents.currents_toggles import CurrentsToggles
     if CurrentsToggles.filter_data:
-        stl.prgMsg('Filtering E-Field and Conductivity Data')
+        stl.prgMsg('Filtering E-Field and Conductivity Data\n')
         from src.ionosphere_modelling.currents.currents_filtered_data_Generator import generate_filtered_data_for_currents
         generate_filtered_data_for_currents()
         stl.Done(start_time)
 
-    stl.prgMsg('Calculating Ionospheric Currents')
+    stl.prgMsg('Calculating Ionospheric Currents\n')
     from src.ionosphere_modelling.currents.currents_Generator import generate_Currents
     generate_Currents()
     stl.Done(start_time)
 
+if dict_executable['calc_PoyntingFlux']==1:
+    stl.prgMsg('Calculating Poynting Flux\n')
+    from src.ionosphere_modelling.poynting_flux.poynting_flux_Generator import generatePoyntingFlux
+    generatePoyntingFlux()
+    stl.Done(start_time)
+
 if dict_executable['calc_JouleHeating']==1:
     # Joule Heating
-    stl.prgMsg('Calculating Joule Heating')
+    stl.prgMsg('Calculating Joule Heating\n')
     from src.ionosphere_modelling.joule_heating.joule_heating_Generator import generate_JouleHeating
     generate_JouleHeating()
     stl.Done(start_time)

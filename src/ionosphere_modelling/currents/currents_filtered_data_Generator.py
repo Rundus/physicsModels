@@ -165,7 +165,10 @@ def generate_filtered_data_for_currents():
                       **{ 'E_N_DC':[E_N_DC, deepcopy(data_dict_EField['E_N'][1])],
                           'E_N_AC': [E_N_AC, deepcopy(data_dict_EField['E_N'][1])],
 
-                          'E_p_DC':[E_p_DC, deepcopy(data_dict_EField['E_p'][1])],
+                          'E_T_DC':deepcopy(data_dict_EField['E_T']),
+                          'E_T_AC': deepcopy(data_dict_EField['E_T']),
+
+                          'E_p_DC': [E_p_DC, deepcopy(data_dict_EField['E_p'][1])],
                           'E_p_AC': [E_p_AC, deepcopy(data_dict_EField['E_p'][1])],
 
                           'sigma_P_DC':[sigma_P_DC, deepcopy(data_dict_conductivity['sigma_P'][1])],

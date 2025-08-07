@@ -57,7 +57,7 @@ def generate_GeomagneticField():
         grid_Bgeo[idx] = Bgeo
 
     # calculate the geomagnetic gradient
-    for idx in tqdm(range(N)):
+    for idx in range(N):
         grid_Bgrad[idx] = np.gradient(grid_Bgeo[idx], deepcopy(data_dict_spatial['grid_alt'][0][idx]))
 
     # --- Construct the Data Dict ---
@@ -193,12 +193,10 @@ def generate_GeomagneticField():
             grid_ENU_to_auroral_transform[i][j] = np.matmul(np.array([rHat, eHat, pHat]),stl.Rz(deepcopy(data_dict_auroral_coord['rotation_Angle'][0])))
             grid_FAC_to_auroral_transform[i][j] = stl.Rz(deepcopy(data_dict_auroral_coord['rotation_Angle'][0]))
 
-
     # [4] Calculate the spatial gradients in the auroral coordinates
     grid_dT = np.zeros(shape=(len(LShellRange), len(altRange)))
     grid_dN = np.zeros(shape=(len(LShellRange), len(altRange)))
     grid_dp = np.zeros(shape=(len(LShellRange), len(altRange)))
-
 
     # Normal
     for j in range(len(altRange)):
@@ -213,19 +211,16 @@ def generate_GeomagneticField():
         # Calculate the vertical distance
         grid_dp[i, :] = np.array([np.sum(grid_rho_Z_auroral[i, :j + 1, 2]) for j in range(len(altRange))])
 
-    data_dict_output_spatial = {**deepcopy(data_dict_spatial)
+    data_dict_output_spatial = {**data_dict_spatial,
                                 **{
-                                    'grid_dT': [grid_dT, deepcopy(data_dict_spatial['grid_dx'][1])],
-                                    'grid_dN': [grid_dN, deepcopy(data_dict_spatial['grid_dx'][1])],
-                                    'grid_dp': [grid_dp, deepcopy(data_dict_spatial['grid_dx'][1])],
+                                    'grid_dT': [grid_dT, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'm', 'LABLAXIS': 'Tangent Distance', 'VAR_TYPE': 'data'}],
+                                    'grid_dN': [grid_dN, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'm', 'LABLAXIS': 'Normal Distance', 'VAR_TYPE': 'data'}],
+                                    'grid_dp': [grid_dp, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'm', 'LABLAXIS': 'Field Aligned Distance', 'VAR_TYPE': 'data'}],
                                     'grid_ECEF_to_Auroral_transform': [grid_ECEF_to_auroral_transform, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'ECEF_to_auroral_transform'}],
                                     'grid_ENU_to_Auroral_transform': [grid_ENU_to_auroral_transform, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'ENU_to_auroral_transform'}],
                                     'grid_FAC_to_Auroral_transform': [grid_FAC_to_auroral_transform, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'FAC_to_auroral_transform'}],
                                 }
                                 }
-    data_dict_output_spatial['grid_dT'][1]['LABLAXIS'] = 'dT'
-    data_dict_output_spatial['grid_dN'][1]['LABLAXIS'] = 'dN'
-    data_dict_output_spatial['grid_dp'][1]['LABLAXIS'] = 'dp'
 
     outputPath = rf'{SpatialToggles.outputFolder}\spatial_environment.cdf'
     stl.outputCDFdata(outputPath, data_dict_output_spatial)
