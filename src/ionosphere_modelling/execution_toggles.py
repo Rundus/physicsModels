@@ -16,7 +16,7 @@ dict_executable = {
     'map_electrostatic_potential': 0,
     'calc_electricField': 0,
     'calc_PoyntingFlux':0,
-    'filter_EFields_conductivity':0, #TODO:THIS NEEDS WORK - separate outputs into two files: one for E-Field another for Conductivity
+    'filter_EFields_conductivity':1,
     'calc_IonoCurrents': 0,
     'calc_JouleHeating':1
 }

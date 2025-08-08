@@ -1,5 +1,5 @@
 
-def generate_filtered_data_for_currents():
+def generate_filtered_EField():
     # --- common imports ---
     import spaceToolsLib as stl
     import numpy as np
@@ -9,7 +9,8 @@ def generate_filtered_data_for_currents():
     from copy import deepcopy
 
     # --- file-specific imports ---
-    from src.ionosphere_modelling.currents.currents_toggles import CurrentsToggles
+    from src.ionosphere_modelling.currents.currents_filter_toggles import FilterToggles
+    from src.ionosphere_modelling.electricField.electricField_toggles import EFieldToggles
     import gc
 
     # prepare the output
@@ -20,7 +21,6 @@ def generate_filtered_data_for_currents():
     #######################
     data_dict_spatial = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
     data_dict_EField = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\electricField\*.cdf*')[0])
-    data_dict_conductivity = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\conductivity\*.cdf*')[0])
     altRange = data_dict_spatial['simAlt'][0]
 
     ############################
@@ -35,38 +35,38 @@ def generate_filtered_data_for_currents():
     # --- PERFORM BOXCAR FILTER ---
     ###############################
     # Note: ONLY provides filtered DC components
-    if CurrentsToggles.use_boxcar:
+    if FilterToggles.use_boxcar:
         from scipy.signal import savgol_filter
         for j in tqdm(range(len(altRange))):
             # E_N
-            E_N_DC[:, j] = np.convolve(data_dict_EField['E_N'][0][:, j], np.ones(CurrentsToggles.N_boxcar)/CurrentsToggles.N_boxcar, mode='same')
+            E_N_DC[:, j] = np.convolve(data_dict_EField['E_N'][0][:, j], np.ones(FilterToggles.N_boxcar)/FilterToggles.N_boxcar, mode='same')
 
             # E_p
-            E_p_DC[:, j] = np.convolve(data_dict_EField['E_p'][0][:, j], np.ones(CurrentsToggles.N_boxcar)/CurrentsToggles.N_boxcar, mode='same')
+            E_p_DC[:, j] = np.convolve(data_dict_EField['E_p'][0][:, j], np.ones(FilterToggles.N_boxcar)/FilterToggles.N_boxcar, mode='same')
 
     #####################################
     # --- PERFORM SAVITZ-GOLAY FILTER ---
     #####################################
     # Note: ONLY provides filtered AC components
 
-    if CurrentsToggles.use_savitz_golay:
+    if FilterToggles.use_savitz_golay:
         from scipy.signal import savgol_filter
         for j in tqdm(range(len(altRange))):
             # smooth electric field data
 
             # E_N
             E_N_DC[:, j] = savgol_filter(x=data_dict_EField['E_N'][0][:, j],
-                                                             window_length=CurrentsToggles.window,
-                                                             polyorder=CurrentsToggles.polyorder)
+                                                             window_length=FilterToggles.window,
+                                                             polyorder=FilterToggles.polyorder)
             # E_p
             E_p_DC[:, j] = savgol_filter(x=data_dict_EField['E_p'][0][:, j],
-                                                             window_length=CurrentsToggles.window,
-                                                             polyorder=CurrentsToggles.polyorder)
+                                                             window_length=FilterToggles.window,
+                                                             polyorder=FilterToggles.polyorder)
 
     ################################
     # --- PERFORM THE SSA FILTER ---
     ################################
-    if CurrentsToggles.use_SSA_filter:
+    if FilterToggles.use_SSA_filter:
 
         # Loop over altitude
         for j in tqdm(range(len(altRange))):
@@ -84,15 +84,15 @@ def generate_filtered_data_for_currents():
 
                 # --- SSA the E-Field(s) ---
 
-                SSA_E = stl.SSA(tseries=data_dict_EField['E_N'][0][:, j], L=CurrentsToggles.wLen, mirror_percent=CurrentsToggles.mirror_percent)
-                E_N_DC[:, j] = deepcopy(SSA_E.reconstruct(indices=CurrentsToggles.DC_components))
-                E_N_AC[:, j] = deepcopy(SSA_E.reconstruct(indices=CurrentsToggles.AC_components))
+                SSA_E = stl.SSA(tseries=data_dict_EField['E_N'][0][:, j], L=FilterToggles.wLen, mirror_percent=FilterToggles.mirror_percent)
+                E_N_DC[:, j] = deepcopy(SSA_E.reconstruct(indices=FilterToggles.DC_components))
+                E_N_AC[:, j] = deepcopy(SSA_E.reconstruct(indices=FilterToggles.AC_components))
                 del SSA_E
                 gc.collect()
 
-                SSA_E = stl.SSA(tseries=data_dict_EField['E_p'][0][:, j], L=CurrentsToggles.wLen, mirror_percent=CurrentsToggles.mirror_percent)
-                E_p_DC[:, j] = deepcopy(SSA_E.reconstruct(indices=CurrentsToggles.DC_components))
-                E_p_AC[:, j] = deepcopy(SSA_E.reconstruct(indices=CurrentsToggles.AC_components))
+                SSA_E = stl.SSA(tseries=data_dict_EField['E_p'][0][:, j], L=FilterToggles.wLen, mirror_percent=FilterToggles.mirror_percent)
+                E_p_DC[:, j] = deepcopy(SSA_E.reconstruct(indices=FilterToggles.DC_components))
+                E_p_AC[:, j] = deepcopy(SSA_E.reconstruct(indices=FilterToggles.AC_components))
                 del SSA_E
                 gc.collect()
 
@@ -112,7 +112,7 @@ def generate_filtered_data_for_currents():
                           }
                       }
 
-    outputPath = rf'{CurrentsToggles.outputFolder}\{CurrentsToggles.filter_path}\filtered_EFields_conductivity.cdf'
+    outputPath = rf'{EFieldToggles.outputFolder}\{FilterToggles.filter_path}\filtered_EFields_conductivity.cdf'
     stl.outputCDFdata(outputPath, data_dict_output)
 
 generate_filtered_data_for_currents()

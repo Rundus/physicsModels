@@ -1,5 +1,5 @@
 
-def generate_filtered_data_for_currents():
+def generate_filtered_conductivity():
     # --- common imports ---
     import spaceToolsLib as stl
     import numpy as np

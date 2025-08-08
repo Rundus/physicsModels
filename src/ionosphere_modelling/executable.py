@@ -123,12 +123,19 @@ if dict_executable['calc_electricField']==1:
 
 
 if dict_executable['filter_EFields_conductivity'] == 1:
-    from src.ionosphere_modelling.currents.currents_toggles import CurrentsToggles
-    if CurrentsToggles.filter_data:
-        stl.prgMsg('Filtering E-Field and Conductivity Data\n')
-        from src.ionosphere_modelling.currents.currents_filtered_data_Generator import generate_filtered_data_for_currents
-        generate_filtered_data_for_currents()
+    from src.ionosphere_modelling.currents.currents_filter_toggles import FilterToggles
+    if FilterToggles.filter_data:
+
+        stl.prgMsg('Filtering E-Field Data\n')
+        from src.ionosphere_modelling.electricField.electricField_filtered_data_Generator import generate_filtered_EField
+        generate_filtered_EField()
         stl.Done(start_time)
+
+        stl.prgMsg('Filtering Conductivity Data\n')
+        from src.ionosphere_modelling.conductivity.conductivity_filtered_data_Generator import generate_filtered_conductivity
+        generate_filtered_conductivity()
+        stl.Done(start_time)
+
 
 
 
