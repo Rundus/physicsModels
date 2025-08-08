@@ -2,11 +2,13 @@
 ########################
 # --- PLASMA DENSITY ---
 ########################
-class plasmaToggles:
+class PlasmaToggles:
+
     ##################
     # --- FILE I/O ---
     ##################
-    outputFolder = 'C:\Data\physicsModels\ionosphere\plasma_environment'
+    from src.ionosphere_modelling.sim_toggles import SimToggles
+    outputFolder = f'{SimToggles.sim_root_path}\plasma_environment'
     IRI_filePath = r'C:\Data\physicsModels\ionosphere\IRI\ACESII\IRI_3D_2022324.cdf'
 
     # --- --- --- ---

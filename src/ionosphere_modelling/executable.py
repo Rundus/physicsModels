@@ -24,6 +24,9 @@ from src.ionosphere_modelling.execution_toggles import *
 if dict_executable['regen_EVERYTHING']==1:
     for key in dict_executable.keys():
         dict_executable[key] = 1
+
+
+
 # re-run specifics
 if dict_executable['regenSpatial']==1:
     # spatial environment
@@ -31,12 +34,18 @@ if dict_executable['regenSpatial']==1:
     from src.ionosphere_modelling.spatial_environment.spatial_environment_Generator import generate_spatialEnvironment
     generate_spatialEnvironment()
     stl.Done(start_time)
+
+
+
 if dict_executable['regenBgeo']==1:
     # geomagnetic field
     stl.prgMsg('Regenerating Bgeo\n')
     from src.ionosphere_modelling.geomagneticField.geomagneticField_Generator import generate_GeomagneticField
     generate_GeomagneticField()
     stl.Done(start_time)
+
+
+
 
 if dict_executable['regenNeSpectrum']==1:
     # ne spectrum
@@ -52,12 +61,18 @@ if dict_executable['regenNeSpectrum']==1:
         langmuir_ni_spectrogram()
     stl.Done(start_time)
 
+
+
+
 if dict_executable['regenPlasmaEnvironment']==1:
     # plasma environment
     stl.prgMsg('Regenerating Plasma Environment\n')
     from src.ionosphere_modelling.plasma_environment.plasma_environment_Generator import generatePlasmaEnvironment
     generatePlasmaEnvironment()
     stl.Done(start_time)
+
+
+
 
 if dict_executable['regenNeutralEnvironment']==1:
     # neutral atmosphere
@@ -66,11 +81,17 @@ if dict_executable['regenNeutralEnvironment']==1:
     generateNeutralEnvironment()
     stl.Done(start_time)
 
+
+
+
 if dict_executable['ionRecomb_ne_Calc']==1:
     stl.prgMsg('Generating electron density from Ionization/Recombination \n')
     from src.ionosphere_modelling.ionization_recombination.ionizationRecomb_Generator import generateIonizationRecomb
     generateIonizationRecomb()
     stl.Done(start_time)
+
+
+
 
 if dict_executable['calc_IonoConductivity']==1:
     # conductivity
@@ -79,12 +100,18 @@ if dict_executable['calc_IonoConductivity']==1:
     generateIonosphericConductivity()
     stl.Done(start_time)
 
+
+
+
 if dict_executable['map_electrostatic_potential']==1:
     # electrostatic potential mapping
     stl.prgMsg('Mapping Electrostatic Potential')
     from src.ionosphere_modelling.electrostaticPotential.electrostaticPotential_Generator import generateElectrostaticPotential
     generateElectrostaticPotential()
     stl.Done(start_time)
+
+
+
 
 if dict_executable['calc_electricField']==1:
     # electric field
@@ -95,8 +122,7 @@ if dict_executable['calc_electricField']==1:
 
 
 
-
-if dict_executable['calc_IonoCurrents']==1:
+if dict_executable['filter_EFields_conductivity'] == 1:
     from src.ionosphere_modelling.currents.currents_toggles import CurrentsToggles
     if CurrentsToggles.filter_data:
         stl.prgMsg('Filtering E-Field and Conductivity Data\n')
@@ -104,16 +130,26 @@ if dict_executable['calc_IonoCurrents']==1:
         generate_filtered_data_for_currents()
         stl.Done(start_time)
 
+
+
+
+if dict_executable['calc_IonoCurrents']==1:
     stl.prgMsg('Calculating Ionospheric Currents\n')
     from src.ionosphere_modelling.currents.currents_Generator import generate_Currents
     generate_Currents()
     stl.Done(start_time)
+
+
+
 
 if dict_executable['calc_PoyntingFlux']==1:
     stl.prgMsg('Calculating Poynting Flux\n')
     from src.ionosphere_modelling.poynting_flux.poynting_flux_Generator import generatePoyntingFlux
     generatePoyntingFlux()
     stl.Done(start_time)
+
+
+
 
 if dict_executable['calc_JouleHeating']==1:
     # Joule Heating

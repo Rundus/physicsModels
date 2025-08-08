@@ -1,8 +1,9 @@
 ###########################
 # --- HEIGHT IONIZATION ---
 ###########################
-class ionizationRecombToggles:
-    outputFolder = 'C:\Data\physicsModels\ionosphere\ionizationRecomb'
+class IonizationRecombToggles:
+    from src.ionosphere_modelling.sim_toggles import SimToggles
+    outputFolder = f'{SimToggles.sim_root_path}\ionizationRecomb'
 
     flux_path = 'C:\Data\physicsModels\ionosphere\data_inputs\energy_flux\high'
 

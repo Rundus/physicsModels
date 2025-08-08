@@ -2,11 +2,13 @@
 # --- GEOMAGNETIC FIELD ---
 ###########################
 class CurrentsToggles:
-    outputFolder = 'C:\Data\physicsModels\ionosphere\currents'
+    from src.ionosphere_modelling.sim_toggles import SimToggles
+    outputFolder = f'{SimToggles.sim_root_path}\currents'
 
-    # --- --- --- --- --- ---
-    # --- FILTER THE DATA ---
-    # --- --- --- --- --- ---
+class FilterToggles:
+    # --- --- --- --- --- --- --- --- --- --- --- ---
+    # --- FILTER THE CONDUCTIVITY AND E-FIELD DATA --
+    # --- --- --- --- --- --- --- --- --- --- --- ---
     # Description: Use a choice of filters to clean-up the conductivity + E-Field data
     # before calculating the currents.
 
@@ -15,10 +17,10 @@ class CurrentsToggles:
 
     # SSA data
     use_SSA_filter = True
-    fH = 0.67 # High Flyer Spin Freq
-    fL = 0.545 # Low Flyer Spin Freq
-    T = (2 / (fH + fL)) / 0.05 # Averaged spin Period
-    num_of_spin_periods = 10 # use this many spin periods
+    fH = 0.67  # High Flyer Spin Freq
+    fL = 0.545  # Low Flyer Spin Freq
+    T = (2 / (fH + fL)) / 0.05  # Averaged spin Period
+    num_of_spin_periods = 10  # use this many spin periods
     wLen = int(num_of_spin_periods * T)
     mirror_percent = 0.0
     DC_components = [0, 1, 2, 3]

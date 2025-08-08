@@ -42,11 +42,11 @@ def generatePoyntingFlux():
     S_AC = np.zeros(shape=(len(LShellRange), len(altRange), 3))
 
     ranges = [range(len(LShellRange)),range(len(altRange))]
-    for i, j in itertools.product(*ranges):
+    for i, j in tqdm(itertools.product(*ranges)):
 
         # DC Fields (N,T,p)
         B_vec = np.array([ 0, 0, data_dict_Bgeo['Bgeo'][0][i][j]])
-        E_vec = np.array([ data_dict_EField['E_N_DC'][0][i][j], 0, data_dict_EField['E_p_DC'][0][i][j]  ])
+        E_vec = np.array([data_dict_EField['E_N_DC'][0][i][j], 0, data_dict_EField['E_p_DC'][0][i][j]  ])
         S_DC[i][j] = np.cross(E_vec,B_vec)/stl.u0
 
         # AC Fields (N,T,p)

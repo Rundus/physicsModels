@@ -26,4 +26,5 @@ class SpatialToggles:
     # --- geomagnetic Longitude Grid ---
     # Used to ensure the simulated R.O.I.is about right
     simGeomLong = deepcopy(data_dict_eepaa_high_ds['Long_geom'][0][low_idx:high_idx+1])
-    outputFolder = 'C:\Data\physicsModels\ionosphere\spatial_environment'
+    from src.ionosphere_modelling.sim_toggles import SimToggles
+    outputFolder = f'{SimToggles.sim_root_path}\spatial_environment'

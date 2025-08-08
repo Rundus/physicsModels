@@ -15,7 +15,6 @@ def generate_spatialEnvironment():
     import math
     from geopy import distance
 
-
     # import the toggles
     from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
     altRange = SpatialToggles.simAlt

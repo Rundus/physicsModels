@@ -3,5 +3,6 @@
 ###########################
 import datetime as dt
 class BgeoToggles:
-    outputFolder = 'C:\Data\physicsModels\ionosphere\geomagneticField'
+    from src.ionosphere_modelling.sim_toggles import SimToggles
+    outputFolder = f'{SimToggles.sim_root_path}\geomagneticField'
     targetTime = dt.datetime(2022,11,20,17)
