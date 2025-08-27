@@ -9,8 +9,8 @@ def generate_filtered_conductivity():
     from copy import deepcopy
 
     # --- file-specific imports ---
-    from src.ionosphere_modelling.currents.currents_toggles import CurrentsToggles
-    from src.ionosphere_modelling.conductivity.conductivity_toggles import conductivityToggles
+    from src.ionosphere_modelling.currents.currents_filter_toggles import FilterToggles
+    from src.ionosphere_modelling.conductivity.conductivity_toggles import ConductivityToggles
     import gc
 
     # prepare the output
@@ -37,24 +37,24 @@ def generate_filtered_conductivity():
     # --- PERFORM BOXCAR FILTER ---
     ###############################
     # Note: ONLY provides filtered DC components
-    if CurrentsToggles.use_boxcar:
+    if FilterToggles.use_boxcar:
         from scipy.signal import savgol_filter
         for j in tqdm(range(len(altRange))):
             # sigma_P
-            sigma_P_DC[:, j] = np.convolve(data_dict_conductivity['sigma_P'][0][:, j], np.ones(CurrentsToggles.N_boxcar)/CurrentsToggles.N_boxcar, mode='same')
+            sigma_P_DC[:, j] = np.convolve(data_dict_conductivity['sigma_P'][0][:, j], np.ones(FilterToggles.N_boxcar)/FilterToggles.N_boxcar, mode='same')
 
             # sigma_H
-            sigma_H_DC[:, j] = np.convolve(data_dict_conductivity['sigma_H'][0][:, j], np.ones(CurrentsToggles.N_boxcar)/CurrentsToggles.N_boxcar, mode='same')
+            sigma_H_DC[:, j] = np.convolve(data_dict_conductivity['sigma_H'][0][:, j], np.ones(FilterToggles.N_boxcar)/FilterToggles.N_boxcar, mode='same')
 
             # sigma_D
-            sigma_D_DC[:, j] = np.convolve(data_dict_conductivity['sigma_D'][0][:, j], np.ones(CurrentsToggles.N_boxcar)/CurrentsToggles.N_boxcar, mode='same')
+            sigma_D_DC[:, j] = np.convolve(data_dict_conductivity['sigma_D'][0][:, j], np.ones(FilterToggles.N_boxcar)/FilterToggles.N_boxcar, mode='same')
 
     #####################################
     # --- PERFORM SAVITZ-GOLAY FILTER ---
     #####################################
     # Note: ONLY provides filtered AC components
 
-    if CurrentsToggles.use_savitz_golay:
+    if FilterToggles.use_savitz_golay:
         from scipy.signal import savgol_filter
         for j in tqdm(range(len(altRange))):
             # smooth electric field data
@@ -62,23 +62,23 @@ def generate_filtered_conductivity():
             # smooth conductivity data
             # sigma_P
             sigma_P_AC[:, j] = savgol_filter(x=data_dict_conductivity['sigma_P'][0][:, j],
-                                                                       window_length=CurrentsToggles.window,
-                                                                       polyorder=CurrentsToggles.polyorder)
+                                                                       window_length=FilterToggles.window,
+                                                                       polyorder=FilterToggles.polyorder)
 
             # sigma_H
             sigma_H_DC[:, j] = savgol_filter(x=data_dict_conductivity['sigma_H'][0][:, j],
-                                             window_length=CurrentsToggles.window,
-                                             polyorder=CurrentsToggles.polyorder)
+                                             window_length=FilterToggles.window,
+                                             polyorder=FilterToggles.polyorder)
 
             # sigma_D
             sigma_D_DC[:, j] = savgol_filter(x=data_dict_conductivity['sigma_D'][0][:, j],
-                                                                       window_length=CurrentsToggles.window,
-                                                                       polyorder=CurrentsToggles.polyorder)
+                                                                       window_length=FilterToggles.window,
+                                                                       polyorder=FilterToggles.polyorder)
 
     ################################
     # --- PERFORM THE SSA FILTER ---
     ################################
-    if CurrentsToggles.use_SSA_filter:
+    if FilterToggles.use_SSA_filter:
 
         # Loop over altitude
         for j in tqdm(range(len(altRange))):
@@ -97,21 +97,21 @@ def generate_filtered_conductivity():
 
             else:
                 # --- SSA the conductivity ---
-                SSA_sigma = stl.SSA(tseries=data_dict_conductivity['sigma_P'][0][:, j], L=CurrentsToggles.wLen, mirror_percent=CurrentsToggles.mirror_percent)
-                sigma_P_DC[:, j] = deepcopy(SSA_sigma.reconstruct(indices=CurrentsToggles.DC_components))
-                sigma_P_AC[:, j] = deepcopy(SSA_sigma.reconstruct(indices=CurrentsToggles.AC_components))
+                SSA_sigma = stl.SSA(tseries=data_dict_conductivity['sigma_P'][0][:, j], L=FilterToggles.wLen, mirror_percent=FilterToggles.mirror_percent)
+                sigma_P_DC[:, j] = deepcopy(SSA_sigma.reconstruct(indices=FilterToggles.DC_components))
+                sigma_P_AC[:, j] = deepcopy(SSA_sigma.reconstruct(indices=FilterToggles.AC_components))
                 del SSA_sigma
                 gc.collect()
 
-                SSA_sigma = stl.SSA(tseries=data_dict_conductivity['sigma_H'][0][:, j], L=CurrentsToggles.wLen, mirror_percent=CurrentsToggles.mirror_percent)
-                sigma_H_DC[:, j] = deepcopy(SSA_sigma.reconstruct(indices=CurrentsToggles.DC_components))
-                sigma_H_AC[:, j] = deepcopy(SSA_sigma.reconstruct(indices=CurrentsToggles.AC_components))
+                SSA_sigma = stl.SSA(tseries=data_dict_conductivity['sigma_H'][0][:, j], L=FilterToggles.wLen, mirror_percent=FilterToggles.mirror_percent)
+                sigma_H_DC[:, j] = deepcopy(SSA_sigma.reconstruct(indices=FilterToggles.DC_components))
+                sigma_H_AC[:, j] = deepcopy(SSA_sigma.reconstruct(indices=FilterToggles.AC_components))
                 del SSA_sigma
                 gc.collect()
 
-                SSA_sigma = stl.SSA(tseries=data_dict_conductivity['sigma_D'][0][:, j], L=CurrentsToggles.wLen, mirror_percent=CurrentsToggles.mirror_percent)
-                sigma_D_DC[:, j] = deepcopy(SSA_sigma.reconstruct(indices=CurrentsToggles.DC_components))
-                sigma_D_AC[:, j] = deepcopy(SSA_sigma.reconstruct(indices=CurrentsToggles.AC_components))
+                SSA_sigma = stl.SSA(tseries=data_dict_conductivity['sigma_D'][0][:, j], L=FilterToggles.wLen, mirror_percent=FilterToggles.mirror_percent)
+                sigma_D_DC[:, j] = deepcopy(SSA_sigma.reconstruct(indices=FilterToggles.DC_components))
+                sigma_D_AC[:, j] = deepcopy(SSA_sigma.reconstruct(indices=FilterToggles.AC_components))
                 del SSA_sigma
                 gc.collect()
 
@@ -131,7 +131,5 @@ def generate_filtered_conductivity():
                           }
                       }
 
-    outputPath = rf'{Con.outputFolder}\{CurrentsToggles.filter_path}\filtered_conductivity.cdf'
+    outputPath = rf'{ConductivityToggles.outputFolder}\{FilterToggles.filter_path}\filtered_conductivity.cdf'
     stl.outputCDFdata(outputPath, data_dict_output)
-
-generate_filtered_data_for_currents()

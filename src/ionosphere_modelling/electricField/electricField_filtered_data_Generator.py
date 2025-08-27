@@ -114,5 +114,3 @@ def generate_filtered_EField():
 
     outputPath = rf'{EFieldToggles.outputFolder}\{FilterToggles.filter_path}\filtered_EFields_conductivity.cdf'
     stl.outputCDFdata(outputPath, data_dict_output)
-
-generate_filtered_data_for_currents()

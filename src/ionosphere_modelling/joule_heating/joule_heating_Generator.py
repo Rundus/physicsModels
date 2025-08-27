@@ -46,8 +46,8 @@ def generate_JouleHeating():
     data_dict_output = {
                         'simLShell': deepcopy(data_dict_spatial['simLShell']),
                         'simAlt': deepcopy(data_dict_spatial['simAlt']),
-                         'q_j_DC': [grid_Joule_DC, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'W/m!A-3', 'LABLAXIS': 'DC Joule Heating Rate', 'VAR_TYPE': 'data','SCALEMIN':1E-9,'SCALEMAX':1E-6}],
-                         'q_j_AC': [grid_Joule_AC, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'W/m!A-3', 'LABLAXIS': 'AC Joule Heating Rate', 'VAR_TYPE': 'data', 'SCALEMIN': 1E-9, 'SCALEMAX': 1E-6}],
+                         'q_j_DC': [grid_Joule_DC, {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'W/m!A3', 'LABLAXIS': 'DC Joule Heating Rate', 'VAR_TYPE': 'data','SCALEMIN':1E-9,'SCALEMAX':1E-6}],
+                         'q_j_AC': [grid_Joule_AC, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'W/m!A3', 'LABLAXIS': 'AC Joule Heating Rate', 'VAR_TYPE': 'data', 'SCALEMIN': 1E-9, 'SCALEMAX': 1E-6}],
                          }
 
     outputPath = rf'{JouleHeatingToggles.outputFolder}\joule_heating.cdf'
