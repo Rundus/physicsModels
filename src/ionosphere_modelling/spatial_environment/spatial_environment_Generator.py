@@ -75,7 +75,7 @@ def generate_spatialEnvironment():
             euclidian_distance = math.sqrt(flat_distance ** 2 + (p2[2] - p1[2]) ** 2)
             grid_deltaZ[idx][idx_z] = euclidian_distance*stl.m_to_km
 
-    for idx, Lval in enumerate(LShellRange): # DeltaX grid:
+    for idx, Lval in tqdm(enumerate(LShellRange)): # DeltaX grid:
         for idx_z, alt in enumerate(altRange):
             if idx == len(LShellRange)-1:
                 # Get the points

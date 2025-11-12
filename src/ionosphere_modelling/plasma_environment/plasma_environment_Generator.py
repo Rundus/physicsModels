@@ -12,14 +12,14 @@ def generatePlasmaEnvironment():
     from copy import deepcopy
 
     # --- file-specific imports ---
-    from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
+    from src.ionosphere_modelling.plasma_environment.plasma_toggles import PlasmaToggles
 
     #######################
     # --- LOAD THE DATA ---
     #######################
     # get the geomagnetic field data dict
     data_dict_Bgeo = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\geomagneticField\*.cdf*')[0])
-    data_dict_IRI = deepcopy(stl.loadDictFromFile(plasmaToggles.IRI_filePath)) # collect the IRI data
+    data_dict_IRI = deepcopy(stl.loadDictFromFile(PlasmaToggles.IRI_filePath)) # collect the IRI data
 
     ############################
     # --- PREPARE THE OUTPUT ---
@@ -29,8 +29,8 @@ def generatePlasmaEnvironment():
     time_idx = np.abs(data_dict_IRI['time'][0] - int(dt_targetTime.hour * 60 + dt_targetTime.minute)).argmin()
     LShellRange = data_dict_Bgeo['simLShell'][0]
     altRange = data_dict_Bgeo['simAlt'][0]
-    Imasses = np.array([stl.ion_dict[key] for key in plasmaToggles.wIons])
-    Ikeys = np.array([key for key in plasmaToggles.wIons])
+    Imasses = np.array([stl.ion_dict[key] for key in PlasmaToggles.wIons])
+    Ikeys = np.array([key for key in PlasmaToggles.wIons])
 
     data_dict_output = {
         'Te': [np.zeros(shape=(len(LShellRange),len(altRange))), {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'K', 'LABLAXIS': 'Te'}],
@@ -97,7 +97,7 @@ def generatePlasmaEnvironment():
     #########################
     # --- IRI ne/ni ratio ---
     #########################
-    ni_IRI = 1E6 * np.sum(np.array([deepcopy(data_dict_output[f"n_{key}"][0]) for key in plasmaToggles.wIons]), axis=0) # convert data into m^-3
+    ni_IRI = 1E6 * np.sum(np.array([deepcopy(data_dict_output[f"n_{key}"][0]) for key in PlasmaToggles.wIons]), axis=0) # convert data into m^-3
     ne_IRI = 1E6 * deepcopy(data_dict_output['Ne'][0])  # convert data into m^-3
     data_dict_output['ne_ni_ratio'][0] = np.divide(ne_IRI, ni_IRI)
 
@@ -112,12 +112,12 @@ def generatePlasmaEnvironment():
     ##################################
     # --- INDIVIDUAL ION DENSITIES ---
     ##################################
-    if plasmaToggles.useACESII_density_Profile:
-        data_dict_ACESII_ni_spectrum = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\ACESII_ni_spectrum\ACESII_ni_spectrum.cdf')
+    if PlasmaToggles.useACESII_density_Profile:
+        data_dict_ACESII_ni_spectrum = stl.loadDictFromFile(rf'{PlasmaToggles.outputFolder}\ACESII_ni_spectrum\ACESII_ni_spectrum.cdf')
         for idx, key in enumerate(Ikeys):
             data_dict_output[f'n_{key}'][0] = 1E6*np.multiply(data_dict_ACESII_ni_spectrum[f'ni_spectrum'][0], data_dict_output[f'C_{key}'][0])
-    elif plasmaToggles.useEISCAT_density_Profile:
-        data_dict_EISCAT_ne_spectrum = stl.loadDictFromFile(rf'{plasmaToggles.outputFolder}\EISCAT_ne_spectrum\EISCAT_ne_spectrum.cdf')
+    elif PlasmaToggles.useEISCAT_density_Profile:
+        data_dict_EISCAT_ne_spectrum = stl.loadDictFromFile(rf'{PlasmaToggles.outputFolder}\EISCAT_ne_spectrum\EISCAT_ne_spectrum.cdf')
         for idx, key in enumerate(Ikeys):
             data_dict_output[f'n_{key}'][0] = (1/deepcopy(data_dict_output['ne_ni_ratio'][0]))*1E6*np.multiply(data_dict_EISCAT_ne_spectrum[f'ne_spectrum'][0], data_dict_output[f'C_{key}'][0])
     else:
@@ -128,25 +128,25 @@ def generatePlasmaEnvironment():
     ###########################
     # --- TOTAL ION DENSITY ---
     ###########################
-    if plasmaToggles.useACESII_density_Profile:
+    if PlasmaToggles.useACESII_density_Profile:
         data_dict_output['ni'][0] = 1E6 * deepcopy(data_dict_ACESII_ni_spectrum['ni_spectrum'][0])
-    elif plasmaToggles.useEISCAT_density_Profile:
+    elif PlasmaToggles.useEISCAT_density_Profile:
         data_dict_output['ni'][0] = 1E6 * deepcopy(data_dict_EISCAT_ne_spectrum['ne_spectrum'][0]) * (1/deepcopy(data_dict_output['ne_ni_ratio'][0]))
     else:
-        data_dict_output['ni'][0] = 1E6 * np.array([deepcopy(data_dict_output[f"n_{key}"][0]) for key in plasmaToggles.wIons])
+        data_dict_output['ni'][0] = 1E6 * np.array([deepcopy(data_dict_output[f"n_{key}"][0]) for key in PlasmaToggles.wIons])
 
     ##################
     # --- ION MASS ---
     ##################
     # get the effective mass based on the IRI
-    data_dict_output['m_eff_i'][0] = np.sum(np.array([deepcopy(data_dict_output[f"C_{key}"][0])*Imasses[idx] for idx,key in enumerate(plasmaToggles.wIons)]), axis=0)
+    data_dict_output['m_eff_i'][0] = np.sum(np.array([deepcopy(data_dict_output[f"C_{key}"][0])*Imasses[idx] for idx,key in enumerate(PlasmaToggles.wIons)]), axis=0)
 
     #################################
     # --- ELECTRON PLASMA DENSITY ---
     #################################
-    if plasmaToggles.useACESII_density_Profile:
+    if PlasmaToggles.useACESII_density_Profile:
         ne_density = 1E6*deepcopy(data_dict_ACESII_ni_spectrum['ni_spectrum'][0])*deepcopy(data_dict_output['ne_ni_ratio'][0])
-    elif plasmaToggles.useEISCAT_density_Profile:
+    elif PlasmaToggles.useEISCAT_density_Profile:
         ne_density = 1E6 * deepcopy(data_dict_EISCAT_ne_spectrum['ne_spectrum'][0])
     else:
         ne_density = 1E6 * deepcopy(data_dict_output['Ne'][0])  # convert data into m^-3
@@ -218,5 +218,5 @@ def generatePlasmaEnvironment():
 
         data_dict_output[key][1] = newAttrs
 
-    outputPath = rf'{plasmaToggles.outputFolder}\plasma_environment.cdf'
+    outputPath = rf'{PlasmaToggles.outputFolder}\plasma_environment.cdf'
     stl.outputCDFdata(outputPath, data_dict_output)

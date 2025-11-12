@@ -13,10 +13,10 @@ def generateIonosphericConductivity():
     from copy import deepcopy
 
     # --- file-specific imports ---
-    from src.ionosphere_modelling.ionization_recombination.ionizationRecomb_toggles import ionizationRecombToggles
-    from src.ionosphere_modelling.neutral_environment.neutral_toggles import neutralsToggles
-    from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
-    from src.ionosphere_modelling.conductivity.conductivity_toggles import conductivityToggles
+    from src.ionosphere_modelling.ionization_recombination.ionizationRecomb_toggles import IonizationRecombToggles
+    from src.ionosphere_modelling.neutral_environment.neutral_toggles import NeutralsToggles
+    from src.ionosphere_modelling.plasma_environment.plasma_toggles import PlasmaToggles
+    from src.ionosphere_modelling.conductivity.conductivity_toggles import ConductivityToggles
     from scipy.integrate import simpson
 
     ##########################
@@ -35,7 +35,7 @@ def generateIonosphericConductivity():
     data_dict_neutral = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\neutral_environment\*.cdf*')[0])
 
     # get the ACES-II EEPAA Flux data
-    data_dict_flux = stl.loadDictFromFile(glob(rf'{ionizationRecombToggles.flux_path}\*eepaa_flux*')[0])
+    data_dict_flux = stl.loadDictFromFile(glob(rf'{IonizationRecombToggles.flux_path}\*eepaa_flux*')[0])
 
     # get the ACES-II L-Shell data
     data_dict_LShell = stl.loadDictFromFile(glob('C:\Data\physicsModels\ionosphere\data_inputs\eepaa\high\*eepaa_downsampled*')[0])
@@ -83,7 +83,7 @@ def generateIonosphericConductivity():
     model = Leda2019()
     nu_en_total = np.sum([model.electronNeutral_CollisionFreq(data_dict_neutral=data_dict_neutral,
                                                  data_dict_plasma=data_dict_plasma,
-                                                 neutralKey=key) for key in neutralsToggles.wNeutrals], axis=0)
+                                                 neutralKey=key) for key in NeutralsToggles.wNeutrals], axis=0)
 
     # nu_ei: electron-ion collisions - Depends on Te and Ne
     model = Johnson1961()
@@ -102,12 +102,12 @@ def generateIonosphericConductivity():
     model = Leda2019()
     nu_in_profiles = [model.ionNeutral_CollisionsFreq(data_dict_neutral=data_dict_neutral,
                                              data_dict_plasma=data_dict_plasma,
-                                             ionKey=key) for key in plasmaToggles.wIons]  # NOp, Op, O2p
+                                             ionKey=key) for key in PlasmaToggles.wIons]  # NOp, Op, O2p
 
     # store the individual collision freqs
     data_dict_output = {**data_dict_output,
-                        **{f'nu_i_{key}': [nu_in_profiles[idx], {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': f'nu_i_{key}'}] for idx, key in enumerate(plasmaToggles.wIons)},
-                        **{f'nu_i': [np.sum([nu_in_profiles[idx] for idx, key in enumerate(plasmaToggles.wIons)],axis=0) , {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': f'nu_i'}]}
+                        **{f'nu_i_{key}': [nu_in_profiles[idx], {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': f'nu_i_{key}'}] for idx, key in enumerate(PlasmaToggles.wIons)},
+                        **{f'nu_i': [np.sum([nu_in_profiles[idx] for idx, key in enumerate(PlasmaToggles.wIons)],axis=0) , {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': '1/s', 'LABLAXIS': f'nu_i'}]}
                         }
 
     ##################
@@ -120,12 +120,12 @@ def generateIonosphericConductivity():
     data_dict_output = {**data_dict_output, **{'kappa_e': [kappa_e, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'kappa_e'}]}}
 
     # ions
-    for idx, key in enumerate(plasmaToggles.wIons):
+    for idx, key in enumerate(PlasmaToggles.wIons):
         Omega_i_specific = deepcopy(data_dict_plasma[f'Omega_{key}'][0])
         kappa_i_specific = np.divide(Omega_i_specific, data_dict_output[f'nu_i_{key}'][0])
         data_dict_output = {**data_dict_output, **{f'kappa_i_{key}': [kappa_i_specific, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': f'kappa_i_{key}'}]}}
 
-    kappa_i = np.sum([data_dict_output[f'kappa_i_{key}'][0] for idx, key in enumerate(plasmaToggles.wIons)],axis=0)
+    kappa_i = np.sum([data_dict_output[f'kappa_i_{key}'][0] for idx, key in enumerate(PlasmaToggles.wIons)],axis=0)
     data_dict_output = {**data_dict_output, **{f'kappa_i': [kappa_i, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': f'kappa_i'}]}}
 
     ######################
@@ -139,11 +139,11 @@ def generateIonosphericConductivity():
     sigma_H_e = q0 * np.multiply(np.divide(data_dict_output['ne_total'][0], B_geo), np.power(kappa_e, 2)/(1 + np.power(kappa_e, 2)))
 
     # calculated ion sigmas
-    sigma_D_ions = np.zeros(shape=(len(plasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
-    sigma_P_ions = np.zeros(shape=(len(plasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
-    sigma_H_ions = np.zeros(shape=(len(plasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
+    sigma_D_ions = np.zeros(shape=(len(PlasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
+    sigma_P_ions = np.zeros(shape=(len(PlasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
+    sigma_H_ions = np.zeros(shape=(len(PlasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
 
-    for idx, key in enumerate(plasmaToggles.wIons):
+    for idx, key in enumerate(PlasmaToggles.wIons):
         kappa_val = deepcopy(data_dict_output[f'kappa_i_{key}'][0])
         # specific_ion_concentration = np.divide(data_dict_plasma[f'n_{key}'][0], data_dict_plasma['ni'][0])
         n_i = data_dict_output['ne_total'][0]*deepcopy(data_dict_plasma[f'C_{key}'][0])
@@ -243,7 +243,7 @@ def generateIonosphericConductivity():
     div_sigma_H_N = np.zeros(shape=(len(SpatialToggles.simLShell), len(SpatialToggles.simAlt)))
 
     for idx in range(len(altRange)):
-        gradients = deepcopy(data_dict_spatial['grid_deltaX'][0][:, idx])
+        gradients = deepcopy(data_dict_spatial['grid_dx'][0][:, idx])
         initial_point = gradients[0]
         position_points = np.array([np.sum(gradients[0:i + 1]) - initial_point for i in range(len(gradients))])
 
@@ -274,5 +274,5 @@ def generateIonosphericConductivity():
 
         data_dict_output[key][1] = newAttrs
 
-    outputPath = rf'{conductivityToggles.outputFolder}\conductivity.cdf'
+    outputPath = rf'{ConductivityToggles.outputFolder}\conductivity.cdf'
     stl.outputCDFdata(outputPath, data_dict_output)

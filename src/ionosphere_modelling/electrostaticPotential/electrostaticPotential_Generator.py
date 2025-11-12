@@ -46,6 +46,7 @@ def generateElectrostaticPotential():
 
         # Place this value into the respective bin
         grid_potential[LShell_idx][Alt_idx].append(data_dict_integrated_potential['Potential'][0][counter])
+        # grid_potential[LShell_idx][Alt_idx].append(data_dict_integrated_potential['Potential_detrend'][0][counter])
         counter+=1
 
     # average all the bins with data and set empty bins to zero
@@ -68,8 +69,8 @@ def generateElectrostaticPotential():
                        **{
                            'sigma_P':deepcopy(data_dict_conductivity['sigma_P']),
                            'sigma_D':deepcopy(data_dict_conductivity['sigma_D']),
-                           'grid_deltaAlt': deepcopy(data_dict_spatial['grid_deltaAlt']),
-                           'grid_deltaX':deepcopy(data_dict_spatial['grid_deltaX']),
+                           'grid_dz': deepcopy(data_dict_spatial['grid_dz']),
+                           'grid_dx':deepcopy(data_dict_spatial['grid_dx']),
                            'initial_potential': [np.array(grid_potential), {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
                            'simLShell':deepcopy(data_dict_spatial['simLShell']),
                            'simAlt':deepcopy(data_dict_spatial['simAlt'])
@@ -83,8 +84,8 @@ def generateElectrostaticPotential():
     #########################
 
     # Calculate all the coefficents - ASSUME A SINGLE VALUE, AVERAGE VALUE for deltaZ, deltaX
-    deltaZ = round(np.nanmean(deepcopy(data_dict_output['grid_deltaAlt'][0])))
-    deltaX = round(np.nanmean(deepcopy(data_dict_output['grid_deltaX'][0])))
+    deltaZ = round(np.nanmean(deepcopy(data_dict_output['grid_dz'][0])))
+    deltaX = round(np.nanmean(deepcopy(data_dict_output['grid_dx'][0])))
 
     ###################################
     # --- CALCULATE THE COEFFICENTS ---
@@ -237,17 +238,24 @@ def generateElectrostaticPotential():
     # [5] Solve the Ax=B problem and reshape into potential grid
     solved_potential = spsolve(A=A_matrix, b=b_matrix).reshape((M, N))
 
-    # --- store the outputs  ---
-    data_dict_output = {**data_dict_output,
-                        **{'potential': [solved_potential, {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
-                           'b_matrix': [b_matrix.reshape((M,N)), {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
-                            'sigma_D_sigma_P_ratio_sqrt': [np.sqrt(deepcopy(data_dict_output['sigma_D'][0])/deepcopy(data_dict_output['sigma_P'][0])), {'DEPEND_0':'simLShell','DEPEND_1':'simAlt', 'UNITS': None, 'LABLAXIS': 'SigmaD/sigmaP', 'VAR_TYPE': 'data'}]
-                        }
-                        }
+
 
     #########################
     # --- OUTPUT THE DATA ---
     #########################
+    # --- store the outputs  ---
+    data_dict_output = {**data_dict_output,
+                        **{'potential': [solved_potential, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'V',
+                                                            'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
+                           'b_matrix': [b_matrix.reshape((M, N)),
+                                        {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'V',
+                                         'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
+                           'sigma_D_sigma_P_ratio_sqrt': [np.sqrt(
+                               deepcopy(data_dict_output['sigma_D'][0]) / deepcopy(data_dict_output['sigma_P'][0])),
+                                                          {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None,
+                                                           'LABLAXIS': 'SigmaD/sigmaP', 'VAR_TYPE': 'data'}]
+                           }
+                        }
 
     outputPath = rf'{ElectroStaticToggles.outputFolder}\electrostaticPotential.cdf'
     stl.outputCDFdata(outputPath, data_dict_output)

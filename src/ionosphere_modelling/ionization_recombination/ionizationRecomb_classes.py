@@ -3,7 +3,7 @@ import numpy as np
 from numpy import power,log,pi
 from spaceToolsLib.variables import kB,gravG,Me,Re
 import spaceToolsLib as stl
-from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
+from src.ionosphere_modelling.plasma_environment.plasma_toggles import PlasmaToggles
 
 
 class fang2010:
@@ -89,7 +89,7 @@ class schunkNagy2009:
 
         partials = []
 
-        for ionNam in plasmaToggles.wIons:
+        for ionNam in PlasmaToggles.wIons:
             try:
                 partials.append(alpha_dissociated[f'{ionNam}'] * data_dict_plasma[f'C_{ionNam}'][0])
             except: # the O+ case

@@ -14,7 +14,7 @@ def generateNeutralEnvironment(**kwargs):
     from copy import deepcopy
 
     # --- file-specific imports ---
-    from src.ionosphere_modelling.neutral_environment.neutral_toggles import neutralsToggles
+    from src.ionosphere_modelling.neutral_environment.neutral_toggles import NeutralsToggles
     from numpy import datetime64, squeeze
     import pymsis
 
@@ -99,11 +99,11 @@ def generateNeutralEnvironment(**kwargs):
 
 
     # add the total neutral density
-    n_n = np.array([data_dict_output[f"{key}"][0] for key in neutralsToggles.wNeutrals])
+    n_n = np.array([data_dict_output[f"{key}"][0] for key in NeutralsToggles.wNeutrals])
     data_dict_output = {**data_dict_output, **{'nn': [np.sum(n_n,axis=0), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm!A-3!N', 'LABLAXIS': 'nn', 'VAR_TYPE':'data'}]}}
 
     # add the effective neutral mass
-    m_eff_n = np.sum(np.array( [stl.netural_dict[key]*data_dict_output[f"{key}"][0] for key in neutralsToggles.wNeutrals]), axis=0)/data_dict_output['nn'][0]
+    m_eff_n = np.sum(np.array( [stl.netural_dict[key]*data_dict_output[f"{key}"][0] for key in NeutralsToggles.wNeutrals]), axis=0)/data_dict_output['nn'][0]
     data_dict_output = {**data_dict_output, **{'m_eff_n': [m_eff_n, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'kg', 'LABLAXIS': 'nn', 'VAR_TYPE':'data'}]}}
 
     ######################
@@ -132,5 +132,5 @@ def generateNeutralEnvironment(**kwargs):
     # --- OUTPUT DATA ---
     #####################
 
-    outputPath = rf'{neutralsToggles.outputFolder}\neutral_environment.cdf'
+    outputPath = rf'{NeutralsToggles.outputFolder}\neutral_environment.cdf'
     stl.outputCDFdata(outputPath, data_dict_output)

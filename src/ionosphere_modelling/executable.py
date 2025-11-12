@@ -51,12 +51,12 @@ if dict_executable['regenNeSpectrum']==1:
     # ne spectrum
     stl.prgMsg('Regenerating ne spectrum\n')
 
-    from src.ionosphere_modelling.plasma_environment.plasma_toggles import plasmaToggles
+    from src.ionosphere_modelling.plasma_environment.plasma_toggles import PlasmaToggles
 
-    if plasmaToggles.useEISCAT_density_Profile:
+    if PlasmaToggles.useEISCAT_density_Profile:
         from src.ionosphere_modelling.plasma_environment.EISCAT_ne_spectrum.EISCAT_ne_spectrum import EISCAT_ne_spectrum
         EISCAT_ne_spectrum()
-    elif plasmaToggles.useACESII_density_Profile:
+    elif PlasmaToggles.useACESII_density_Profile:
         from src.ionosphere_modelling.plasma_environment.ACESII_Langmuir_ni_spectrogram.Langmuir_ni_spectrogram import langmuir_ni_spectrogram
         langmuir_ni_spectrogram()
     stl.Done(start_time)
@@ -105,7 +105,7 @@ if dict_executable['calc_IonoConductivity']==1:
 
 if dict_executable['map_electrostatic_potential']==1:
     # electrostatic potential mapping
-    stl.prgMsg('Mapping Electrostatic Potential')
+    stl.prgMsg('Mapping Electrostatic Potential\n')
     from src.ionosphere_modelling.electrostaticPotential.electrostaticPotential_Generator import generateElectrostaticPotential
     generateElectrostaticPotential()
     stl.Done(start_time)
