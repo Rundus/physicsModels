@@ -31,7 +31,7 @@ def generateIonizationRecomb():
     data_dict_plasma = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\plasma_environment\*.cdf*')[0])
 
     # get the ACES-II EEPAA Flux data
-    data_dict_flux = stl.loadDictFromFile(glob(rf'{IonizationRecombToggles.flux_path}\\*eepaa_flux_downsampled*')[0])
+    data_dict_flux = stl.loadDictFromFile(glob(rf'{IonizationRecombToggles.flux_path}\\*eepaa_flux_downsampled_1*')[0])
 
     # get the ACES-II L-Shell data
     data_dict_LShell = stl.loadDictFromFile(glob('C:\Data\physicsModels\ionosphere\data_inputs\eepaa\high\*eepaa_downsampled*')[0])
@@ -52,7 +52,6 @@ def generateIonizationRecomb():
                         'simLShell': deepcopy(data_dict_plasma['simLShell']),
                         'simAlt': deepcopy(data_dict_plasma['simAlt'])
                         }
-
 
     ############################
     # --- RECOMBINATION RATE ---
@@ -99,8 +98,6 @@ def generateIonizationRecomb():
         ##################################
         data_dict_output['ne_model'][0][idx1] = np.sqrt(deepcopy(data_dict_output['q_total'][0][idx1]) / deepcopy(data_dict_output['alpha_recomb_total'][0][idx1]))  # in m^-3
 
-
-
     #########################################
     # --- PLUG ANY HOLES IN NE_MODEL DATA ---
     #########################################
@@ -141,4 +138,4 @@ def generateIonizationRecomb():
         data_dict_output[key][1] = newAttrs
 
     outputPath = rf'{IonizationRecombToggles.outputFolder}\ionization_rcomb.cdf'
-    stl.outputCDFdata(outputPath, data_dict_output)
+    stl.outputDataDict(outputPath, data_dict_output)

@@ -104,4 +104,4 @@ def generate_spatialEnvironment():
                            }}
 
     outputPath = rf'{SpatialToggles.outputFolder}\spatial_environment.cdf'
-    stl.outputCDFdata(outputPath, data_dict_output)
+    stl.outputDataDict(outputPath, data_dict_output)

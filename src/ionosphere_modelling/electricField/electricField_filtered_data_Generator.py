@@ -31,6 +31,9 @@ def generate_filtered_EField():
     E_p_DC = np.zeros(shape=np.shape(data_dict_EField['E_N'][0]))
     E_p_AC = np.zeros(shape=np.shape(data_dict_EField['E_N'][0]))
 
+    ###########################
+    # ---
+
     ###############################
     # --- PERFORM BOXCAR FILTER ---
     ###############################
@@ -82,7 +85,7 @@ def generate_filtered_EField():
 
             else:
 
-                # --- SSA the E-Field(s) ---
+                # --- mSSA the E-Field(s) ---
 
                 SSA_E = stl.SSA(tseries=data_dict_EField['E_N'][0][:, j], L=FilterToggles.wLen, mirror_percent=FilterToggles.mirror_percent)
                 E_N_DC[:, j] = deepcopy(SSA_E.reconstruct(indices=FilterToggles.DC_components))
@@ -113,4 +116,4 @@ def generate_filtered_EField():
                       }
 
     outputPath = rf'{EFieldToggles.outputFolder}\{FilterToggles.filter_path}\filtered_EFields_conductivity.cdf'
-    stl.outputCDFdata(outputPath, data_dict_output)
+    stl.outputDataDict(outputPath, data_dict_output)

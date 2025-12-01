@@ -12,6 +12,7 @@ def generate_JouleHeating():
     from src.ionosphere_modelling.joule_heating.joule_heating_toggles import JouleHeatingToggles
     from src.ionosphere_modelling.electricField.electricField_toggles import EFieldToggles
     from src.ionosphere_modelling.currents.currents_toggles import CurrentsToggles
+    from src.ionosphere_modelling.currents.currents_filter_toggles import FilterToggles
 
     # prepare the output
     data_dict_output = {}
@@ -21,14 +22,12 @@ def generate_JouleHeating():
     #######################
     data_dict_spatial = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
 
-    if CurrentsToggles.filter_data:
-        data_dict_EField = deepcopy(stl.loadDictFromFile(rf'{CurrentsToggles.outputFolder}\{CurrentsToggles.filter_path}\filtered_EFields_conductivity.cdf')) # collect the IRI data
-        data_dict_conductivity = deepcopy(stl.loadDictFromFile(rf'{CurrentsToggles.outputFolder}\{CurrentsToggles.filter_path}\filtered_EFields_conductivity.cdf')) # collect the IRI data
+    if FilterToggles.filter_data:
+        data_dict_EField = deepcopy(stl.loadDictFromFile(rf'{CurrentsToggles.outputFolder}\{FilterToggles.filter_path}\filtered_EFields_conductivity.cdf')) # collect the IRI data
+        data_dict_conductivity = deepcopy(stl.loadDictFromFile(rf'{CurrentsToggles.outputFolder}\{FilterToggles.filter_path}\filtered_EFields_conductivity.cdf')) # collect the IRI data
     else:
         data_dict_EField = deepcopy(stl.loadDictFromFile(rf'{EFieldToggles.outputFolder}\electric_Field.cdf'))  # collect the IRI data
         data_dict_conductivity = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\conductivity\*.cdf*')[0])
-
-
 
     #################################
     # --- CALCULATE JOULE HEATING ---
@@ -51,4 +50,4 @@ def generate_JouleHeating():
                          }
 
     outputPath = rf'{JouleHeatingToggles.outputFolder}\joule_heating.cdf'
-    stl.outputCDFdata(outputPath, data_dict_output)
+    stl.outputDataDict(outputPath, data_dict_output)

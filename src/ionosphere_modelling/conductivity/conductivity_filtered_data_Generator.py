@@ -132,4 +132,5 @@ def generate_filtered_conductivity():
                       }
 
     outputPath = rf'{ConductivityToggles.outputFolder}\{FilterToggles.filter_path}\filtered_conductivity.cdf'
-    stl.outputCDFdata(outputPath, data_dict_output)
+    stl.outputDataDict(outputPath, data_dict_output)
+          

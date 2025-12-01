@@ -219,4 +219,4 @@ def generatePlasmaEnvironment():
         data_dict_output[key][1] = newAttrs
 
     outputPath = rf'{PlasmaToggles.outputFolder}\plasma_environment.cdf'
-    stl.outputCDFdata(outputPath, data_dict_output)
+    stl.outputDataDict(outputPath, data_dict_output)

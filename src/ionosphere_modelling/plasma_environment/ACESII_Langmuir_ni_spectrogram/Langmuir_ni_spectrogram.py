@@ -160,7 +160,7 @@ def langmuir_ni_spectrogram():
             data_dict_output[key][1]['var_type'] = 'data'
 
         output_folder = 'C:\Data\physicsModels\ionosphere\plasma_environment\ACESII_ni_spectrum'
-        stl.outputCDFdata(outputPath=output_folder + '\\ACESII_ni_spectrum.cdf', data_dict=data_dict_output)
+        stl.outputDataDict(outputPath=output_folder + '\\ACESII_ni_spectrum.cdf', data_dict=data_dict_output)
 
 
 langmuir_ni_spectrogram()

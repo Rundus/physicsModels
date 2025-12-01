@@ -70,7 +70,7 @@ def generate_GeomagneticField():
                         }}
 
     outputPath = rf'{BgeoToggles.outputFolder}\geomagneticfield.cdf'
-    stl.outputCDFdata(outputPath, data_dict_output)
+    stl.outputDataDict(outputPath, data_dict_output)
 
     #############################
     # --- AURORAL COORDINATES ---
@@ -223,5 +223,5 @@ def generate_GeomagneticField():
                                 }
 
     outputPath = rf'{SpatialToggles.outputFolder}\spatial_environment.cdf'
-    stl.outputCDFdata(outputPath, data_dict_output_spatial)
+    stl.outputDataDict(outputPath, data_dict_output_spatial)
 

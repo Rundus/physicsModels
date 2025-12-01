@@ -45,7 +45,7 @@ def downsample_EnergyFlux_data(wRocket):
 
     # --- Load the Data ---
     stl.prgMsg(f'Loading data')
-    data_dict = stl.loadDictFromFile(glob(rf'C:\Data\ACESII\L3\Energy_Flux\{fliers[wRocket-4]}\*eepaa_flux.cdf*')[0])
+    data_dict = stl.loadDictFromFile(glob(rf'C:\Data\physicsModels\ionosphere\data_inputs\energy_flux\high\ACESII_36359_l3_eepaa_flux_input_ionosphere.cdf')[0])
     stl.Done(start_time)
 
     # --- prepare the output ---
@@ -89,7 +89,7 @@ def downsample_EnergyFlux_data(wRocket):
         stl.prgMsg('Creating output file')
         fileoutName = f'ACESII_{rocketID[wRocket-4]}_eepaa_flux_downsampled_{DataPreparationToggles.N_avg}.cdf'
         outputPath = f'C:\Data\physicsModels\ionosphere\data_inputs\energy_flux\\{fliers[wRocket-4]}\\' + fileoutName
-        stl.outputCDFdata(outputPath, data_dict_output)
+        stl.outputDataDict(outputPath, data_dict_output)
         stl.Done(start_time)
 
 

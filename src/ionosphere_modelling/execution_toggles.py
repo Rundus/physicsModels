@@ -13,10 +13,10 @@ dict_executable = {
     'regenNeutralEnvironment': 0,
     'ionRecomb_ne_Calc': 0,
     'calc_IonoConductivity': 0,
-    'map_electrostatic_potential': 1,
-    'calc_electricField': 1,
+    'map_electrostatic_potential': 0,
+    'calc_electricField': 0,
     'calc_PoyntingFlux':0,
     'filter_EFields_conductivity':0,
     'calc_IonoCurrents': 0,
-    'calc_JouleHeating':0
+    'calc_JouleHeating':1
 }

@@ -45,13 +45,17 @@ def downsample_EEPAA_data(wRocket):
 
     # --- Load the Data ---
     stl.prgMsg(f'Loading data')
-    data_dict_eepaa = stl.loadDictFromFile(glob(rf'C:\Data\ACESII\L2\{fliers[wRocket-4]}\*eepaa_fullCal.cdf*')[0], wKeys_Load=['Epoch',
+
+    if wRocket==4:
+        data_dict_eepaa = stl.loadDictFromFile(glob(rf'C:\Data\physicsModels\ionosphere\data_inputs\energy_flux\high\ACESII_36359_l3_eepaa_flux_input_ionosphere.cdf')[0])
+    else:
+        data_dict_eepaa = stl.loadDictFromFile(glob(rf'C:\Data\ACESII\L2\{fliers[wRocket-4]}\*eepaa_fullCal.cdf*')[0], wKeys_Load=['Epoch',
                                                                                                                                'Differential_Energy_Flux',
                                                                                                                                'Differential_Number_Flux',
                                                                                                                                'Energy',
                                                                                                                                'Pitch_Angle',
                                                                                                                                'Lat_geom',
-                                                                                                                               'Long_geom',
+                                                                                                                                'Long_geom',
                                                                                                                                'Alt_geom'])
     data_dict_Lshell = stl.loadDictFromFile(glob(rf'C:\Data\ACESII\coordinates\Lshell\{fliers[wRocket-4]}\*_Lshell.cdf*')[0], wKeys_Load=[
                                                                                                                                           'L-Shell',

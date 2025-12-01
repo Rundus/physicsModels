@@ -133,4 +133,4 @@ def generateNeutralEnvironment(**kwargs):
     #####################
 
     outputPath = rf'{NeutralsToggles.outputFolder}\neutral_environment.cdf'
-    stl.outputCDFdata(outputPath, data_dict_output)
+    stl.outputDataDict(outputPath, data_dict_output)

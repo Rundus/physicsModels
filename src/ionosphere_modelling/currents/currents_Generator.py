@@ -9,6 +9,7 @@ def generate_Currents():
     from copy import deepcopy
 
     # --- file-specific imports ---
+    from src.ionosphere_modelling.currents.currents_filter_toggles import FilterToggles
     from src.ionosphere_modelling.currents.currents_toggles import CurrentsToggles
     from scipy.integrate import simpson
 
@@ -28,12 +29,12 @@ def generate_Currents():
     # --- GENERATE THE IONOSPHERIC CURRENTS ---
     ###########################################
     # Description: Get the Fields and conductivity values for the
-    if CurrentsToggles.filter_data:
-        if CurrentsToggles.use_boxcar:
+    if FilterToggles.filter_data:
+        if FilterToggles.use_boxcar:
             data_dict_filter = stl.loadDictFromFile(r'C:\Data\physicsModels\ionosphere\currents\savitz_golay_filtered\filtered_EFields_conductivity.cdf')
-        elif CurrentsToggles.use_savitz_golay:
+        elif FilterToggles.use_savitz_golay:
             data_dict_filter = stl.loadDictFromFile(r'C:\Data\physicsModels\ionosphere\currents\savitz_golay_filtered\filtered_EFields_conductivity.cdf')
-        elif CurrentsToggles.use_SSA_filter:
+        elif FilterToggles.use_SSA_filter:
             data_dict_filter = stl.loadDictFromFile(r'C:\Data\physicsModels\ionosphere\currents\ssa_filtered\filtered_EFields_conductivity.cdf')
         data_dict_output = {**data_dict_output,
                             **{
@@ -133,4 +134,4 @@ def generate_Currents():
                                }}
 
     outputPath = rf'{CurrentsToggles.outputFolder}\currents.cdf'
-    stl.outputCDFdata(outputPath, data_dict_output)
+    stl.outputDataDict(outputPath, data_dict_output)

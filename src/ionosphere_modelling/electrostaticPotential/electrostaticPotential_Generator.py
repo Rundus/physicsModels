@@ -34,8 +34,11 @@ def generateElectrostaticPotential():
     # prepare the data
     LShellRange = data_dict_spatial['simLShell'][0]
     altRange = data_dict_spatial['simAlt'][0]
+    potential = deepcopy(data_dict_integrated_potential['Potential'][0])
+    potential_detrend = deepcopy(data_dict_integrated_potential['Potential_detrend'][0])
 
     grid_potential = [[[] for j in range(len(altRange))] for i in range(len(LShellRange))]
+    grid_potential_detrend = [[[] for j in range(len(altRange))] for i in range(len(LShellRange))]
 
     counter = 0
     for Lval, altVal in zip(data_dict_integrated_potential['L-Shell'][0],stl.m_to_km*data_dict_integrated_potential['Alt'][0]):
@@ -45,8 +48,8 @@ def generateElectrostaticPotential():
         Alt_idx = np.abs(altRange - altVal).argmin()
 
         # Place this value into the respective bin
-        grid_potential[LShell_idx][Alt_idx].append(data_dict_integrated_potential['Potential'][0][counter])
-        # grid_potential[LShell_idx][Alt_idx].append(data_dict_integrated_potential['Potential_detrend'][0][counter])
+        grid_potential[LShell_idx][Alt_idx].append(potential[counter])
+        grid_potential_detrend[LShell_idx][Alt_idx].append(potential_detrend[counter])
         counter+=1
 
     # average all the bins with data and set empty bins to zero
@@ -57,6 +60,12 @@ def generateElectrostaticPotential():
                 grid_potential[idx1][idx2] = 0
             elif len(val) > 0:
                 grid_potential[idx1][idx2] = np.average(val)
+
+            val = grid_potential_detrend[idx1][idx2]
+            if len(val) == 0:
+                grid_potential_detrend[idx1][idx2] = 0
+            elif len(val) > 0:
+                grid_potential_detrend[idx1][idx2] = np.average(val)
 
 
 
@@ -72,24 +81,29 @@ def generateElectrostaticPotential():
                            'grid_dz': deepcopy(data_dict_spatial['grid_dz']),
                            'grid_dx':deepcopy(data_dict_spatial['grid_dx']),
                            'initial_potential': [np.array(grid_potential), {'DEPEND_1':'simAlt','DEPEND_0':'simLShell', 'UNITS':'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
+                           'initial_potential_detrend': [np.array(grid_potential_detrend), {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'V', 'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
                            'simLShell':deepcopy(data_dict_spatial['simLShell']),
                            'simAlt':deepcopy(data_dict_spatial['simAlt'])
                        }
                         }
 
     grid_flattened = np.array([np.sum(arr)/len(np.nonzero(arr)[0]) for arr in data_dict_output['initial_potential'][0]])
+    grid_flattened_detrend = np.array([np.sum(arr) / len(np.nonzero(arr)[0]) for arr in data_dict_output['initial_potential_detrend'][0]])
+
 
     #########################
+    # -----------------------
     # --- MAP THE E-FIELD ---
+    # -----------------------
     #########################
 
-    # Calculate all the coefficents - ASSUME A SINGLE VALUE, AVERAGE VALUE for deltaZ, deltaX
+    ####################################
+    # --- CALCULATE THE COEFFICIENTS ---
+    ####################################
+
+    # --- Assume a single, averaged value for deltaZ, deltaX ---
     deltaZ = round(np.nanmean(deepcopy(data_dict_output['grid_dz'][0])))
     deltaX = round(np.nanmean(deepcopy(data_dict_output['grid_dx'][0])))
-
-    ###################################
-    # --- CALCULATE THE COEFFICENTS ---
-    ###################################
 
     # --- Calculate the conductivity ratio term p(x,z) = sigma_P / sigma_D ---
     p = data_dict_output['sigma_P'][0]/data_dict_output['sigma_D'][0]
@@ -140,18 +154,27 @@ def generateElectrostaticPotential():
                             **{name: [np.array(val), {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': None, 'LABLAXIS': f'{name}_coefficent', 'VAR_TYPE': 'support_data'}]}
                             }
 
-    # get the Initial condition potential grid and make modifications. Store the modifications
-    # initial_potential = deepcopy(data_dict_output['initial_potential'][0])
+    # --- Enforce Phi=0 Boundary Conditions on the Initial condition potential grid---
     initial_potential = np.zeros(shape=(len(data_dict_output['simLShell'][0]), len(SpatialToggles.simAlt)))
-    initial_potential[:, -1] = 1 * grid_flattened  # set the Top to some initial conditions
+    initial_potential_detrend = np.zeros(shape=(len(data_dict_output['simLShell'][0]), len(SpatialToggles.simAlt)))
+
+    # Set the Top of the simulation to the Low-Flyer Measured potential.
+    # Essentially, we assume the top of our simulation is the same as our measured E-Field.
+    initial_potential[:, -1] = grid_flattened
+    initial_potential_detrend[:,-1] = grid_flattened_detrend
+
+    # Enforce phi=0 boundaries
     initial_potential[:, 0] = 0 * grid_flattened  # set the bottom to some initial conditions
     initial_potential[0] = np.zeros(shape=len(data_dict_output['simAlt'][0]))  # set the left side to zero
     initial_potential[-1] = np.zeros(shape=len(data_dict_output['simAlt'][0]))  # set the right side to zero
-    data_dict_output['initial_potential'][0] = initial_potential
+    initial_potential_detrend[:, 0] = 0 * grid_flattened_detrend  # set the bottom to some initial conditions
+    initial_potential_detrend[0] = np.zeros(shape=len(data_dict_output['simAlt'][0]))  # set the left side to zero
+    initial_potential_detrend[-1] = np.zeros(shape=len(data_dict_output['simAlt'][0]))  # set the right side to zero
 
-    # --- --- --- --- --- --- --- --- --- --- --- --
+    data_dict_output['initial_potential'][0] = initial_potential
+    data_dict_output['initial_potential_detrend'][0] = initial_potential_detrend
+
     # --- populate the coefficients of the matrix ---
-    # --- --- --- --- --- --- --- --- --- --- --- --
     def checkBoundary(i, j, N, M):
         '''
         Checks input indices are at the boundary of the simulation space
@@ -172,8 +195,7 @@ def generateElectrostaticPotential():
         else:
             return 0
 
-    # [2] Construct the Array
-    # [a] form the sparse A matrix
+    # [0] Construct/form the sparse A matrix
     M = len(data_dict_output['simLShell'][0])
     N = len(data_dict_output['simAlt'][0])
     dim = N * M
@@ -185,6 +207,7 @@ def generateElectrostaticPotential():
 
     # [2] Form the solution vector
     b_matrix = np.zeros(shape=(dim))
+    b_matrix_detrend = np.zeros(shape=(dim))
 
     # [3] Fill in the sparse matrix to form the coefficent matrix
     counter = 0
@@ -207,6 +230,7 @@ def generateElectrostaticPotential():
 
                 # UPDATE THE SOLUTION B VECTOR
                 b_matrix[pos] = deepcopy(initial_potential[i][j])
+                b_matrix_detrend[pos] = deepcopy(initial_potential_detrend[i][j])
 
             # IF on a boundary point, set that SPECIFIC potential value to zero in the sparse matrix
             elif checkBoundary(i=i,j=j,N=N,M=M)==1:
@@ -237,6 +261,7 @@ def generateElectrostaticPotential():
 
     # [5] Solve the Ax=B problem and reshape into potential grid
     solved_potential = spsolve(A=A_matrix, b=b_matrix).reshape((M, N))
+    solved_potential_detrend = spsolve(A=A_matrix, b=b_matrix_detrend).reshape((M, N))
 
 
 
@@ -247,7 +272,12 @@ def generateElectrostaticPotential():
     data_dict_output = {**data_dict_output,
                         **{'potential': [solved_potential, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'V',
                                                             'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
+                           'potential_detrend': [solved_potential_detrend, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'V',
+                                                            'LABLAXIS': 'Electrostatic Potential Detrend', 'VAR_TYPE': 'data'}],
                            'b_matrix': [b_matrix.reshape((M, N)),
+                                        {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'V',
+                                         'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
+                           'b_matrix_detrend': [b_matrix_detrend.reshape((M, N)),
                                         {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'V',
                                          'LABLAXIS': 'Electrostatic Potential', 'VAR_TYPE': 'data'}],
                            'sigma_D_sigma_P_ratio_sqrt': [np.sqrt(
@@ -258,4 +288,4 @@ def generateElectrostaticPotential():
                         }
 
     outputPath = rf'{ElectroStaticToggles.outputFolder}\electrostaticPotential.cdf'
-    stl.outputCDFdata(outputPath, data_dict_output)
+    stl.outputDataDict(outputPath, data_dict_output)

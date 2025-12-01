@@ -275,4 +275,4 @@ def generateIonosphericConductivity():
         data_dict_output[key][1] = newAttrs
 
     outputPath = rf'{ConductivityToggles.outputFolder}\conductivity.cdf'
-    stl.outputCDFdata(outputPath, data_dict_output)
+    stl.outputDataDict(outputPath, data_dict_output)
