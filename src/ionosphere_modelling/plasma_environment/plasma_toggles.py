@@ -8,8 +8,8 @@ class PlasmaToggles:
     # --- FILE I/O ---
     ##################
     from src.ionosphere_modelling.sim_toggles import SimToggles
-    outputFolder = f'{SimToggles.sim_root_path}\plasma_environment'
-    IRI_filePath = r'C:\Data\physicsModels\ionosphere\IRI\ACESII\IRI_3D_2022324.cdf'
+    outputFolder = f'{SimToggles.sim_root_path}/plasma_environment'
+    IRI_filePath = rf'{SimToggles.sim_root_path}/IRI/ACESII/IRI_3D_2022324.cdf'
 
     # --- --- --- ---
     ### ELECTRONS ###
@@ -29,6 +29,11 @@ class PlasmaToggles:
     # --- --- --
     wIons = ['NO+', 'O+', 'O2+']  # which neutrals to consider in the simulation, use the key format in spaceToolsLib
     # wIons = ['NO+','H+','N+','He+', 'O+', 'O2+']  # all ions
+
+    # --- --- --- ---
+    ### TEMPERATURE ###
+    # --- --- --- ---
+    useDERPA_TeTi = True
 
 
 

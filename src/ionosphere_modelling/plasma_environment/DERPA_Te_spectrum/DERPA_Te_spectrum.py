@@ -14,25 +14,26 @@ from glob import glob
 from src.ionosphere_modelling.sim_toggles import SimToggles
 from scipy.interpolate import CubicSpline
 from copy import deepcopy
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.stats import binned_statistic
 
 #################
 # --- TOGGLES ---
 #################
-outputData = False
+outputData = True
 plot_fit_data = False
 plot_EISCAT_background = False
-bool_show_num_points_plot = True
-
+bool_show_num_points_plot = False
+bool_show_linear_Te_plot = True
 
 def DERPA_Te_spectrum():
 
     #######################
     # --- LOAD THE DATA ---
-    #######################
-    data_dict_LP_cal_high = stl.loadDictFromFile(glob(f'C:/Data/ACESII/calibration/LP/postFlight_calibration/high/*.cdf*')[0])
-    data_dict_LP_cal_low = stl.loadDictFromFile(glob(f'C:/Data/ACESII/calibration/LP/postFlight_calibration/low/*.cdf*')[0])
-    data_dict_Bgeo = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\geomagneticField\*.cdf*')[0])
+    #######################    )
+    data_dict_LP_cal_high = stl.loadDictFromFile(glob(f'{SimToggles.ACES_data_folder}/calibration/LP/postFlight_calibration/high/*.cdf*')[0])
+    data_dict_LP_cal_low = stl.loadDictFromFile(glob(f'{SimToggles.ACES_data_folder}/calibration/LP/postFlight_calibration/low/*.cdf*')[0])
+    data_dict_Bgeo = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/geomagneticField/*.cdf*')[0])
 
     ############################
     # --- PREPARE THE OUTPUT ---
@@ -130,7 +131,7 @@ def DERPA_Te_spectrum():
         data_dicts[wflyer]['L-Shell'][0] = deepcopy(data_dicts[wflyer]['L-Shell'][0][low_idx:high_idx+1])
 
     # Construct an L-shell vs altitude array for fitting to the grid
-    alt_grid = np.linspace(70, 420, 2)
+    alt_grid = np.array([i for i in range(70,422,2)])
     fit_array = [[[] for alt in alt_grid] for LShell in simLShell]
 
     # populate the fitting array with both flyer's data
@@ -145,18 +146,90 @@ def DERPA_Te_spectrum():
         for alt_idx in range(len(fit_array[0])):
             fit_num_points[iLat_idx][alt_idx] = len(fit_array[iLat_idx][alt_idx])
 
+    # reduce fit array to either a mean or a zero
+    for i in range(len(fit_array)):
+        for j in range(len(fit_array[0])):
+            if len(fit_array[i][j]) != 0:
+                fit_array[i][j] = np.nanmean(fit_array[i][j])
+            else:
+                fit_array[i][j] = 0
+    fit_array = np.array(fit_array)
+
     if bool_show_num_points_plot:
-        fig, ax = plt.subplots()
-        cmap = ax.pcolormesh(simLShell, alt_grid, fit_num_points.T, norm='log',vmin=1,vmax=100)
-        ax.set_ylabel('Alt [km]', fontsize=20)
-        ax.set_xlabel('L Shell', fontsize=20)
-        ax.set_ylim(70, 420)
-        ax.set_xlim(simLShell[0], simLShell[-1])
-        cbar = plt.colorbar(cmap)
-        cbar.set_label('Num of Points')
-        ax.grid()
+        fig, ax = plt.subplots(2)
+        data = [fit_num_points.T, fit_array.T]
+        label = ['Num of Points', 'Temperature [K]']
+        for i in range(2):
+            cmap = ax[i].pcolormesh(simLShell, alt_grid, data[i])
+            ax[i].set_ylabel('Alt [km]', fontsize=20)
+            ax[i].set_xlabel('L Shell', fontsize=20)
+            ax[i].set_ylim(70, 420)
+            ax[i].set_xlim(simLShell[0], simLShell[-1])
+            cbar = plt.colorbar(cmap)
+            cbar.set_label(label[i])
+            ax[i].grid()
         plt.show()
 
+    #####################################################
+    # --- LINEAR FIT DERPA PERTURBATION OVER ALTITUDE ---
+    #####################################################
+    def weighting(x,A,z0):
+        return 0.5*(1-np.tanh((x-z0)/A))
+
+    scaling = 150
+    z0 = 100
+
+    Te_fit = np.zeros(shape=(len(simLShell), len(simAlt)))
+    Te_no_average = np.zeros(shape=(len(simLShell), len(simAlt)))
+    simulated_Alt_slice = []
+    simulated_Temp_slice = []
+    for i in range(len(simLShell)):
+        # for each L-Shell, get the two DERPA points and their altitude
+        good_idxs = np.where(fit_array[i]!=0)
+        fit_Temps = fit_array[i][good_idxs]
+        fit_alts = alt_grid[good_idxs]
+
+        # Using these points, interpolate onto all altitudes
+        Te_interpolated = np.interp(simAlt,fit_alts,fit_Temps)
+
+        # At altitudes below the low flyer we cannot just use our interpolation. Instead, lets use the background EISCAT and weight the average value by the tanh(x) function
+        background_alt_weights = [weighting(altval,z0,scaling)  for altval in simAlt]
+        DERPA_alt_weights = [(1-weighting(altval,z0,scaling)) for altval in simAlt]
+        weights = np.array([background_alt_weights,DERPA_alt_weights]).T
+        temps = np.array([Te_background_grid[0],Te_interpolated]).T
+        temps_scaled = temps*weights
+        Te_fit[i] = np.sum(temps_scaled,axis=1)
+        Te_no_average[i] = Te_interpolated
+
+        alt_idx = np.abs(simAlt-fit_alts[0]).argmin()
+        simulated_Alt_slice.append(fit_alts[0])
+        simulated_Temp_slice.append(Te_fit[i][alt_idx])
+
+
+    if bool_show_linear_Te_plot:
+        fig, ax = plt.subplots(2)
+
+        # Show Te
+        axNo = 0
+        cmap = ax[axNo].pcolormesh(simLShell, simAlt,(stl.q0 / stl.kB)*Te_fit.T)
+        divider = make_axes_locatable(ax[axNo])
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        cbar = plt.colorbar(cmap, cax=cax)
+        cbar.set_label('Temperature [K]')
+        ax[axNo].set_ylabel('Alt [km]', fontsize=20)
+        ax[axNo].set_xlabel('L Shell', fontsize=20)
+        ax[axNo].set_ylim(70, 300)
+        ax[axNo].set_xlim(simLShell[0], simLShell[-1])
+        ax[axNo].grid()
+
+
+        # Show Te simulated vs Te DERPA Low Flyer
+        axNo = 1
+        ax[axNo].plot(simLShell,(stl.q0 / stl.kB) *np.array(simulated_Temp_slice),label='Simulated')
+        ax[axNo].plot(data_dicts[1]['L-Shell'][0], (stl.q0 / stl.kB) *data_dicts[1]['Te_DERPA1'][0],color='tab:red',label='DERPA1')
+        ax[axNo].plot(data_dicts[1]['L-Shell'][0], (stl.q0 / stl.kB) *data_dicts[1]['Te_DERPA2'][0],color='tab:green',label='DERPA2')
+        ax[axNo].legend()
+        plt.show()
 
     #####################
     # --- OUTPUT DATA ---
@@ -165,12 +238,15 @@ def DERPA_Te_spectrum():
         data_dict_output = {
             'Te_background':[(stl.q0/stl.kB)*np.array(Te_background_grid), {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'K', 'LABLAXIS': 'Te'}],
             'Ti_background': [(stl.q0/stl.kB)*np.array(Ti_background_grid), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'K', 'LABLAXIS': 'Ti'}],
-            'Tr_background': [np.array(Tr_background_grid), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'Tr'}],
+            'Tr_background': [np.array(Tr_background_grid), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'Te/Ti'}],
             'ne_background': [np.array(ne_background_grid), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm^-3', 'LABLAXIS': 'ne'}],
             'simLShell': deepcopy(data_dict_Bgeo['simLShell']),
-            'simAlt':deepcopy(data_dict_Bgeo['simAlt'])
+            'simAlt':deepcopy(data_dict_Bgeo['simAlt']),
+            'Te_fit':[(stl.q0/stl.kB)*np.array(Te_fit), {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'K', 'LABLAXIS': 'Te_fit'}],
+            'Te_fit_noAvg': [(stl.q0 / stl.kB) * np.array(Te_no_average), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'K', 'LABLAXIS': 'Te_fit'}],
+            'Ti_fit': [(stl.q0/stl.kB)*np.array(Te_fit)/Tr_background_grid, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'K', 'LABLAXIS': 'Ti_fit'}]
         }
-        output_path = 'C:/Data/physicsModels/ionosphere/plasma_environment/DERPA_Te_spectrum/DERPA_Te_spectrum.cdf'
+        output_path = f'{SimToggles.sim_root_path}/plasma_environment/DERPA_Te_spectrum/DERPA_Te_spectrum.cdf'
         stl.outputDataDict(outputPath=output_path, data_dict=data_dict_output)
 
 DERPA_Te_spectrum()

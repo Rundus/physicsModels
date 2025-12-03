@@ -18,7 +18,7 @@ def generatePlasmaEnvironment():
     # --- LOAD THE DATA ---
     #######################
     # get the geomagnetic field data dict
-    data_dict_Bgeo = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\geomagneticField\*.cdf*')[0])
+    data_dict_Bgeo = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/geomagneticField/*.cdf*')[0])
     data_dict_IRI = deepcopy(stl.loadDictFromFile(PlasmaToggles.IRI_filePath)) # collect the IRI data
 
     ############################
@@ -197,6 +197,13 @@ def generatePlasmaEnvironment():
                  **{'ionLarmorRadius_eff': [ionLarmorRadius_eff, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'ionLarmorRadius_eff'}]},
                  **{f'ionLarmorRadius_{key}': [ionLarmorRadius_ions[idx], {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': f'ionLarmorRadius_{key}'}] for idx, key in enumerate(Ikeys)}
                  }
+
+
+    if PlasmaToggles.useDERPA_TeTi:
+        data_dict_DERPA_fits = stl.loadDictFromFile(f'{SimToggles.sim_root_path}/plasma_environment/DERPA_Te_spectrum/DERPA_Te_spectrum.cdf')
+        data_dict_output['Te'][0] = deepcopy(data_dict_DERPA_fits['Te_fit'][0])
+        data_dict_output['Ti'][0] = deepcopy(data_dict_DERPA_fits['Ti_fit'][0])
+
 
 
     #####################
