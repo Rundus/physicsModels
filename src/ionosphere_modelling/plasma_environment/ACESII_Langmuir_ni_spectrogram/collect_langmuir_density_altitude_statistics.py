@@ -34,23 +34,24 @@ stl.setupPYCDF()
 from spacepy import pycdf
 from copy import deepcopy
 from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
+from src.ionosphere_modelling.sim_toggles import SimToggles
 
 def collect_langmuir_density_altitude_statistics(wflyer):
 
     # --- preamble ---
     rocket_ID = ['36359', '36364'][wflyer]
-    ACES_data_folder = r'C:\Data\\ACESII\\'
+    ACES_data_folder = SimToggles.ACES_data_folder
     stl.prgMsg(f'Loading ACES-II {rocket_ID} Data')
 
     #######################
     # --- LOAD THE DATA ---
     #######################
     wFlyer = ['high', 'low'][wflyer]
-    data_dict_eepaa = stl.loadDictFromFile(ACES_data_folder + f'\\L2\\{wFlyer}\\ACESII_{rocket_ID}_l2_eepaa_fullCal.cdf')
-    data_dict_energy_flux = stl.loadDictFromFile(ACES_data_folder + f'\\L3\\Energy_Flux\\{wFlyer}\\ACESII_{rocket_ID}_l3_eepaa_Flux.cdf')
-    data_dict_LP = stl.loadDictFromFile(ACES_data_folder + f'\\L3\\Langmuir\\{wFlyer}\\ACESII_{rocket_ID}_l3_langmuir_fixed.cdf')
-    data_dict_attitude = stl.loadDictFromFile(ACES_data_folder + f'\\attitude\\{wFlyer}\\ACESII_{rocket_ID}_Attitude_Solution.cdf')
-    data_dict_LShell = stl.loadDictFromFile(ACES_data_folder + f'\\coordinates\\Lshell\\{wFlyer}\\ACESII_{rocket_ID}_Lshell.cdf')
+    data_dict_eepaa = stl.loadDictFromFile(ACES_data_folder + f'/L2/{wFlyer}/ACESII_{rocket_ID}_l2_eepaa_fullCal.cdf')
+    data_dict_energy_flux = stl.loadDictFromFile(ACES_data_folder + f'/L3/Energy_Flux/{wFlyer}/ACESII_{rocket_ID}_l3_eepaa_Flux.cdf')
+    data_dict_LP = stl.loadDictFromFile(ACES_data_folder + f'/L3/Langmuir/{wFlyer}/ACESII_{rocket_ID}_l3_langmuir_fixed.cdf')
+    data_dict_attitude = stl.loadDictFromFile(ACES_data_folder + f'/attitude/{wFlyer}/ACESII_{rocket_ID}_Attitude_Solution.cdf')
+    data_dict_LShell = stl.loadDictFromFile(ACES_data_folder + f'/coordinates/Lshell/{wFlyer}/ACESII_{rocket_ID}_Lshell.cdf')
     stl.Done(start_time)
 
     ######################################################
@@ -108,7 +109,7 @@ def collect_langmuir_density_altitude_statistics(wflyer):
     #########################
     # --- OUTPUT THE DATA ---
     #########################
-    output_folder = r'C:\Data\physicsModels\ionosphere\plasma_environment\ACESII_ni_spectrum\\'
+    output_folder = rf'{SimToggles.sim_root_path}/plasma_environment/ACESII_ni_spectrum/'
 
     data_dict_output = {
         'quiet_ni': [quiet_ni, deepcopy(data_dict_LP['ni'][1])],
@@ -132,7 +133,7 @@ def collect_langmuir_density_altitude_statistics(wflyer):
 
     if outputData:
         # output the High Flyer data
-        stl.outputCDFdata(outputPath=output_folder + f'{wFlyer}\\ACESII_{rocket_ID}_langmuir_ni_statistics.cdf', data_dict=data_dict_output)
+        stl.outputCDFdata(outputPath=output_folder + f'{wFlyer}/ACESII_{rocket_ID}_langmuir_ni_statistics.cdf', data_dict=data_dict_output)
 
 
 # --- --- --- ---

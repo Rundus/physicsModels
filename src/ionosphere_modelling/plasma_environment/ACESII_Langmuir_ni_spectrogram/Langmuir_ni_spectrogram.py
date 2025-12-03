@@ -23,6 +23,7 @@ start_time = time.time()
 from scipy.optimize import curve_fit
 from scipy.interpolate import CubicSpline
 import spaceToolsLib as stl
+from src.ionosphere_modelling.sim_toggles import SimToggles
 from copy import deepcopy
 from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
 
@@ -48,10 +49,10 @@ def langmuir_ni_spectrogram():
     #######################
     # --- LOAD THE DATA ---
     #######################
-    data_dict_HF_statistics = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\plasma_environment\ACESII_ni_spectrum\high\ACESII_36359_langmuir_ni_statistics.cdf')
-    data_dict_LF_statistics = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\plasma_environment\ACESII_ni_spectrum\low\ACESII_36364_langmuir_ni_statistics.cdf')
+    data_dict_HF_statistics = stl.loadDictFromFile(f'{SimToggles.sim_root_path}/plasma_environment/ACESII_ni_spectrum/high/ACESII_36359_langmuir_ni_statistics.cdf')
+    data_dict_LF_statistics = stl.loadDictFromFile(f'{SimToggles.sim_root_path}/plasma_environment/ACESII_ni_spectrum/low/ACESII_36364_langmuir_ni_statistics.cdf')
     data_dicts = [data_dict_HF_statistics,  data_dict_LF_statistics]
-    data_dict_spatial = stl.loadDictFromFile(r'C:\Data\physicsModels\ionosphere\spatial_environment\spatial_environment.cdf')
+    data_dict_spatial = stl.loadDictFromFile(rf'{SimToggles.sim_root_path}/spatial_environment/spatial_environment.cdf')
 
     ############################
     # --- PREPARE THE OUTPUT ---
@@ -159,10 +160,8 @@ def langmuir_ni_spectrogram():
             data_dict_output[key][1]['DEPEND_0'] = None
             data_dict_output[key][1]['var_type'] = 'data'
 
-        output_folder = 'C:\Data\physicsModels\ionosphere\plasma_environment\ACESII_ni_spectrum'
-        stl.outputDataDict(
-
-            outputPath=output_folder + '\\ACESII_ni_spectrum.cdf', data_dict=data_dict_output)
+        output_folder = f'{SimToggles.sim_root_path}/plasma_environment/ACESII_ni_spectrum'
+        stl.outputDataDict(outputPath=output_folder + '/ACESII_ni_spectrum.cdf', data_dict=data_dict_output)
 
 
 langmuir_ni_spectrogram()

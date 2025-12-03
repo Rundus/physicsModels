@@ -20,8 +20,8 @@ def generate_GeomagneticField():
     #######################
     # --- LOAD THE DATA ---
     #######################
-    data_dict_spatial = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
-    data_dict_auroral_coord = stl.loadDictFromFile('C:/Data/ACESII/coordinates/auroral_coordinates/low/ACESII_36364_auroral_coordinates_angle.cdf')
+    data_dict_spatial = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}/spatial_environment/*.cdf*')[0])
+    data_dict_auroral_coord = stl.loadDictFromFile(f'{SimToggles.ACES_data_folder}/coordinates/auroral_coordinates/low/ACESII_36364_auroral_coordinates_angle.cdf')
 
     ########################################
     # --- GENERATE THE B-FIELD & TOGGLES ---
@@ -69,7 +69,7 @@ def generate_GeomagneticField():
                             'B_U': [grid_Bgeo_ENU_U,{'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'T', 'LABLAXIS': 'B_U', 'VAR_TYPE': 'data'}],
                         }}
 
-    outputPath = rf'{BgeoToggles.outputFolder}\geomagneticfield.cdf'
+    outputPath = rf'{BgeoToggles.outputFolder}/geomagneticfield.cdf'
     stl.outputDataDict(outputPath, data_dict_output)
 
     #############################
@@ -222,6 +222,6 @@ def generate_GeomagneticField():
                                 }
                                 }
 
-    outputPath = rf'{SpatialToggles.outputFolder}\spatial_environment.cdf'
+    outputPath = rf'{SpatialToggles.outputFolder}/spatial_environment.cdf'
     stl.outputDataDict(outputPath, data_dict_output_spatial)
 

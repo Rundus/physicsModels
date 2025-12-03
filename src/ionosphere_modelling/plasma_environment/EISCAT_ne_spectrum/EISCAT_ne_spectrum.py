@@ -14,7 +14,7 @@ from copy import deepcopy
 from scipy.signal import savgol_filter
 from scipy.interpolate import CubicSpline
 from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
-
+from src.ionosphere_modelling.sim_toggles import SimToggles
 
 #################
 # --- TOGGLES ---
@@ -37,8 +37,8 @@ def EISCAT_ne_spectrum():
     #######################
     # --- LOAD THE DATA ---
     #######################
-    data_dict_EISCAT = stl.loadDictFromFile(r'C:\Data\ACESII\science\EISCAT\tromso\UHF\MAD6400_2022-11-20_beata_ant@uhfa.cdf')
-    data_dict_spatial = stl.loadDictFromFile(r'C:\Data\physicsModels\ionosphere\spatial_environment\spatial_environment.cdf')
+    data_dict_EISCAT = stl.loadDictFromFile(rf'{SimToggles.ACES_data_folder}\science\EISCAT\tromso\UHF\MAD6400_2022-11-20_beata_ant@uhfa.cdf')
+    data_dict_spatial = stl.loadDictFromFile(rf'{SimToggles.sim_root_path}\spatial_environment\spatial_environment.cdf')
 
     ############################
     # --- PREPARE THE OUTPUT ---
@@ -102,7 +102,7 @@ def EISCAT_ne_spectrum():
     #####################
     # --- OUTPUT DATA ---
     #####################
-    output_folder = 'C:\Data\physicsModels\ionosphere\plasma_environment\EISCAT_ne_spectrum'
+    output_folder = f'{SimToggles.sim_root_path}\plasma_environment\EISCAT_ne_spectrum'
     stl.outputCDFdata(outputPath=output_folder + '\\EISCAT_ne_spectrum.cdf', data_dict=data_dict_output)
 
     ###################
@@ -121,6 +121,6 @@ def EISCAT_ne_spectrum():
         ax.set_xlim(50, 320)
         ax.set_xlabel('Alt [km]')
         ax.set_ylabel('ne [cm$^{-3}$]')
-        plt.savefig('C:\Data\physicsModels\ionosphere\plasma_environment\EISCAT_ne_spectrum\EISCAT_ne_spectrum.png')
+        plt.savefig(f'{SimToggles.sim_root_path}\plasma_environment\EISCAT_ne_spectrum\EISCAT_ne_spectrum.png')
 
 EISCAT_ne_spectrum()

@@ -26,25 +26,25 @@ def generateIonosphericConductivity():
     ##########################
 
     # get the spatial environment data
-    data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
+    data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/spatial_environment/*.cdf*')[0])
 
     # get the geomagnetic field data dict
-    data_dict_Bgeo = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\geomagneticField\*.cdf*')[0])
+    data_dict_Bgeo = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/geomagneticField/*.cdf*')[0])
 
     # get the ionospheric neutral data dict
-    data_dict_neutral = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\neutral_environment\*.cdf*')[0])
+    data_dict_neutral = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/neutral_environment/*.cdf*')[0])
 
     # get the ACES-II EEPAA Flux data
-    data_dict_flux = stl.loadDictFromFile(glob(rf'{IonizationRecombToggles.flux_path}\*eepaa_flux*')[0])
+    data_dict_flux = stl.loadDictFromFile(glob(rf'{IonizationRecombToggles.flux_path}/*input_ionosphere*')[0])
 
     # get the ACES-II L-Shell data
-    data_dict_LShell = stl.loadDictFromFile(glob('C:\Data\physicsModels\ionosphere\data_inputs\eepaa\high\*eepaa_downsampled*')[0])
+    data_dict_LShell = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/data_inputs/eepaa/high/*eepaa_downsampled*')[0])
 
     # get the ionospheric plasma data dict
-    data_dict_plasma = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\plasma_environment\*.cdf*')[0])
+    data_dict_plasma = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/plasma_environment/*.cdf*')[0])
 
     # get the ionization-recombination data dict
-    data_dict_ionRecomb = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\ionizationRecomb\*.cdf*')[0])
+    data_dict_ionRecomb = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/ionizationRecomb/*.cdf*')[0])
 
     ############################
     # --- PREPARE THE OUTPUT ---
@@ -274,5 +274,5 @@ def generateIonosphericConductivity():
 
         data_dict_output[key][1] = newAttrs
 
-    outputPath = rf'{ConductivityToggles.outputFolder}\conductivity.cdf'
+    outputPath = rf'{ConductivityToggles.outputFolder}/conductivity.cdf'
     stl.outputDataDict(outputPath, data_dict_output)

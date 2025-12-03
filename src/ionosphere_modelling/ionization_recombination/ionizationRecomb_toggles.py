@@ -3,9 +3,9 @@
 ###########################
 class IonizationRecombToggles:
     from src.ionosphere_modelling.sim_toggles import SimToggles
-    outputFolder = f'{SimToggles.sim_root_path}\ionizationRecomb'
+    outputFolder = f'{SimToggles.sim_root_path}/ionizationRecomb'
 
-    flux_path = 'C:\Data\physicsModels\ionosphere\data_inputs\energy_flux\high'
+    flux_path = f'{SimToggles.sim_root_path}/data_inputs/energy_flux/high'
 
     # --- BEAM n_E: which dataset to use for the n_e profile ---
     # Description: use Evans1974 beam model for n(z) OR a real-data derived model n(z)

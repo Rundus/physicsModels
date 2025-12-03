@@ -103,5 +103,5 @@ def generate_spatialEnvironment():
                             'grid_dx': [grid_deltaX, {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm', 'LABLAXIS': 'Horizontal Gradient'}],
                            }}
 
-    outputPath = rf'{SpatialToggles.outputFolder}\spatial_environment.cdf'
+    outputPath = rf'{SpatialToggles.outputFolder}/spatial_environment.cdf'
     stl.outputDataDict(outputPath, data_dict_output)

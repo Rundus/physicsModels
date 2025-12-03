@@ -38,6 +38,7 @@ import spaceToolsLib as stl
 from tqdm import tqdm
 from glob import glob
 from copy import deepcopy
+from src.ionosphere_modelling.sim_toggles import SimToggles
 
 
 def diffFlux_to_Energy_Flux_ionosphere_input():
@@ -46,7 +47,7 @@ def diffFlux_to_Energy_Flux_ionosphere_input():
     # --- LOAD THE DATA ---
     # --- --- --- --- --- -
     # --- get the data from the file ---
-    data_dict_eepaa = stl.loadDictFromFile(inputFilePath=glob('C:/Data/ACESII/L2/high/*l2_eepaa_fullCal.cdf*')[0])
+    data_dict_eepaa = stl.loadDictFromFile(inputFilePath=glob(f'{SimToggles.ACES_data_folder}/L2/high/*l2_eepaa_fullCal.cdf*')[0])
 
     # --- --- --- --- -
     # --- INTEGRATE ---
@@ -79,8 +80,6 @@ def diffFlux_to_Energy_Flux_ionosphere_input():
 
     # input flux Pitch cutoff
     pitch_cutoff_idx = np.abs(Pitch-cutoff_pitch).argmin()
-    print(Pitch)
-    print(pitch_cutoff_idx)
 
 
     # determine the DeltaE to use for the varphi integrations - DeltaE = the half distance to the next energy value
@@ -169,7 +168,6 @@ def diffFlux_to_Energy_Flux_ionosphere_input():
                             'varPhi_N': [varPhi_N, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
                             'varPhi_N_antiParallel': [varPhi_N_antiParallel, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
                             'varPhi_N_Parallel': [varPhi_N_Parallel, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
-
                             'Phi_E': [Phi_E, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
                             'Phi_E_antiParallel': [Phi_E_antiParallel, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
                             'Phi_E_Parallel': [Phi_E_Parallel, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
@@ -230,7 +228,7 @@ def diffFlux_to_Energy_Flux_ionosphere_input():
 
         # write out the data
         fileoutName = f'ACESII_36359_l3_eepaa_flux_input_ionosphere.cdf'
-        outputPath = f'C:\Data\physicsModels\ionosphere\data_inputs\energy_flux\high\\{fileoutName}'
+        outputPath = f'{SimToggles.sim_root_path}/data_inputs/energy_flux/high/{fileoutName}'
         stl.outputDataDict(outputPath, data_dict_output)
 
 

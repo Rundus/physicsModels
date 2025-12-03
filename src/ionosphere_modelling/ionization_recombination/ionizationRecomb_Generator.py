@@ -28,16 +28,16 @@ def generateIonizationRecomb():
     ##########################
 
     # get the ionospheric plasma data dict
-    data_dict_plasma = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\plasma_environment\*.cdf*')[0])
+    data_dict_plasma = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}/plasma_environment/*.cdf*')[0])
 
     # get the ACES-II EEPAA Flux data
-    data_dict_flux = stl.loadDictFromFile(glob(rf'{IonizationRecombToggles.flux_path}\\*eepaa_flux_downsampled_1*')[0])
+    data_dict_flux = stl.loadDictFromFile(glob(rf'{IonizationRecombToggles.flux_path}/*eepaa_flux_downsampled_1*')[0])
 
     # get the ACES-II L-Shell data
-    data_dict_LShell = stl.loadDictFromFile(glob('C:\Data\physicsModels\ionosphere\data_inputs\eepaa\high\*eepaa_downsampled*')[0])
+    data_dict_LShell = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}/data_inputs/eepaa/high/*eepaa_downsampled*')[0])
 
     # get the neutral data dict
-    data_dict_neutral = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\neutral_environment\*.cdf*')[0])
+    data_dict_neutral = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/neutral_environment/*.cdf*')[0])
 
     ############################
     # --- PREPARE THE OUTPUT ---
@@ -137,5 +137,5 @@ def generateIonizationRecomb():
 
         data_dict_output[key][1] = newAttrs
 
-    outputPath = rf'{IonizationRecombToggles.outputFolder}\ionization_rcomb.cdf'
+    outputPath = rf'{IonizationRecombToggles.outputFolder}/ionization_rcomb.cdf'
     stl.outputDataDict(outputPath, data_dict_output)

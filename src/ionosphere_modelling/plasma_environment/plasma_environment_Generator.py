@@ -113,11 +113,11 @@ def generatePlasmaEnvironment():
     # --- INDIVIDUAL ION DENSITIES ---
     ##################################
     if PlasmaToggles.useACESII_density_Profile:
-        data_dict_ACESII_ni_spectrum = stl.loadDictFromFile(rf'{PlasmaToggles.outputFolder}\ACESII_ni_spectrum\ACESII_ni_spectrum.cdf')
+        data_dict_ACESII_ni_spectrum = stl.loadDictFromFile(rf'{PlasmaToggles.outputFolder}/ACESII_ni_spectrum/ACESII_ni_spectrum.cdf')
         for idx, key in enumerate(Ikeys):
             data_dict_output[f'n_{key}'][0] = 1E6*np.multiply(data_dict_ACESII_ni_spectrum[f'ni_spectrum'][0], data_dict_output[f'C_{key}'][0])
     elif PlasmaToggles.useEISCAT_density_Profile:
-        data_dict_EISCAT_ne_spectrum = stl.loadDictFromFile(rf'{PlasmaToggles.outputFolder}\EISCAT_ne_spectrum\EISCAT_ne_spectrum.cdf')
+        data_dict_EISCAT_ne_spectrum = stl.loadDictFromFile(rf'{PlasmaToggles.outputFolder}/EISCAT_ne_spectrum/EISCAT_ne_spectrum.cdf')
         for idx, key in enumerate(Ikeys):
             data_dict_output[f'n_{key}'][0] = (1/deepcopy(data_dict_output['ne_ni_ratio'][0]))*1E6*np.multiply(data_dict_EISCAT_ne_spectrum[f'ne_spectrum'][0], data_dict_output[f'C_{key}'][0])
     else:
@@ -225,5 +225,5 @@ def generatePlasmaEnvironment():
 
         data_dict_output[key][1] = newAttrs
 
-    outputPath = rf'{PlasmaToggles.outputFolder}\plasma_environment.cdf'
+    outputPath = rf'{PlasmaToggles.outputFolder}/plasma_environment.cdf'
     stl.outputDataDict(outputPath, data_dict_output)
