@@ -9,14 +9,14 @@ dict_executable = {
     'regenSpatial': 0,
     'regenBgeo': 0,
     'regenNeSpectrum': 0,
-    'regenPlasmaEnvironment': 0,
+    'regenPlasmaEnvironment': 1,
     'regenNeutralEnvironment': 0,
-    'ionRecomb_ne_Calc': 0,
-    'calc_IonoConductivity': 0,
+    'ionRecomb_ne_Calc': 1,
+    'calc_IonoConductivity': 1,
     'map_electrostatic_potential': 0,
     'calc_electricField': 0,
     'calc_PoyntingFlux':0,
     'filter_EFields_conductivity':0,
     'calc_IonoCurrents': 0,
-    'calc_JouleHeating':1
+    'calc_JouleHeating':0
 }

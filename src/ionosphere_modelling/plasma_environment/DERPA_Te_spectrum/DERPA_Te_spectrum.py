@@ -3,31 +3,36 @@
 # --- --- --- --- --- --- --=
 # Description: get the DERPA data and fit/interpolate it over the simulation range
 import matplotlib.pyplot as plt
+
 # --- IMPORTS ---
 import numpy as np
 import spaceToolsLib as stl
 import datetime as dt
 from scipy.signal import savgol_filter
 from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
-
+from glob import glob
+from src.ionosphere_modelling.sim_toggles import SimToggles
+from scipy.interpolate import CubicSpline
+from copy import deepcopy
+from scipy.stats import binned_statistic
 
 #################
 # --- TOGGLES ---
 #################
 outputData = False
 plot_fit_data = False
-plot_EISCAT_fit = True
+plot_EISCAT_background = False
+bool_show_num_points_plot = True
+
 
 def DERPA_Te_spectrum():
 
     #######################
     # --- LOAD THE DATA ---
     #######################
-    data_dict_ERPA1_high = stl.loadDictFromFile(r'C:\Data\ACESII\L2\high\ACESII_36359_l2_ERPA1.cdf')
-    data_dict_ERPA2_high = stl.loadDictFromFile(r'C:\Data\ACESII\L2\high\ACESII_36359_l2_ERPA2.cdf')
-    data_dict_ERPA1_low = stl.loadDictFromFile(r'C:\Data\ACESII\L2\low\ACESII_36364_l2_ERPA1.cdf')
-    data_dict_ERPA2_low = stl.loadDictFromFile(r'C:\Data\ACESII\L2\low\ACESII_36364_l2_ERPA2.cdf')
-    data_dict_EISCAT = stl.loadDictFromFile(r'C:\Data\ACESII\science\EISCAT\tromso\UHF\MAD6400_2022-11-20_beata_ant@uhfa.cdf')
+    data_dict_LP_cal_high = stl.loadDictFromFile(glob(f'C:/Data/ACESII/calibration/LP/postFlight_calibration/high/*.cdf*')[0])
+    data_dict_LP_cal_low = stl.loadDictFromFile(glob(f'C:/Data/ACESII/calibration/LP/postFlight_calibration/low/*.cdf*')[0])
+    data_dict_Bgeo = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\geomagneticField\*.cdf*')[0])
 
     ############################
     # --- PREPARE THE OUTPUT ---
@@ -39,28 +44,17 @@ def DERPA_Te_spectrum():
     ##########################################
     # --- REDUCE DERPA TO SIMULATION RANGE ---
     ##########################################
-    data_dicts = [data_dict_ERPA1_high,data_dict_ERPA2_high, data_dict_ERPA1_low,data_dict_ERPA2_low]
-    for idx, dddict in enumerate(data_dicts):
-        low_idx = np.abs(dddict['L-Shell'][0] - simLShell[0]).argmin()
-        high_idx = np.abs(dddict['L-Shell'][0]- simLShell[-1]).argmin()
-        for key in ['Epoch', 'L-Shell', 'temperature', 'Alt']:
-            data_dicts[idx][f"{key}"][0] = data_dicts[idx][f"{key}"][0][low_idx:high_idx+1]
+    data_dicts = [data_dict_LP_cal_high, data_dict_LP_cal_low]
 
-    ###########################################
-    # --- AVERAGE THE TEMPERATURES TOGETHER ---
-    ###########################################
-    temp_high = np.zeros(shape=len(data_dict_ERPA1_high['Epoch'][0]))
-    for tme in range(len(data_dict_ERPA1_high['Epoch'][0])):
-        temp_high[tme] = np.nanmean([data_dict_ERPA1_high['temperature'][0][tme], data_dict_ERPA2_high['temperature'][0][tme]])
-
-    temp_low = np.zeros(shape=len(data_dict_ERPA1_low['Epoch'][0]))
-    for tme in range(len(data_dict_ERPA1_low['Epoch'][0])):
-        temp_low[tme] = np.nanmean([data_dict_ERPA1_low['temperature'][0][tme], data_dict_ERPA2_low['temperature'][0][tme]])
+    #################################################
+    # --- AVERAGE THE DERPA TEMPERATURES TOGETHER ---
+    #################################################
+    temps_avg = [np.nanmean(np.array([data_dicts[rkt_idx]['Te_DERPA1'][0],data_dicts[rkt_idx]['Te_DERPA2'][0]]).T,axis=1) for rkt_idx in range(2)]
 
     if plot_fit_data:
         fig, ax = plt.subplots()
-        ax.scatter(x=data_dict_ERPA1_high['L-Shell'][0], y=data_dict_ERPA1_high['Alt'][0]/stl.m_to_km, c=temp_high,s=80)
-        ax.scatter(x=data_dict_ERPA1_low['L-Shell'][0], y=data_dict_ERPA1_low['Alt'][0]/stl.m_to_km, c=temp_low,s=80)
+        ax.scatter(x=data_dicts[0]['L-Shell'][0], y=data_dicts[0]['Alt'][0], c=temps_avg[0],s=80)
+        ax.scatter(x=data_dicts[1]['L-Shell'][0], y=data_dicts[1]['Alt'][0], c=temps_avg[1],s=80)
         ax.set_ylabel('Alt [km]', fontsize=20)
         ax.set_xlabel('L Shell', fontsize=20)
         ax.set_ylim(130, 420)
@@ -68,45 +62,98 @@ def DERPA_Te_spectrum():
         ax.grid()
         plt.show()
 
-    #############################
-    # --- GET THE EISCAT DATA ---
-    #############################
-    # Description: The EISCAT data can be used to get the Te during the parts where ACES-II did NOT measure it <170 km
+    #####################################
+    # --- CONSTRUCT EISCAT BACKGROUND ---
+    #####################################
 
-    # EISCAT alternating time jumps 45s, 75sec
-    target_times = [dt.datetime(2022,11,20,17,21,25),
-                    # dt.datetime(2022,11,20,17,21,25)+dt.timedelta(seconds=45),
-                    dt.datetime(2022,11,20,17,21,25)+dt.timedelta(seconds=1*75+1*45),
-                    # dt.datetime(2022,11,20,17,21,25)+dt.timedelta(seconds=2*45+1*75),
-                    dt.datetime(2022,11,20,17,21,25)+dt.timedelta(seconds=2*45+2*75),
-                    # dt.datetime(2022,11,20,17,21,25)+dt.timedelta(seconds=3*45+2*75),
-                    dt.datetime(2022,11,20,17,21,25)+dt.timedelta(seconds=3*45+3*75)
-                    ]
-    # target_times = [dt.datetime(2022, 11, 20, 17, 21, 25)]
+    # find the peak in the altitude --> we will only use the upleg
+    peak_alt_point = [np.argmax(data_dicts[i]['Alt'][0]) for i in range(2)]
+    peak_alt_idxs = [np.abs(data_dicts[i]['Alt'][0][0:peak_alt_point[i]]-310).argmin() for i in range(2)] # only get data up to ~300km
 
-    Te = data_dict_EISCAT['tr'][0] *data_dict_EISCAT['ti'][0]
-    idxs = [np.abs(data_dict_EISCAT['Epoch'][0] - tme).argmin() for tme in target_times]
-    Te = Te[idxs]
+    # reduce EISCAT data to upleg region below 300 km
+    upleg_alt = [data_dicts[i]['Alt'][0][0:peak_alt_idxs[i]] for i in range(2)]
+    upleg_Ti = [data_dicts[i]['Ti'][0][0:peak_alt_idxs[i]] for i in range(2)]
+    upleg_Te = [data_dicts[i]['Te'][0][0:peak_alt_idxs[i]] for i in range(2)]
+    upleg_ne = [data_dicts[i]['ne'][0][0:peak_alt_idxs[i]] for i in range(2)]
+    upleg_Tr = [data_dicts[i]['Tr'][0][0:peak_alt_idxs[i]] for i in range(2)]
 
-    if plot_EISCAT_fit:
+    # smooth each of these curves and evaluate them on the simulation altitudes
+    def running_mean_filter(data):
+        k = 5
+        N = len(data)
+        new_data = np.zeros_like(data)
+        for i in range(k,N-k):
+            new_data[i] = np.mean(data[i-k:i+k+1])
+        return new_data
+
+    if plot_EISCAT_background:
+
+        fig, ax = plt.subplots(4)
+        colors= ['tab:blue','tab:red']
+        for i in range(2):
+            ax[0].plot(upleg_alt[i], running_mean_filter(upleg_Ti[i]),label='Ti',color=colors[i])
+            ax[1].plot(upleg_alt[i], running_mean_filter(upleg_Te[i]), label='Te',color=colors[i])
+            ax[2].plot(upleg_alt[i], running_mean_filter(upleg_ne[i]), label='ne',color=colors[i])
+            ax[3].plot(upleg_alt[i], running_mean_filter(upleg_Tr[i]), label='Tr',color=colors[i])
+
+        for j in range(4):
+            ax[j].legend()
+        plt.show()
+
+    # Construct the simulation output background variables from the High Flyer LP calibration files
+    cs_Te = CubicSpline(upleg_alt[0],upleg_Te[0])
+    cs_Ti = CubicSpline(upleg_alt[0], upleg_Ti[0])
+    cs_Tr = CubicSpline(upleg_alt[0], upleg_Tr[0])
+    cs_ne = CubicSpline(upleg_alt[0], upleg_ne[0])
+
+    Te_background_grid = np.zeros(shape=(len(simLShell),len(simAlt)))
+    Ti_background_grid = np.zeros(shape=(len(simLShell), len(simAlt)))
+    Tr_background_grid = np.zeros(shape=(len(simLShell), len(simAlt)))
+    ne_background_grid = np.zeros(shape=(len(simLShell), len(simAlt)))
+
+    for i in range(len(simLShell)):
+        Te_background_grid[i] = cs_Te(simAlt)
+        Ti_background_grid[i] = cs_Ti(simAlt)
+        Tr_background_grid[i] = cs_Tr(simAlt)
+        ne_background_grid[i] = cs_ne(simAlt)
+
+    ######################################
+    # --- CONSTRUCT DERPA PERTURBATION ---
+    ######################################
+
+    # reduce data to only simulation region
+    for wflyer in range(2):
+        low_idx, high_idx = np.abs(data_dicts[wflyer]['L-Shell'][0] - simLShell[0]).argmin(), np.abs(data_dicts[wflyer]['L-Shell'][0] - simLShell[-1]).argmin()
+        for key, val in data_dicts[wflyer].items():
+            if key not in ['L-Shell']:
+                data_dicts[wflyer][key][0] = deepcopy(data_dicts[wflyer][key][0][low_idx:high_idx+1])
+        data_dicts[wflyer]['L-Shell'][0] = deepcopy(data_dicts[wflyer]['L-Shell'][0][low_idx:high_idx+1])
+
+    # Construct an L-shell vs altitude array for fitting to the grid
+    alt_grid = np.linspace(70, 420, 2)
+    fit_array = [[[] for alt in alt_grid] for LShell in simLShell]
+
+    # populate the fitting array with both flyer's data
+    for wflyer in range(2):
+        for tmeIdx in range(len(data_dicts[wflyer]['Epoch'][0])):
+            LShell_idx = np.abs(simLShell - data_dicts[wflyer]['L-Shell'][0][tmeIdx]).argmin()
+            alt_idx = np.abs(alt_grid - data_dicts[wflyer]['Alt'][0][tmeIdx]).argmin()
+            fit_array[LShell_idx][alt_idx].append(np.nanmean([data_dicts[wflyer]['Te_DERPA1'][0][tmeIdx],data_dicts[wflyer]['Te_DERPA2'][0][tmeIdx]]))
+
+    fit_num_points = np.zeros(shape=(len(simLShell),len(alt_grid)))
+    for iLat_idx in range(len(fit_array)):
+        for alt_idx in range(len(fit_array[0])):
+            fit_num_points[iLat_idx][alt_idx] = len(fit_array[iLat_idx][alt_idx])
+
+    if bool_show_num_points_plot:
         fig, ax = plt.subplots()
-        Te_mean = np.nanmean(Te,axis=0)
-        Te_mean_nonan = []
-        Range_nonan = []
-        for idx in range(len(Te_mean)):
-            if np.isnan(Te_mean[idx]) == False:
-                Te_mean_nonan.append(Te_mean[idx])
-                Range_nonan.append(data_dict_EISCAT['range'][0][idx])
-        Te_mean = Te_mean_nonan
-        print(np.shape(Te_mean))
-        ax.scatter(x=Range_nonan, y=Te_mean, s=30)
-        filtered_data = savgol_filter(x=Te_mean,window_length=150,polyorder=3)
-        filtfilt_data = savgol_filter(x=filtered_data, window_length=160, polyorder=3)
-        ax.plot(Range_nonan,filtfilt_data,color='red')
-        ax.set_xlabel('Alt [km]', fontsize=20)
-        ax.set_ylabel('Te', fontsize=20)
-        ax.set_xlim(60, 400)
-        ax.set_ylim(0,3000)
+        cmap = ax.pcolormesh(simLShell, alt_grid, fit_num_points.T, norm='log',vmin=1,vmax=100)
+        ax.set_ylabel('Alt [km]', fontsize=20)
+        ax.set_xlabel('L Shell', fontsize=20)
+        ax.set_ylim(70, 420)
+        ax.set_xlim(simLShell[0], simLShell[-1])
+        cbar = plt.colorbar(cmap)
+        cbar.set_label('Num of Points')
         ax.grid()
         plt.show()
 
@@ -115,7 +162,15 @@ def DERPA_Te_spectrum():
     # --- OUTPUT DATA ---
     #####################
     if outputData:
-        output_folder = 'C:\Data\physicsModels\ionosphere\plasma_environment\DERPA_Te_spectrum\DERPA_Te_spectrum'
-        stl.outputCDFdata(outputPath=output_folder + '\\DERPA_Te_spectrum.cdf', data_dict=data_dict_output)
+        data_dict_output = {
+            'Te_background':[(stl.q0/stl.kB)*np.array(Te_background_grid), {'DEPEND_0': 'simLShell','DEPEND_1': 'simAlt', 'UNITS': 'K', 'LABLAXIS': 'Te'}],
+            'Ti_background': [(stl.q0/stl.kB)*np.array(Ti_background_grid), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'K', 'LABLAXIS': 'Ti'}],
+            'Tr_background': [np.array(Tr_background_grid), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': None, 'LABLAXIS': 'Tr'}],
+            'ne_background': [np.array(ne_background_grid), {'DEPEND_0': 'simLShell', 'DEPEND_1': 'simAlt', 'UNITS': 'm^-3', 'LABLAXIS': 'ne'}],
+            'simLShell': deepcopy(data_dict_Bgeo['simLShell']),
+            'simAlt':deepcopy(data_dict_Bgeo['simAlt'])
+        }
+        output_path = 'C:/Data/physicsModels/ionosphere/plasma_environment/DERPA_Te_spectrum/DERPA_Te_spectrum.cdf'
+        stl.outputDataDict(outputPath=output_path, data_dict=data_dict_output)
 
 DERPA_Te_spectrum()
