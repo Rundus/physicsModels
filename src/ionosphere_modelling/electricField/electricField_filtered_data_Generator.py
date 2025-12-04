@@ -19,8 +19,8 @@ def generate_filtered_EField():
     #######################
     # --- LOAD THE DATA ---
     #######################
-    data_dict_spatial = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
-    data_dict_EField = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\electricField\*.cdf*')[0])
+    data_dict_spatial = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}/spatial_environment/*.cdf*')[0])
+    data_dict_EField = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}/electricField/*.cdf*')[0])
     altRange = data_dict_spatial['simAlt'][0]
 
     ############################
@@ -115,5 +115,5 @@ def generate_filtered_EField():
                           }
                       }
 
-    outputPath = rf'{EFieldToggles.outputFolder}\{FilterToggles.filter_path}\filtered_EFields_conductivity.cdf'
+    outputPath = rf'{EFieldToggles.outputFolder}/{FilterToggles.filter_path}/filtered_EFields_conductivity.cdf'
     stl.outputDataDict(outputPath, data_dict_output)
