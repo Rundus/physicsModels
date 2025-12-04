@@ -21,8 +21,8 @@ def generate_electricField():
     #######################
     # --- LOAD THE DATA ---
     #######################
-    data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
-    data_dict_potential = stl.loadDictFromFile(r'C:\Data\physicsModels\ionosphere\electrostaticPotential\electrostaticPotential.cdf')
+    data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/spatial_environment/*.cdf*')[0])
+    data_dict_potential = stl.loadDictFromFile(rf'{SimToggles.sim_root_path}/electrostaticPotential/electrostaticPotential.cdf')
     LShellRange = data_dict_spatial['simLShell'][0]
     altRange = data_dict_spatial['simAlt'][0]
 
@@ -69,7 +69,7 @@ def generate_electricField():
     ###############################
     if EFieldToggles.include_neutral_winds:
         # load neutral wind data
-        data_dict_neutral = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\neutral_environment\*.cdf*')[0])
+        data_dict_neutral = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/neutral_environment/*.cdf*')[0])
 
         # form the ENU neutral wind vector
         neutral_wind_ENU = np.zeros(shape=(len(LShellRange), len(altRange), 3))
@@ -95,7 +95,7 @@ def generate_electricField():
                               }
                            }
 
-    # outputPath = rf'{EFieldToggles.outputFolder}\electric_Field.cdf'
+    # outputPath = rf'{EFieldToggles.outputFolder}/electric_Field.cdf'
     # stl.outputCDFdata(outputPath, data_dict_output)
     #
     # # --- Construct the Data Dict ---
@@ -118,5 +118,5 @@ def generate_electricField():
                               }
                            }
 
-    outputPath = rf'{EFieldToggles.outputFolder}\electric_Field.cdf'
+    outputPath = rf'{EFieldToggles.outputFolder}/electric_Field.cdf'
     stl.outputDataDict(outputPath, data_dict_output)

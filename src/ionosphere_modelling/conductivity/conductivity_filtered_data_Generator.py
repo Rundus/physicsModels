@@ -19,8 +19,8 @@ def generate_filtered_conductivity():
     #######################
     # --- LOAD THE DATA ---
     #######################
-    data_dict_spatial = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
-    data_dict_conductivity = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\conductivity\*.cdf*')[0])
+    data_dict_spatial = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}/spatial_environment/*.cdf*')[0])
+    data_dict_conductivity = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}/conductivity/*.cdf*')[0])
     altRange = data_dict_spatial['simAlt'][0]
 
     ############################
@@ -131,6 +131,6 @@ def generate_filtered_conductivity():
                           }
                       }
 
-    outputPath = rf'{ConductivityToggles.outputFolder}\{FilterToggles.filter_path}\filtered_conductivity.cdf'
+    outputPath = rf'{ConductivityToggles.outputFolder}/{FilterToggles.filter_path}/filtered_conductivity.cdf'
     stl.outputDataDict(outputPath, data_dict_output)
           

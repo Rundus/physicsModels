@@ -3,7 +3,7 @@
 #######################################
 class ElectroStaticToggles:
     from src.ionosphere_modelling.sim_toggles import SimToggles
-    outputFolder = f'{SimToggles.sim_root_path}\electrostaticPotential'
+    outputFolder = f'{SimToggles.sim_root_path}/electrostaticPotential'
     perform_mapping = True
     N_avg = 3 # number of points to average together for the electric potential mapping
 

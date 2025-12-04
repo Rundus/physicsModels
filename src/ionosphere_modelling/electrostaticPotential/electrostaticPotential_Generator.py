@@ -21,9 +21,9 @@ def generateElectrostaticPotential():
     #######################
     # --- LOAD THE DATA ---
     #######################
-    data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
-    data_dict_integrated_potential = stl.loadDictFromFile(r'C:\Data\ACESII\science\integrated_potential\low\ACESII_36364_integrated_potential.cdf')
-    data_dict_conductivity = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\conductivity\*.cdf*')[0])
+    data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/spatial_environment/*.cdf*')[0])
+    data_dict_integrated_potential = stl.loadDictFromFile(rf'{SimToggles.ACES_data_folder}/science/integrated_potential/low/ACESII_36364_integrated_potential.cdf')
+    data_dict_conductivity = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}/conductivity/*.cdf*')[0])
 
     #######################################################################
     # --- RE-GRID THE POTENTIAL ONTO SIMULATION WITH INITIAL CONDITIONS ---
@@ -248,7 +248,7 @@ def generateElectrostaticPotential():
 
             counter += 1
 
-    print('\n')
+    print('/n')
     print(f'Initial Conditions {c1}')
     print(f'Boundaries {c2}')
     print(f'ODEs {c3}')
@@ -287,5 +287,5 @@ def generateElectrostaticPotential():
                            }
                         }
 
-    outputPath = rf'{ElectroStaticToggles.outputFolder}\electrostaticPotential.cdf'
+    outputPath = rf'{ElectroStaticToggles.outputFolder}/electrostaticPotential.cdf'
     stl.outputDataDict(outputPath, data_dict_output)

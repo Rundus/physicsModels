@@ -23,10 +23,10 @@ def generateNeutralEnvironment(**kwargs):
     # --- LOAD THE DATA ---
     #######################
     # get the geomagnetic field data dict
-    data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
+    data_dict_spatial = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/spatial_environment/*.cdf*')[0])
 
     # get the neutral winds
-    data_dict_neutral_winds = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}\neutral_environment\hwm14\*.cdf*')[0])
+    data_dict_neutral_winds = stl.loadDictFromFile(glob(rf'{SimToggles.sim_root_path}/neutral_environment/hwm14/*.cdf*')[0])
 
     ############################
     # --- PREPARE THE OUTPUT ---
@@ -132,5 +132,5 @@ def generateNeutralEnvironment(**kwargs):
     # --- OUTPUT DATA ---
     #####################
 
-    outputPath = rf'{NeutralsToggles.outputFolder}\neutral_environment.cdf'
+    outputPath = rf'{NeutralsToggles.outputFolder}/neutral_environment.cdf'
     stl.outputDataDict(outputPath, data_dict_output)
