@@ -71,10 +71,8 @@ def generateIonosphericConductivity():
     ###############################
     # --- CONSTRUCT n_e PROFILE ---
     ###############################
-
     # construct the background density profile n(z, ILat) - Inverted-V density + Ionospheric base density
-    data_dict_output['ne_total'][0] = data_dict_ionRecomb['ne_model'][0] + data_dict_plasma['ne'][0]
-    # data_dict_output['ne_total'][0] = data_dict_ionRecomb['ne_model'][0]
+    data_dict_output['ne_total'][0] = deepcopy(data_dict_ionRecomb['ne_model'][0]) + deepcopy(data_dict_plasma['ne'][0])
 
     #################################
     # --- Electron Collision Freq ---
@@ -173,12 +171,50 @@ def generateIonosphericConductivity():
     data_dict_output['sigma_P_i'][0] = np.sum(sigma_P_ions, axis=0)
     data_dict_output['sigma_H_i'][0] = np.sum(sigma_H_ions, axis=0)
 
-    ##########################################
-    # --- Height-Integrated Conductivities ---
-    ##########################################
+    #########################################################
+    # --- Background Conductivities for Robinson/Kaeppler ---
+    #########################################################
+    ne_background = deepcopy(data_dict_plasma['ne'][0])
+
+    # collisions
+    model = Leda2019()
+    nu_en_background = np.sum([model.electronNeutral_CollisionFreq(data_dict_neutral=data_dict_neutral,data_dict_plasma=data_dict_plasma, neutralKey=key) for key in NeutralsToggles.wNeutrals],axis=0)
+    model = Johnson1961()
+    nu_ei_background = model.electronIon_CollisionFreq(data_dict_neutral, data_dict_plasma, ne_data=ne_background)
+    nu_e_background = nu_en_total + nu_ei_total
+
+    # Background conductivities
+    kappa_e_background = np.divide(data_dict_plasma['Omega_e'][0], nu_e_background)
+    sigma_D_e_background = q0 * np.multiply(np.divide(ne_background, B_geo), kappa_e)
+    sigma_P_e_background = q0 * np.multiply(np.divide(ne_background, B_geo),kappa_e / (1 + np.power(kappa_e, 2)))
+    sigma_H_e_background = q0 * np.multiply(np.divide(ne_background, B_geo),np.power(kappa_e, 2) / (1 + np.power(kappa_e, 2)))
+    sigma_D_ions_background = np.zeros(shape=(len(PlasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
+    sigma_P_ions_background = np.zeros(shape=(len(PlasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
+    sigma_H_ions_background = np.zeros(shape=(len(PlasmaToggles.wIons), len(data_dict_output['simLShell'][0]), len(data_dict_output['simAlt'][0])))
+    for idx, key in enumerate(PlasmaToggles.wIons):
+        kappa_val = deepcopy(data_dict_output[f'kappa_i_{key}'][0])
+        n_i = ne_background*deepcopy(data_dict_plasma[f'C_{key}'][0])
+        sigma_D_ions_background[idx] = q0 * np.multiply(np.divide(n_i, B_geo), kappa_val)
+        sigma_P_ions_background[idx] = q0 * np.multiply(np.divide(n_i, B_geo), kappa_val / (1 + np.power(kappa_val, 2)))
+        sigma_H_ions_background[idx] = q0 * np.multiply(np.divide(n_i, B_geo), np.power(kappa_val, 2) / (1 + np.power(kappa_val, 2)))
+
+    sigma_P_background = sigma_P_e_background + np.sum(sigma_P_ions_background, axis=0)
+    sigma_P_background[sigma_P_background < 0] = 0
+    sigma_H_background = sigma_H_e_background - np.sum(sigma_H_ions_background, axis=0)
+    sigma_H_background[sigma_H_background < 0] = 0
+    sigma_D_background = sigma_D_e_background + np.sum(sigma_D_ions_background, axis=0)
+    sigma_D_background[sigma_D_background < 0] = 0
+
+    #######################################################
+    # --- Height-Integrated Conductivities (Background) ---
+    #######################################################
     Sigma_H_HI = np.array([simpson(y=data_dict_output['sigma_H'][0][L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
     Sigma_P_HI = np.array([simpson(y=data_dict_output['sigma_P'][0][L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
     Sigma_Parallel_HI = np.array([simpson(y=data_dict_output['sigma_D'][0][L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
+
+    Sigma_H_HI_background = np.array([simpson(y=sigma_H_background[L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
+    Sigma_P_HI_background = np.array([simpson(y=sigma_P_background[L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
+    Sigma_D_HI_background = np.array([simpson(y=sigma_D_background[L_idx], x=data_dict_output['simAlt'][0]) for L_idx in range(len(data_dict_output['simLShell'][0]))])
 
     data_dict_output = {**data_dict_output,
                         **{'Sigma_H': [Sigma_H_HI, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
@@ -224,15 +260,16 @@ def generateIonosphericConductivity():
         Sigma_P_K10[idx1] = 3.5 * np.power(energy_flux_watts, 0.49)
         Sigma_H_K10[idx1] = 5.19 * np.power(energy_flux_watts, 0.56)
 
+
     data_dict_output = {**data_dict_output,
-                        **{'Sigma_H_Robinson': [Sigma_H_Robinson, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
-                        **{'Sigma_P_Robinson': [Sigma_P_Robinson, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
-                        **{'Sigma_H_K10': [Sigma_H_K10, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
-                        **{'Sigma_P_K10': [Sigma_P_K10, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
-                        **{'Sigma_H_K50': [Sigma_H_K50, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
-                        **{'Sigma_P_K50': [Sigma_P_K50, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
-                        **{'Sigma_H_K90': [Sigma_H_K90, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
-                        **{'Sigma_P_K50': [Sigma_P_K90, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_H_Robinson': [Sigma_H_Robinson + Sigma_H_HI_background, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_P_Robinson': [Sigma_P_Robinson+ Sigma_P_HI_background, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_H_K10': [Sigma_H_K10+ Sigma_H_HI_background, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_P_K10': [Sigma_P_K10+ Sigma_P_HI_background, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_H_K50': [Sigma_H_K50+ Sigma_H_HI_background, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_P_K50': [Sigma_P_K50+ Sigma_P_HI_background, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
+                        **{'Sigma_H_K90': [Sigma_H_K90+ Sigma_H_HI_background, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Hall Conductivity'}]},
+                        **{'Sigma_P_K50': [Sigma_P_K90+ Sigma_P_HI_background, {'DEPEND_0': 'simLShell', 'UNITS': 'S', 'LABLAXIS': 'Height-Integrated Pedersen Conductivity'}]},
                         }
 
 

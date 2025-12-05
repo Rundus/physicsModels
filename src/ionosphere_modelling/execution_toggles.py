@@ -12,12 +12,12 @@ dict_executable = {
     'regenPlasmaEnvironment': 0,
     'regenNeutralEnvironment': 0,
     'ionRecomb_ne_Calc': 0,
-    'calc_IonoConductivity': 0,
+    'calc_IonoConductivity': 1,
     'map_electrostatic_potential': 0,
     'calc_electricField': 0,
     'calc_PoyntingFlux':0,
     'filter_EFields':0,
     'filter_conductivity':0,
-    'calc_IonoCurrents': 1,
+    'calc_IonoCurrents': 0,
     'calc_JouleHeating':0
 }

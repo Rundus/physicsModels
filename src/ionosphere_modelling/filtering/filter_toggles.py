@@ -9,18 +9,18 @@ class FilterToggles:
     filter_data = True
 
     # SSA data
-    use_SSA_filter = False
+    use_SSA_filter = True
     fH = 0.67  # High Flyer Spin Freq
     fL = 0.545  # Low Flyer Spin Freq
     T = (2 / (fH + fL)) / 0.05  # Averaged spin Period
     num_of_spin_periods = 10  # use this many spin periods
     wLen = int(num_of_spin_periods * T)
     mirror_percent = 0.0
-    DC_components = [0]
+    DC_components = [0,1]
     AC_components = [i for i in range(wLen) if i not in [0]]
 
     # savitz-golay
-    use_savitz_golay = True
+    use_savitz_golay = False
     polyorder = 3
     window = 500
 
