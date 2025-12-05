@@ -9,7 +9,7 @@ def generate_filtered_EField():
     from copy import deepcopy
 
     # --- file-specific imports ---
-    from src.ionosphere_modelling.currents.currents_filter_toggles import FilterToggles
+    from src.ionosphere_modelling.filtering.filter_toggles import FilterToggles
     from src.ionosphere_modelling.electricField.electricField_toggles import EFieldToggles
     import gc
 
@@ -115,5 +115,5 @@ def generate_filtered_EField():
                           }
                       }
 
-    outputPath = rf'{EFieldToggles.outputFolder}/{FilterToggles.filter_path}/filtered_EFields_conductivity.cdf'
+    outputPath = rf'{FilterToggles.outputFolder}/{FilterToggles.filter_path}/filtered_EFields.cdf'
     stl.outputDataDict(outputPath, data_dict_output)

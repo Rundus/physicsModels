@@ -94,19 +94,24 @@ if dict_executable['calc_electricField']==1:
     generate_electricField()
     stl.Done(start_time)
 
-if dict_executable['filter_EFields_conductivity'] == 1:
-    from src.ionosphere_modelling.currents.currents_filter_toggles import FilterToggles
+if dict_executable['filter_EFields'] == 1:
+    from src.ionosphere_modelling.filtering.filter_toggles import FilterToggles
     if FilterToggles.filter_data:
 
         stl.prgMsg('Filtering E-Field Data\n')
-        from src.ionosphere_modelling.electricField.electricField_filtered_data_Generator import generate_filtered_EField
+        from src.ionosphere_modelling.filtering.filtered_electricField_Generator import generate_filtered_EField
         generate_filtered_EField()
         stl.Done(start_time)
 
+if dict_executable['filter_conductivity'] == 1:
+    from src.ionosphere_modelling.filtering.filter_toggles import FilterToggles
+
+    if FilterToggles.filter_data:
         stl.prgMsg('Filtering Conductivity Data\n')
-        from src.ionosphere_modelling.conductivity.conductivity_filtered_data_Generator import generate_filtered_conductivity
+        from src.ionosphere_modelling.filtering.filtered_conductivity_Generator import generate_filtered_conductivity
         generate_filtered_conductivity()
         stl.Done(start_time)
+
 
 if dict_executable['calc_IonoCurrents']==1:
     stl.prgMsg('Calculating Ionospheric Currents\n')

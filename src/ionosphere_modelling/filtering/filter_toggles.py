@@ -9,7 +9,7 @@ class FilterToggles:
     filter_data = True
 
     # SSA data
-    use_SSA_filter = True
+    use_SSA_filter = False
     fH = 0.67  # High Flyer Spin Freq
     fL = 0.545  # Low Flyer Spin Freq
     T = (2 / (fH + fL)) / 0.05  # Averaged spin Period
@@ -20,7 +20,7 @@ class FilterToggles:
     AC_components = [i for i in range(wLen) if i not in [0]]
 
     # savitz-golay
-    use_savitz_golay = False
+    use_savitz_golay = True
     polyorder = 3
     window = 500
 
@@ -28,9 +28,14 @@ class FilterToggles:
     use_boxcar = False
     N_boxcar = 20
 
+
+    # FILE I/O
     if use_SSA_filter:
         filter_path = 'ssa_filtered'
     elif use_savitz_golay:
         filter_path = 'savitz_golay_filtered'
     elif use_boxcar:
         filter_path = 'boxcar_filtered'
+
+    from src.ionosphere_modelling.sim_toggles import SimToggles
+    outputFolder = f'{SimToggles.sim_root_path}/filtered'

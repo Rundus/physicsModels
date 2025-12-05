@@ -9,7 +9,7 @@ def generate_filtered_conductivity():
     from copy import deepcopy
 
     # --- file-specific imports ---
-    from src.ionosphere_modelling.currents.currents_filter_toggles import FilterToggles
+    from src.ionosphere_modelling.filtering.filter_toggles import FilterToggles
     from src.ionosphere_modelling.conductivity.conductivity_toggles import ConductivityToggles
     import gc
 
@@ -131,6 +131,6 @@ def generate_filtered_conductivity():
                           }
                       }
 
-    outputPath = rf'{ConductivityToggles.outputFolder}/{FilterToggles.filter_path}/filtered_conductivity.cdf'
+    outputPath = rf'{FilterToggles.outputFolder}/{FilterToggles.filter_path}/filtered_conductivity.cdf'
     stl.outputDataDict(outputPath, data_dict_output)
           

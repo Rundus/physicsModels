@@ -16,7 +16,8 @@ dict_executable = {
     'map_electrostatic_potential': 0,
     'calc_electricField': 0,
     'calc_PoyntingFlux':0,
-    'filter_EFields_conductivity':1,
-    'calc_IonoCurrents': 0,
+    'filter_EFields':0,
+    'filter_conductivity':0,
+    'calc_IonoCurrents': 1,
     'calc_JouleHeating':0
 }

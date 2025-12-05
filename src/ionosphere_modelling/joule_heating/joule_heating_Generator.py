@@ -2,17 +2,15 @@ def generate_JouleHeating():
     # --- common imports ---
     import spaceToolsLib as stl
     import numpy as np
-    from tqdm import tqdm
     from glob import glob
     from src.ionosphere_modelling.sim_toggles import SimToggles
-    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
     from copy import deepcopy
 
     # --- file-specific imports ---
     from src.ionosphere_modelling.joule_heating.joule_heating_toggles import JouleHeatingToggles
     from src.ionosphere_modelling.electricField.electricField_toggles import EFieldToggles
     from src.ionosphere_modelling.currents.currents_toggles import CurrentsToggles
-    from src.ionosphere_modelling.currents.currents_filter_toggles import FilterToggles
+    from src.ionosphere_modelling.filtering.filter_toggles import FilterToggles
 
     # prepare the output
     data_dict_output = {}

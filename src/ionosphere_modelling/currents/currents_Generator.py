@@ -5,11 +5,10 @@ def generate_Currents():
     from tqdm import tqdm
     from glob import glob
     from src.ionosphere_modelling.sim_toggles import SimToggles
-    from src.ionosphere_modelling.spatial_environment.spatial_toggles import SpatialToggles
     from copy import deepcopy
 
     # --- file-specific imports ---
-    from src.ionosphere_modelling.currents.currents_filter_toggles import FilterToggles
+    from src.ionosphere_modelling.filtering.filter_toggles import FilterToggles
     from src.ionosphere_modelling.currents.currents_toggles import CurrentsToggles
     from scipy.integrate import simpson
 
@@ -19,9 +18,9 @@ def generate_Currents():
     #######################
     # --- LOAD THE DATA ---
     #######################
-    data_dict_spatial = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\spatial_environment\*.cdf*')[0])
-    data_dict_EField = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\electricField\*.cdf*')[0])
-    data_dict_conductivity = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}\conductivity\*.cdf*')[0])
+    data_dict_spatial = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}/spatial_environment/*.cdf*')[0])
+    data_dict_EField = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}/electricField/*.cdf*')[0])
+    data_dict_conductivity = stl.loadDictFromFile(glob(f'{SimToggles.sim_root_path}/conductivity/*.cdf*')[0])
     LShellRange = data_dict_spatial['simLShell'][0]
     altRange = data_dict_spatial['simAlt'][0]
 
@@ -30,12 +29,12 @@ def generate_Currents():
     ###########################################
     # Description: Get the Fields and conductivity values for the
     if FilterToggles.filter_data:
-        if FilterToggles.use_boxcar:
-            data_dict_filter = stl.loadDictFromFile(r'C:\Data\physicsModels\ionosphere\currents\savitz_golay_filtered\filtered_EFields_conductivity.cdf')
-        elif FilterToggles.use_savitz_golay:
-            data_dict_filter = stl.loadDictFromFile(r'C:\Data\physicsModels\ionosphere\currents\savitz_golay_filtered\filtered_EFields_conductivity.cdf')
-        elif FilterToggles.use_SSA_filter:
-            data_dict_filter = stl.loadDictFromFile(r'C:\Data\physicsModels\ionosphere\currents\ssa_filtered\filtered_EFields_conductivity.cdf')
+        filtered_files = glob(rf'{SimToggles.sim_root_path}/filtered/{FilterToggles.filter_path}/*.cdf*')
+        data_dict_filter = {}
+        for file in filtered_files:
+            new_dict = stl.loadDictFromFile(file)
+            data_dict_filter = {**data_dict_filter,**new_dict}
+
         data_dict_output = {**data_dict_output,
                             **{
                             'E_N_DC': deepcopy(data_dict_filter['E_N_DC']),
@@ -133,5 +132,5 @@ def generate_Currents():
                                 f'J_parallel_HI_{tag}': [J_parallel_HI, {'DEPEND_1': 'simAlt', 'DEPEND_0': 'simLShell', 'UNITS': 'A/m^2', 'LABLAXIS': f'Parallel Current {tag} (Height Integrated)', 'VAR_TYPE': 'data'}]
                                }}
 
-    outputPath = rf'{CurrentsToggles.outputFolder}\currents.cdf'
+    outputPath = rf'{CurrentsToggles.outputFolder}/currents.cdf'
     stl.outputDataDict(outputPath, data_dict_output)
