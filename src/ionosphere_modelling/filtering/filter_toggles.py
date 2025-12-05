@@ -16,7 +16,7 @@ class FilterToggles:
     num_of_spin_periods = 10  # use this many spin periods
     wLen = int(num_of_spin_periods * T)
     mirror_percent = 0.0
-    DC_components = [0,1]
+    DC_components = [0,1,2,3]
     AC_components = [i for i in range(wLen) if i not in [0]]
 
     # savitz-golay

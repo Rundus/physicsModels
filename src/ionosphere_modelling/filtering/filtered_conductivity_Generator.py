@@ -126,8 +126,8 @@ def generate_filtered_conductivity():
                           'sigma_H_DC': [sigma_H_DC, deepcopy(data_dict_conductivity['sigma_H'][1])],
                           'sigma_H_AC': [sigma_H_AC, deepcopy(data_dict_conductivity['sigma_H'][1])],
 
-                          'sigma_D_DC': [sigma_H_DC, deepcopy(data_dict_conductivity['sigma_D'][1])],
-                          'sigma_D_AC': [sigma_H_AC, deepcopy(data_dict_conductivity['sigma_D'][1])]
+                          'sigma_D_DC': [sigma_D_DC, deepcopy(data_dict_conductivity['sigma_D'][1])],
+                          'sigma_D_AC': [sigma_D_AC, deepcopy(data_dict_conductivity['sigma_D'][1])]
                           }
                       }
 
