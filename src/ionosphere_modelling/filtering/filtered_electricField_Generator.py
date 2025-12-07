@@ -26,13 +26,11 @@ def generate_filtered_EField():
     ############################
     # --- PREPARE THE OUTPUT ---
     ############################
-    E_N_DC = np.zeros(shape=np.shape(data_dict_EField['E_N'][0]))
-    E_N_AC = np.zeros(shape=np.shape(data_dict_EField['E_N'][0]))
-    E_p_DC = np.zeros(shape=np.shape(data_dict_EField['E_N'][0]))
-    E_p_AC = np.zeros(shape=np.shape(data_dict_EField['E_N'][0]))
+    E_N_DC = np.zeros(shape=np.shape(data_dict_EField[f'E_N{EFieldToggles.detrend_label}'][0]))
+    E_N_AC = np.zeros(shape=np.shape(data_dict_EField[f'E_N{EFieldToggles.detrend_label}'][0]))
+    E_p_DC = np.zeros(shape=np.shape(data_dict_EField[f'E_N{EFieldToggles.detrend_label}'][0]))
+    E_p_AC = np.zeros(shape=np.shape(data_dict_EField[f'E_N{EFieldToggles.detrend_label}'][0]))
 
-    ###########################
-    # ---
 
     ###############################
     # --- PERFORM BOXCAR FILTER ---
@@ -42,10 +40,10 @@ def generate_filtered_EField():
         from scipy.signal import savgol_filter
         for j in tqdm(range(len(altRange))):
             # E_N
-            E_N_DC[:, j] = np.convolve(data_dict_EField['E_N'][0][:, j], np.ones(FilterToggles.N_boxcar)/FilterToggles.N_boxcar, mode='same')
+            E_N_DC[:, j] = np.convolve(data_dict_EField[f'E_N{EFieldToggles.detrend_label}'][0][:, j], np.ones(FilterToggles.N_boxcar)/FilterToggles.N_boxcar, mode='same')
 
             # E_p
-            E_p_DC[:, j] = np.convolve(data_dict_EField['E_p'][0][:, j], np.ones(FilterToggles.N_boxcar)/FilterToggles.N_boxcar, mode='same')
+            E_p_DC[:, j] = np.convolve(data_dict_EField[f'E_p{EFieldToggles.detrend_label}'][0][:, j], np.ones(FilterToggles.N_boxcar)/FilterToggles.N_boxcar, mode='same')
 
     #####################################
     # --- PERFORM SAVITZ-GOLAY FILTER ---
@@ -58,11 +56,11 @@ def generate_filtered_EField():
             # smooth electric field data
 
             # E_N
-            E_N_DC[:, j] = savgol_filter(x=data_dict_EField['E_N'][0][:, j],
+            E_N_DC[:, j] = savgol_filter(x=data_dict_EField[f'E_N{EFieldToggles.detrend_label}'][0][:, j],
                                                              window_length=FilterToggles.window,
                                                              polyorder=FilterToggles.polyorder)
             # E_p
-            E_p_DC[:, j] = savgol_filter(x=data_dict_EField['E_p'][0][:, j],
+            E_p_DC[:, j] = savgol_filter(x=data_dict_EField[f'E_p{EFieldToggles.detrend_label}'][0][:, j],
                                                              window_length=FilterToggles.window,
                                                              polyorder=FilterToggles.polyorder)
 
@@ -77,23 +75,23 @@ def generate_filtered_EField():
             if j == 0: # case when you're at the bottom of the simulation i.e. where there's no variation
 
                 # --- Electric Fields ---
-                E_N_DC[:, j] = deepcopy(data_dict_EField['E_N'][0][:, j])
-                E_N_AC[:, j] = deepcopy(data_dict_EField['E_N'][0][:, j])
+                E_N_DC[:, j] = deepcopy(data_dict_EField[f'E_N{EFieldToggles.detrend_label}'][0][:, j])
+                E_N_AC[:, j] = deepcopy(data_dict_EField[f'E_N{EFieldToggles.detrend_label}'][0][:, j])
 
-                E_p_DC[:, j] = deepcopy(data_dict_EField['E_p'][0][:, j])
-                E_p_AC[:, j] = deepcopy(data_dict_EField['E_p'][0][:, j])
+                E_p_DC[:, j] = deepcopy(data_dict_EField[f'E_p{EFieldToggles.detrend_label}'][0][:, j])
+                E_p_AC[:, j] = deepcopy(data_dict_EField[f'E_p{EFieldToggles.detrend_label}'][0][:, j])
 
             else:
 
                 # --- mSSA the E-Field(s) ---
 
-                SSA_E = stl.SSA(tseries=data_dict_EField['E_N'][0][:, j], L=FilterToggles.wLen, mirror_percent=FilterToggles.mirror_percent)
+                SSA_E = stl.SSA(tseries=data_dict_EField[f'E_N{EFieldToggles.detrend_label}'][0][:, j], L=FilterToggles.wLen, mirror_percent=FilterToggles.mirror_percent)
                 E_N_DC[:, j] = deepcopy(SSA_E.reconstruct(indices=FilterToggles.DC_components))
                 E_N_AC[:, j] = deepcopy(SSA_E.reconstruct(indices=FilterToggles.AC_components))
                 del SSA_E
                 gc.collect()
 
-                SSA_E = stl.SSA(tseries=data_dict_EField['E_p'][0][:, j], L=FilterToggles.wLen, mirror_percent=FilterToggles.mirror_percent)
+                SSA_E = stl.SSA(tseries=data_dict_EField[f'E_p{EFieldToggles.detrend_label}'][0][:, j], L=FilterToggles.wLen, mirror_percent=FilterToggles.mirror_percent)
                 E_p_DC[:, j] = deepcopy(SSA_E.reconstruct(indices=FilterToggles.DC_components))
                 E_p_AC[:, j] = deepcopy(SSA_E.reconstruct(indices=FilterToggles.AC_components))
                 del SSA_E

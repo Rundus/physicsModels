@@ -84,17 +84,19 @@ def generate_Currents():
 
         # [1] Calculate the Horizontal/Vertical Distances in the simulation for the Gradient
         dSigma_P_dN = np.zeros(shape=(len(LShellRange), len(altRange)))
+        dSigma_H_dN = np.zeros(shape=(len(LShellRange), len(altRange)))
         dE_N_dN = np.zeros(shape=(len(LShellRange), len(altRange)))
 
         for j in range(len(altRange)):
 
             # Calculate the horizontal distance
             dis = data_dict_spatial['grid_dN'][0][:,j]
-
             dSigma_P_dN[:, j] = np.gradient(data_dict_output[f'sigma_P_{tag}'][0][:, j], dis)
+            dSigma_H_dN[:, j] = np.gradient(data_dict_output[f'sigma_H_{tag}'][0][:, j], dis)
             dE_N_dN[:, j] = np.gradient(data_dict_output[f'E_N_{tag}'][0][:, j], dis)
 
             # [2] # Calculate the Normal Current (Pedersen)
+            # J_N = deepcopy(data_dict_output[f'sigma_P_{tag}'][0]) * np.sqrt(np.square(deepcopy(data_dict_output[f'E_N_{tag}'][0])) + np.square(deepcopy(data_dict_output[f'E_T_{tag}'][0])))
             J_N = deepcopy(data_dict_output[f'sigma_P_{tag}'][0]) * deepcopy(data_dict_output[f'E_N_{tag}'][0])
 
             # Calculate the Tangent Current (Hall)
